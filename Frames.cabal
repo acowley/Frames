@@ -1,0 +1,91 @@
+name:                Frames
+version:             0.1.0.0
+synopsis:            Data frames For working with tabular data files
+description:         User-friendly, type safe, runtime efficient tooling for
+                     working with tabular data deserialized from
+                     comma-separated values (CSV) files. The type of
+                     each row of data is inferred from data, which can
+                     then be streamed from disk, or worked with in
+                     memory.
+license:             BSD3
+license-file:        LICENSE
+author:              Anthony Cowley
+maintainer:          acowley@gmail.com
+copyright:           Copyright (C) 2014 Anthony Cowley
+category:            Data
+build-type:          Simple
+extra-source-files:  benchmarks/*.hs benchmarks/*.py
+                     demo/Main.hs
+                     data/GetData.hs
+cabal-version:       >=1.10
+
+flag demos
+  description: Build demonstration programs
+  default:     False
+  manual:      True
+
+library
+  exposed-modules:     Frames
+                       Frames.Col
+                       Frames.CSV
+                       Frames.InCore
+                       Frames.Rec
+                       Frames.RecF
+                       Frames.RecLens
+                       Frames.TypeLevel
+  other-extensions:    DataKinds, GADTs, KindSignatures, TypeFamilies,
+                       TypeOperators, ConstraintKinds, StandaloneDeriving,
+                       UndecidableInstances, ScopedTypeVariables,
+                       OverloadedStrings
+  build-depends:       base >=4.7 && <4.8,
+                       ghc-prim >=0.3 && <0.4,
+                       text,
+                       template-haskell,
+                       transformers,
+                       vector,
+                       readable >= 0.2 && < 0.3,
+                       pipes >= 4.1 && < 5
+  hs-source-dirs:      src
+  default-language:    Haskell2010
+  ghc-options:         -Wall
+
+-- Get the large-ish data file used in the demo and benchmark
+executable getdata
+  if !flag(demos)
+    buildable: False
+  main-is: GetData.hs
+  build-depends: base, bytestring, http-client, zip-archive
+  hs-source-dirs: data
+  default-language: Haskell2010
+  ghc-options: -Wall
+
+-- Miscellaneous tooling around a data file
+executable demo
+  if !flag(demos)
+    buildable: False
+  main-is: Main.hs
+  build-depends: base, list-t, lens-family-core, transformers, Frames,
+                 vector, text, template-haskell, ghc-prim, readable, pipes
+  hs-source-dirs: demo
+  default-language: Haskell2010
+  ghc-options: -fllvm -O2
+
+-- A short demo to compare with Pandas
+executable benchdemo
+  if !flag(demos)
+    buildable: False
+  main-is:          BenchDemo.hs
+  build-depends:    base, foldl, pipes, Frames, lens-family-core
+  hs-source-dirs:   benchmarks
+  default-language: Haskell2010
+  ghc-options:      -fllvm -O2
+
+-- Benchmark showing tradeoffs of differing processing needs
+benchmark insurance
+  type:             exitcode-stdio-1.0
+  hs-source-dirs:   benchmarks
+  main-is:          InsuranceBench.hs
+  build-depends:    base, criterion, Frames, lens-family-core, pipes,
+                    transformers
+  ghc-options:      -O2 -fllvm
+  default-language: Haskell2010
