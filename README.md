@@ -8,3 +8,5 @@ We provide streaming and in-memory interfaces for efficiently working with datas
 The [benchmark](benchmarks/InsuranceBench.hs) shows several ways of dealing with data when you want to perform multiple traversals.
 
 Another [demo](benchmarks/BenchDemo.hs) shows how to fuse multiple passes into one so that the full data set is never resident in memory. A [Pandas version](benchmarks/panda.py) of a similar program is also provided for comparison.
+
+A major goal of this library is to support interactive exploration of data sets. See this [demo](demo/Main.hs#L11) for an example interactive session.
