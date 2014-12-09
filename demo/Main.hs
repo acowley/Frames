@@ -62,7 +62,7 @@ insMaybe = readTableMaybe "data/FL2.csv"
 type TinyIns = Rec [PolicyID, PointLatitude, PointLongitude]
 
 main :: IO ()
-main = do itbl <- inCore $ P.for insuranceTbl (P.yield . view rsubset)
+main = do itbl <- inCore $ P.for insuranceTbl (P.yield . rcast)
             :: IO (P.Producer TinyIns Identity ())
           putStrLn "In-core representation prepared"
           let Identity (n,sumLat) =

@@ -32,7 +32,7 @@ pipeBench = do (n,sumLat) <-
                         tbl
                sumLong <- P.fold (\s r -> (s + rget pointLongitude r)) 0 id tbl
                return $! P (sumLat / fromIntegral n) (sumLong / fromIntegral n)
-  where tbl = P.for tblP (P.yield . view rsubset) :: P.Producer TinyIns IO ()
+  where tbl = P.for tblP (P.yield . rcast) :: P.Producer TinyIns IO ()
 
 -- | Perform two consecutive folds after first streaming all data into
 -- an in-memory representation.
@@ -52,7 +52,7 @@ pipeBenchInCore =
 -- fields while streaming data into an in-memory representation.
 pipeBenchInCore' :: IO (P Double)
 pipeBenchInCore' =
-  do tbl <- inCore $ P.for tblP (P.yield . view rsubset)
+  do tbl <- inCore $ P.for tblP (P.yield . rcast)
          :: IO (P.Producer TinyIns Identity ())
      let Identity (n,sumLat) =
            P.fold (\ !(!i, !s) r -> (i+1, s+rget pointLatitude r))
@@ -66,7 +66,7 @@ pipeBenchInCore' =
 -- | Perform two consecutive folds after projecting a subset of an
 -- in-memory reprsentation.
 pipeBenchAoS :: IO (P Double)
-pipeBenchAoS = do tbl <- inCoreAoS' (view rsubset) tblP :: IO (Frame TinyIns)
+pipeBenchAoS = do tbl <- inCoreAoS' rcast tblP :: IO (Frame TinyIns)
                   let (n,sumLat) =
                         F.foldl' (\ !(!i,!s) r -> (i+1, s+rget pointLatitude r))
                                  (0::Int,0)
