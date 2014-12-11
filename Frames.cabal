@@ -28,6 +28,7 @@ library
   exposed-modules:     Frames
                        Frames.Col
                        Frames.CSV
+                       Frames.Frame
                        Frames.InCore
                        Frames.Rec
                        Frames.RecF

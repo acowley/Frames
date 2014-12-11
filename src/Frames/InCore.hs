@@ -10,7 +10,6 @@
 module Frames.InCore where
 import Control.Applicative
 import Control.Monad.IO.Class (MonadIO(..))
-import Data.Foldable
 import Data.Functor.Identity
 import Data.Proxy
 import Data.Text (Text)
@@ -19,6 +18,7 @@ import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
 import qualified Data.Vector.Unboxed as VU
 import Frames.Col
+import Frames.Frame
 import Frames.Rec
 import Frames.RecF
 import GHC.Prim (RealWorld)
@@ -122,19 +122,6 @@ instance forall s a rs.
   produceRec _ (Identity v :& vs) = (v VG.!) :& produceRec (Proxy::Proxy rs) vs
   produceRec _ _ = error "Impossible"
   {-# INLINE produceRec #-}
-
--- | A 'Frame' is a collection of rows indexed by 'Int'.
-data Frame r = Frame { frameLength :: Int
-                     , frameRow    :: Int -> r }
-
--- | A 'Frame' whose rows are 'Rec' values.
-type FrameRec rs = Frame (Rec rs)
-
-instance Foldable Frame where
-  foldMap f (Frame n row) = foldMap (f . row) [0..n-1]
-  {-# INLINE foldMap #-}
-  foldl' f z (Frame n row) = foldl' ((. row) . f) z [0..n-1]
-  {-# INLINE foldl' #-}
 
 -- | Stream a finite sequence of rows into an efficient in-memory
 -- representation for further manipulation. Each column of the input

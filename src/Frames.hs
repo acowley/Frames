@@ -5,6 +5,7 @@
 module Frames
   ( module Frames.Col
   , module Frames.CSV
+  , module Frames.Frame
   , module Frames.InCore
   , module Frames.Rec
   , module Frames.RecF
@@ -16,7 +17,8 @@ import Data.Text (Text)
 import Frames.Col ((:->)(..))
 import Frames.CSV (readTable, readTableMaybe, readTable', 
                    tableType, tableTypes, tableTypesPrefixed)
-import Frames.InCore (Frame(..), FrameRec, inCore, inCoreSoA,
+import Frames.Frame
+import Frames.InCore (inCore, inCoreSoA,
                       inCoreAoS, inCoreAoS', toAoS)
 import Frames.Rec (Rec, (&:), recPure, recMaybe, showRec, All)
 import Frames.RecF
