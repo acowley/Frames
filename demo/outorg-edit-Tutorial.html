@@ -1,0 +1,700 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
+<head>
+<title>Frames Tutorial</title>
+<!-- 2015-01-06 Tue 14:18 -->
+<meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
+<meta  name="generator" content="Org-mode" />
+<meta  name="author" content="Anthony Cowley" />
+<style type="text/css">
+ <!--/*--><![CDATA[/*><!--*/
+  .title  { text-align: center; }
+  .todo   { font-family: monospace; color: red; }
+  .done   { color: green; }
+  .tag    { background-color: #eee; font-family: monospace;
+            padding: 2px; font-size: 80%; font-weight: normal; }
+  .timestamp { color: #bebebe; }
+  .timestamp-kwd { color: #5f9ea0; }
+  .right  { margin-left: auto; margin-right: 0px;  text-align: right; }
+  .left   { margin-left: 0px;  margin-right: auto; text-align: left; }
+  .center { margin-left: auto; margin-right: auto; text-align: center; }
+  .underline { text-decoration: underline; }
+  #postamble p, #preamble p { font-size: 90%; margin: .2em; }
+  p.verse { margin-left: 3%; }
+  pre {
+    border: 1px solid #ccc;
+    box-shadow: 3px 3px 3px #eee;
+    padding: 8pt;
+    font-family: monospace;
+    overflow: auto;
+    margin: 1.2em;
+  }
+  pre.src {
+    position: relative;
+    overflow: visible;
+    padding-top: 1.2em;
+  }
+  pre.src:before {
+    display: none;
+    position: absolute;
+    background-color: white;
+    top: -10px;
+    right: 10px;
+    padding: 3px;
+    border: 1px solid black;
+  }
+  pre.src:hover:before { display: inline;}
+  pre.src-sh:before    { content: 'sh'; }
+  pre.src-bash:before  { content: 'sh'; }
+  pre.src-emacs-lisp:before { content: 'Emacs Lisp'; }
+  pre.src-R:before     { content: 'R'; }
+  pre.src-perl:before  { content: 'Perl'; }
+  pre.src-java:before  { content: 'Java'; }
+  pre.src-sql:before   { content: 'SQL'; }
+
+  table { border-collapse:collapse; }
+  caption.t-above { caption-side: top; }
+  caption.t-bottom { caption-side: bottom; }
+  td, th { vertical-align:top;  }
+  th.right  { text-align: center;  }
+  th.left   { text-align: center;   }
+  th.center { text-align: center; }
+  td.right  { text-align: right;  }
+  td.left   { text-align: left;   }
+  td.center { text-align: center; }
+  dt { font-weight: bold; }
+  .footpara:nth-child(2) { display: inline; }
+  .footpara { display: block; }
+  .footdef  { margin-bottom: 1em; }
+  .figure { padding: 1em; }
+  .figure p { text-align: center; }
+  .inlinetask {
+    padding: 10px;
+    border: 2px solid gray;
+    margin: 10px;
+    background: #ffffcc;
+  }
+  #org-div-home-and-up
+   { text-align: right; font-size: 70%; white-space: nowrap; }
+  textarea { overflow-x: auto; }
+  .linenr { font-size: smaller }
+  .code-highlighted { background-color: #ffff00; }
+  .org-info-js_info-navigation { border-style: none; }
+  #org-info-js_console-label
+    { font-size: 10px; font-weight: bold; white-space: nowrap; }
+  .org-info-js_search-highlight
+    { background-color: #ffff00; color: #000000; font-weight: bold; }
+  /*]]>*/-->
+</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;}</style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 500pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<script type="text/javascript">
+/*
+@licstart  The following is the entire license notice for the
+JavaScript code in this tag.
+
+Copyright (C) 2012-2013 Free Software Foundation, Inc.
+
+The JavaScript code in this tag is free software: you can
+redistribute it and/or modify it under the terms of the GNU
+General Public License (GNU GPL) as published by the Free Software
+Foundation, either version 3 of the License, or (at your option)
+any later version.  The code is distributed WITHOUT ANY WARRANTY;
+without even the implied warranty of MERCHANTABILITY or FITNESS
+FOR A PARTICULAR PURPOSE.  See the GNU GPL for more details.
+
+As additional permission under GNU GPL version 3 section 7, you
+may distribute non-source (e.g., minimized or compacted) forms of
+that code without the copy of the GNU GPL normally required by
+section 4, provided you include this license notice and a URL
+through which recipients can access the Corresponding Source.
+
+
+@licend  The above is the entire license notice
+for the JavaScript code in this tag.
+*/
+<!--/*--><![CDATA[/*><!--*/
+ function CodeHighlightOn(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(null != target) {
+     elem.cacheClassElem = elem.className;
+     elem.cacheClassTarget = target.className;
+     target.className = "code-highlighted";
+     elem.className   = "code-highlighted";
+   }
+ }
+ function CodeHighlightOff(elem, id)
+ {
+   var target = document.getElementById(id);
+   if(elem.cacheClassElem)
+     elem.className = elem.cacheClassElem;
+   if(elem.cacheClassTarget)
+     target.className = elem.cacheClassTarget;
+ }
+/*]]>*///-->
+</script>
+</head>
+<body>
+<div id="content">
+<h1 class="title">Frames Tutorial</h1>
+<div id="table-of-contents">
+<h2>Table of Contents</h2>
+<div id="text-table-of-contents">
+<ul>
+<li><a href="#sec-1">1. DataFrames Tutorial</a>
+<ul>
+<li><a href="#sec-1-1">1.1. Data Import</a></li>
+<li><a href="#sec-1-2">1.2. Sanity Check</a></li>
+<li><a href="#sec-1-3">1.3. Subsetting</a>
+<ul>
+<li><a href="#sec-1-3-1">1.3.1. Row Subset</a></li>
+<li><a href="#sec-1-3-2">1.3.2. Column Subset</a></li>
+<li><a href="#sec-1-3-3">1.3.3. Query / Conditional Subset</a></li>
+</ul>
+</li>
+<li><a href="#sec-1-4">1.4. Better Types</a></li>
+</ul>
+</li>
+<li><a href="#sec-2">2. Appendix: User Types</a></li>
+</ul>
+</div>
+</div>
+<p>
+TemplateHaskell, TypeOperators #
+</p>
+<div id="outline-container-sec-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> DataFrames Tutorial</h2>
+<div class="outline-text-2" id="text-1">
+<p>
+This is a semi-port of a
+<a href="http://ajkl.github.io/Dataframes/">dataframe tutorial</a> Rosetta
+Stone. Traditional dataframe tools built in R, Julia, Python,
+etc. expose a richer API than Frames does (so far).
+</p>
+
+<p>
+The example data file used does not include column headers, nor does
+it use commas to separate values, so it does not fall into the sweet
+spot of CSV parsing that <code>Frames</code> is squarely aimed at. That said,
+this mismatch of test data and library support is a great opportunity
+to verify that <code>Frames</code> are flexible enough to meet a variety of
+needs.
+</p>
+
+<p>
+We begin with rather a lot of imports to support a variety of test
+operations and parser customization. I encourage you to start with a
+smaller test program than this!
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-haskell"><span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Control.Applicative</span>
+<span style="color: #F92672;">import</span> <span style="color: #F92672;">qualified</span> <span style="color: #66D9EF;">Control.Foldl</span> <span style="color: #F92672;">as</span> <span style="color: #66D9EF;">L</span>
+<span style="color: #F92672;">import</span> <span style="color: #F92672;">qualified</span> <span style="color: #66D9EF;">Data.Foldable</span> <span style="color: #F92672;">as</span> <span style="color: #66D9EF;">F</span>
+<span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Data.Monoid</span>
+<span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Lens.Family</span>
+<span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Frames</span>
+<span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Frames.CSV</span> (tableTypesOpt, readTableOpt)
+<span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Pipes</span> <span style="color: #F92672;">hiding</span> (<span style="color: #66D9EF;">Proxy</span>)
+<span style="color: #F92672;">import</span> <span style="color: #F92672;">qualified</span> <span style="color: #66D9EF;">Pipes.Prelude</span> <span style="color: #F92672;">as</span> <span style="color: #66D9EF;">P</span>
+</pre>
+</div>
+
+<p>
+A few other imports will be used for highly customized parsing <a href="#sec-1-4">later</a>.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-haskell"><span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Data.Proxy</span>
+<span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Frames.CSV</span> (<span style="color: #66D9EF;">ColumnTypeable</span>(<span style="color: #FD971F;">..</span>), tableTypesPrefixedOpt')
+<span style="color: #F92672;">import</span> <span style="color: #66D9EF;">TutorialUsers</span>
+</pre>
+</div>
+</div>
+
+<div id="outline-container-sec-1-1" class="outline-3">
+<h3 id="sec-1-1"><span class="section-number-3">1.1</span> Data Import</h3>
+<div class="outline-text-3" id="text-1-1">
+<p>
+We usually package column names with the data to keep things a bit
+more self-documenting. This might mean adding a row to the data
+file with the column names, but, if we must use a particular data
+file whose column names are provided in a separate specification,
+we can override the default parsing options.
+</p>
+
+<p>
+The data set this example considers is rather far from the sweet spot
+of CSV processing that <code>Frames</code> is aimed it: it does not include
+column headers, nor does it use commas to separate values! However,
+these mismatches do provide an opportunity to see that <code>Frames</code> are
+flexible enough to meet a variety of needs.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-haskell"><span style="color: #A6E22E;">tableTypesOpt</span>  [<span style="color: #E6DB74;">"user id"</span>, <span style="color: #E6DB74;">"age"</span>, <span style="color: #E6DB74;">"gender"</span>, <span style="color: #E6DB74;">"occupation"</span>, <span style="color: #E6DB74;">"zip code"</span>]
+               <span style="color: #E6DB74;">"|"</span> <span style="color: #E6DB74;">"Users"</span> <span style="color: #E6DB74;">"data/ml-100k/u.user"</span>
+</pre>
+</div>
+
+<p>
+This template haskell splice explicitly specifies column names, a
+separator string, the name for the inferred record type, and the data
+file from which to infer the record type.
+</p>
+
+<p>
+We can load the module into <code>cabal repl</code> to see what we have so far.
+</p>
+
+<pre class="example">
+λ&gt; :i Users
+type Users =
+  Rec
+    '["user id" :-&gt; Int, "age" :-&gt; Int, "gender" :-&gt; Text,
+      "occupation" :-&gt; Text, "zip code" :-&gt; Text]
+</pre>
+
+<p>
+This lets us perform a quick check that the types are basically what
+we expect them to be.
+</p>
+
+<p>
+We now define a streaming representation of the full data set. If the
+data set is too large to keep in memory, we can process it as it
+streams through RAM.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-haskell"><span style="color: #A6E22E;">movieData</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">Producer</span> <span style="color: #66D9EF;">Users</span> <span style="color: #66D9EF;">IO</span> <span style="color: #66D9EF;">()</span>
+<span style="color: #A6E22E;">movieData</span> <span style="color: #FD971F;">=</span> readTableOpt usersParser <span style="color: #E6DB74;">"data/ml-100k/u.user"</span>
+</pre>
+</div>
+
+<p>
+Alternately, if we want to run multiple operations against a data set
+that <i>can</i> fit in RAM, we can do that. Here we define an in-core (in
+memory) array of structures (AoS) representation.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-haskell"><span style="color: #A6E22E;">movies</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">IO</span> (<span style="color: #66D9EF;">Frame</span> <span style="color: #66D9EF;">Users</span>)
+<span style="color: #A6E22E;">movies</span> <span style="color: #FD971F;">=</span> inCoreAoS movieData
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-sec-1-2" class="outline-3">
+<h3 id="sec-1-2"><span class="section-number-3">1.2</span> Sanity Check</h3>
+<div class="outline-text-3" id="text-1-2">
+<p>
+We can compute some easy statistics to see how things look.
+</p>
+
+<pre class="example">
+λ&gt; ms &lt;- movies
+λ&gt; L.fold L.minimum (view age &lt;$&gt; ms)
+7
+</pre>
+
+<p>
+When there are multiple properties we would like to compute, we can
+fuse multiple traversals into one pass using something like the <a href="http://hackage.haskell.org/package/foldl">foldl</a>
+package
+</p>
+
+<pre class="example">
+λ&gt; ms &lt;- movies
+λ&gt; L.fold (L.pretraverse age ((,) &lt;$&gt; L.minimum &lt;*&gt; L.maximum)) ms
+(Just 7,Just 73)
+</pre>
+
+<p>
+Here we are projecting the <code>age</code> column out of each record, and
+computing the minimum and maximum <code>age</code> for all rows.
+</p>
+</div>
+</div>
+
+<div id="outline-container-sec-1-3" class="outline-3">
+<h3 id="sec-1-3"><span class="section-number-3">1.3</span> Subsetting</h3>
+<div class="outline-text-3" id="text-1-3">
+</div><div id="outline-container-sec-1-3-1" class="outline-4">
+<h4 id="sec-1-3-1"><span class="section-number-4">1.3.1</span> Row Subset</h4>
+<div class="outline-text-4" id="text-1-3-1">
+<p>
+Data may be inspected using either Haskell's traditional list API&#x2026;
+</p>
+
+<pre class="example">
+λ&gt; ms &lt;- movies
+λ&gt; mapM_ print (take 3 (toList ms))
+{user id :-&gt; 1, age :-&gt; 24, gender :-&gt; "M", occupation :-&gt; "technician", zip code :-&gt; "85711"}
+{user id :-&gt; 2, age :-&gt; 53, gender :-&gt; "F", occupation :-&gt; "other", zip code :-&gt; "94043"}
+{user id :-&gt; 3, age :-&gt; 23, gender :-&gt; "M", occupation :-&gt; "writer", zip code :-&gt; "32067"}
+</pre>
+
+<p>
+&#x2026; or <code>O(1)</code> indexing of individual rows. Here we take the last three
+rows of the data set,
+</p>
+
+<pre class="example">
+λ&gt; mapM_ (print . frameRow ms) [frameLength ms - 3 .. frameLength ms - 1]
+{user id :-&gt; 941, age :-&gt; 20, gender :-&gt; "M", occupation :-&gt; "student", zip code :-&gt; "97229"}
+{user id :-&gt; 942, age :-&gt; 48, gender :-&gt; "F", occupation :-&gt; "librarian", zip code :-&gt; "78209"}
+{user id :-&gt; 943, age :-&gt; 22, gender :-&gt; "M", occupation :-&gt; "student", zip code :-&gt; "77841"}
+</pre>
+
+<p>
+This lets us view a subset of rows,
+</p>
+
+<pre class="example">
+λ&gt; mapM_ (print . frameRow ms) [50..55]
+{user id :-&gt; 51, age :-&gt; 28, gender :-&gt; "M", occupation :-&gt; "educator", zip code :-&gt; "16509"}
+{user id :-&gt; 52, age :-&gt; 18, gender :-&gt; "F", occupation :-&gt; "student", zip code :-&gt; "55105"}
+{user id :-&gt; 53, age :-&gt; 26, gender :-&gt; "M", occupation :-&gt; "programmer", zip code :-&gt; "55414"}
+{user id :-&gt; 54, age :-&gt; 22, gender :-&gt; "M", occupation :-&gt; "executive", zip code :-&gt; "66315"}
+{user id :-&gt; 55, age :-&gt; 37, gender :-&gt; "M", occupation :-&gt; "programmer", zip code :-&gt; "01331"}
+{user id :-&gt; 56, age :-&gt; 25, gender :-&gt; "M", occupation :-&gt; "librarian", zip code :-&gt; "46260"}
+</pre>
+</div>
+</div>
+
+<div id="outline-container-sec-1-3-2" class="outline-4">
+<h4 id="sec-1-3-2"><span class="section-number-4">1.3.2</span> Column Subset</h4>
+<div class="outline-text-4" id="text-1-3-2">
+<p>
+We can consider a single column.
+</p>
+
+<pre class="example">
+λ&gt; take 6 $ F.foldMap ((:[]) . view occupation) ms
+["technician","other","writer","technician","other","executive"]
+</pre>
+
+<p>
+Or multiple columns,
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-haskell"><span style="color: #A6E22E;">miniUser</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">Users</span> <span style="color: #FD971F;">-&gt;</span> <span style="color: #66D9EF;">Rec</span> [<span style="color: #66D9EF;">Occupation</span>, <span style="color: #66D9EF;">Gender</span>, <span style="color: #66D9EF;">Age</span>]
+<span style="color: #A6E22E;">miniUser</span> <span style="color: #FD971F;">=</span> rcast
+</pre>
+</div>
+
+<pre class="example">
+λ&gt; mapM_ print . take 6 . F.toList $ fmap miniUser ms
+{occupation :-&gt; "technician", gender :-&gt; "M", age :-&gt; 24}
+{occupation :-&gt; "other", gender :-&gt; "F", age :-&gt; 53}
+{occupation :-&gt; "writer", gender :-&gt; "M", age :-&gt; 23}
+{occupation :-&gt; "technician", gender :-&gt; "M", age :-&gt; 24}
+{occupation :-&gt; "other", gender :-&gt; "F", age :-&gt; 33}
+{occupation :-&gt; "executive", gender :-&gt; "M", age :-&gt; 42}
+</pre>
+</div>
+</div>
+
+<div id="outline-container-sec-1-3-3" class="outline-4">
+<h4 id="sec-1-3-3"><span class="section-number-4">1.3.3</span> Query / Conditional Subset</h4>
+<div class="outline-text-4" id="text-1-3-3">
+<p>
+Filtering our frame is rather nicely done using the <a href="http://hackage.haskell.org/package/pipes">pipes</a> package.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-haskell"><span style="color: #A6E22E;">writers</span> <span style="color: #FD971F;">::</span> (<span style="color: #66D9EF;">Occupation</span> <span style="color: #FD971F;">&#8712;</span> rs, <span style="color: #66D9EF;">Monad</span> m) <span style="color: #FD971F;">=&gt;</span> <span style="color: #66D9EF;">Pipe</span> (<span style="color: #66D9EF;">Rec</span> rs) (<span style="color: #66D9EF;">Rec</span> rs) m r
+<span style="color: #A6E22E;">writers</span> <span style="color: #FD971F;">=</span> <span style="color: #F8F8F2; background-color: #272822;">P.filter</span> ((<span style="color: #FD971F;">==</span> <span style="color: #E6DB74;">"writer"</span>) <span style="color: #FD971F;">.</span> view occupation)
+</pre>
+</div>
+
+<pre class="example">
+λ&gt; runEffect $ movieData &gt;-&gt; writers &gt;-&gt; P.take 6 &gt;-&gt; P.print
+{user id :-&gt; 3, age :-&gt; 23, gender :-&gt; "M", occupation :-&gt; "writer", zip code :-&gt; "32067"}
+{user id :-&gt; 21, age :-&gt; 26, gender :-&gt; "M", occupation :-&gt; "writer", zip code :-&gt; "30068"}
+{user id :-&gt; 22, age :-&gt; 25, gender :-&gt; "M", occupation :-&gt; "writer", zip code :-&gt; "40206"}
+{user id :-&gt; 28, age :-&gt; 32, gender :-&gt; "M", occupation :-&gt; "writer", zip code :-&gt; "55369"}
+{user id :-&gt; 50, age :-&gt; 21, gender :-&gt; "M", occupation :-&gt; "writer", zip code :-&gt; "52245"}
+{user id :-&gt; 122, age :-&gt; 32, gender :-&gt; "F", occupation :-&gt; "writer", zip code :-&gt; "22206"}
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-sec-1-4" class="outline-3">
+<h3 id="sec-1-4"><span class="section-number-3">1.4</span> Better Types</h3>
+<div class="outline-text-3" id="text-1-4">
+<p>
+A common disappointment of parsing general data sets is the
+reliance on text for data representation even <i>after</i> parsing. If
+you find that the default <code>ColType</code> spectrum of potential column
+types that <code>Frames</code> uses doesn't capture desired structure, you can
+go ahead and define your own universe of column types! The <code>Users</code>
+row types we've been playing with here is rather boring: it only
+uses <code>Int</code> and <code>Text</code> column types. But <code>Text</code> is far too vague a
+type for a column like <code>gender</code>.
+</p>
+
+<pre class="example">
+λ&gt; L.purely P.fold L.nub (movieData &gt;-&gt; P.map (view gender))
+["M", "F"]
+</pre>
+
+<p>
+Aha! The <code>gender</code> column is pretty simple, so let's go ahead and
+define our own universe of column types. We will name this record
+type <code>U2</code>, and give all the generated column types and lenses a
+prefix, "u2", so they don't conflict with the definitions we
+generated earlier.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-haskell"><span style="color: #A6E22E;">tableTypesPrefixedOpt'</span> (<span style="color: #66D9EF;">Proxy</span><span style="color: #FD971F;">::</span><span style="color: #66D9EF;">Proxy</span> <span style="color: #66D9EF;">UserCol</span>) 
+                       [<span style="color: #E6DB74;">"user id"</span>, <span style="color: #E6DB74;">"age"</span>, <span style="color: #E6DB74;">"gender"</span>, <span style="color: #E6DB74;">"occupation"</span>, <span style="color: #E6DB74;">"zip code"</span>]
+                       <span style="color: #E6DB74;">"|"</span> <span style="color: #E6DB74;">"U2"</span> <span style="color: #E6DB74;">"u2"</span> <span style="color: #E6DB74;">"data/ml-100k/u.user"</span>
+
+<span style="color: #A6E22E;">movieData2</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">Producer</span> <span style="color: #66D9EF;">U2</span> <span style="color: #66D9EF;">IO</span> <span style="color: #66D9EF;">()</span>
+<span style="color: #A6E22E;">movieData2</span> <span style="color: #FD971F;">=</span> readTableOpt u2Parser <span style="color: #E6DB74;">"data/ml-100k/u.user"</span>
+</pre>
+</div>
+
+<p>
+This new record type, <code>U2</code>, has a more interesting <code>gender</code>
+column.
+</p>
+
+<pre class="example">
+λ&gt; :i U2
+type U2 =
+  Rec
+    '["user id" :-&gt; Int, "age" :-&gt; Int, "gender" :-&gt; GenderT,
+      "occupation" :-&gt; Text, "zip code" :-&gt; Text]
+</pre>
+
+<p>
+Let's take the occupations of the first 10 female users:
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-haskell"><span style="color: #A6E22E;">femaleOccupations</span> <span style="color: #FD971F;">::</span> (<span style="color: #66D9EF;">U2gender</span> <span style="color: #FD971F;">&#8712;</span> rs, <span style="color: #66D9EF;">U2occupation</span> <span style="color: #FD971F;">&#8712;</span> rs, <span style="color: #66D9EF;">Monad</span> m)
+                  <span style="color: #FD971F;">=&gt;</span> <span style="color: #66D9EF;">Pipe</span> (<span style="color: #66D9EF;">Rec</span> rs) <span style="color: #66D9EF;">Text</span> m r
+<span style="color: #A6E22E;">femaleOccupations</span> <span style="color: #FD971F;">=</span> <span style="color: #F8F8F2; background-color: #272822;">P.filter</span> ((<span style="color: #FD971F;">==</span> <span style="color: #66D9EF;">Female</span>) <span style="color: #FD971F;">.</span> view u2gender)
+                    <span style="color: #FD971F;">&gt;-&gt;</span> <span style="color: #F8F8F2; background-color: #272822;">P.map</span> (view u2occupation)
+</pre>
+</div>
+
+<pre class="example">
+λ&gt; runEffect $ movieData2 &gt;-&gt; femaleOccupations &gt;-&gt; P.take 10 &gt;-&gt; P.print
+"other"
+"other"
+"other"
+"other"
+"educator"
+"other"
+"homemaker"
+"artist"
+"artist"
+"librarian"
+</pre>
+
+<p>
+So there we go! We've done both row and column subset queries with a
+strongly typed query (namely, <code>(== Female)</code>). Another situation in
+which one might want to define a custom universe of column types is
+when dealing with dates. This would let you both reject rows with
+badly formatted dates, for example, and efficiently query the data set
+with richly-typed queries.
+</p>
+
+<p>
+Even better, did you notice the types of <code>writers</code> and
+<code>femaleOccupations</code>? They are polymorphic over the full row type!
+This means that if your schema changes, or you switch to a related but
+different data set, <b>these functions can still be used without even
+touching the code</b>. Just recompile against the new data set, and
+you're good to go.
+</p>
+</div>
+</div>
+</div>
+
+<div id="outline-container-sec-2" class="outline-2">
+<h2 id="sec-2"><span class="section-number-2">2</span> Appendix: User Types</h2>
+<div class="outline-text-2" id="text-2">
+<p>
+Here are the definitions needed to define the <code>UserCol</code> type with its
+more descriptive <code>GenderT</code> type. We have to define these things in a
+separate module from our main work due to GHC's stage restrictions
+regarding Template Haskell. Specifically, <code>UserCol</code> and its instances
+are used at compile time to infer the record type needed to represent
+the data file. Notice the extension point here, though somewhat
+buried, is not too rough: you prepend new, more refined, type
+compatibility checks to the end of the <code>inferType</code> definition.
+</p>
+
+<p>
+This is clearly a bit of a mouthful, and probably not something you'd
+want to do for every data set. However, the <i>ability</i> to refine the
+structure of parsed data is in keeping with the overall goal of
+<code>Frames</code>: it's easy to take off, and the sky's the limit.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-haskell"><span style="color: #75715E; font-style: italic;">{-# LANGUAGE OverloadedStrings, TemplateHaskell #-}</span>
+<span style="color: #F92672;">module</span> <span style="color: #66D9EF;">TutorialUsers</span> <span style="color: #F92672;">where</span>
+<span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Control.Monad</span> (mzero)
+<span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Data.Bool</span> (bool)
+<span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Data.Maybe</span> (fromMaybe)
+<span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Data.Monoid</span>
+<span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Data.Readable</span> (<span style="color: #66D9EF;">Readable</span>(fromText))
+<span style="color: #F92672;">import</span> <span style="color: #F92672;">qualified</span> <span style="color: #66D9EF;">Data.Text</span> <span style="color: #F92672;">as</span> <span style="color: #66D9EF;">T</span>
+<span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Data.Traversable</span> (sequenceA)
+<span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Frames.CSV</span> (<span style="color: #66D9EF;">ColumnTypeable</span>(<span style="color: #FD971F;">..</span>))
+
+<span style="color: #F92672;">data</span> <span style="color: #66D9EF;">GenderT</span> <span style="color: #FD971F;">=</span> <span style="color: #66D9EF;">Male</span> <span style="color: #FD971F;">|</span> <span style="color: #66D9EF;">Female</span> <span style="color: #F92672;">deriving</span> (<span style="color: #66D9EF;">Eq</span>,<span style="color: #66D9EF;">Ord</span>,<span style="color: #66D9EF;">Show</span>)
+
+<span style="color: #F92672;">instance</span> <span style="color: #66D9EF;">Readable</span> <span style="color: #66D9EF;">GenderT</span> <span style="color: #F92672;">where</span>
+  fromText t
+      <span style="color: #FD971F;">|</span> t' <span style="color: #FD971F;">==</span> <span style="color: #E6DB74;">"m"</span> <span style="color: #FD971F;">=</span> return <span style="color: #66D9EF;">Male</span>
+      <span style="color: #FD971F;">|</span> t' <span style="color: #FD971F;">==</span> <span style="color: #E6DB74;">"f"</span> <span style="color: #FD971F;">=</span> return <span style="color: #66D9EF;">Female</span>
+      <span style="color: #FD971F;">|</span> otherwise <span style="color: #FD971F;">=</span> mzero
+    <span style="color: #F92672;">where</span> t' <span style="color: #FD971F;">=</span> <span style="color: #F8F8F2; background-color: #272822;">T.toCaseFold</span> t
+
+<span style="color: #F92672;">data</span> <span style="color: #66D9EF;">UserCol</span> <span style="color: #FD971F;">=</span> <span style="color: #66D9EF;">TInt</span> <span style="color: #FD971F;">|</span> <span style="color: #66D9EF;">TGender</span> <span style="color: #FD971F;">|</span> <span style="color: #66D9EF;">TText</span> <span style="color: #F92672;">deriving</span> (<span style="color: #66D9EF;">Eq</span>,<span style="color: #66D9EF;">Show</span>,<span style="color: #66D9EF;">Ord</span>,<span style="color: #66D9EF;">Enum</span>,<span style="color: #66D9EF;">Bounded</span>)
+
+<span style="color: #F92672;">instance</span> <span style="color: #66D9EF;">Monoid</span> <span style="color: #66D9EF;">UserCol</span> <span style="color: #F92672;">where</span>
+  mempty <span style="color: #FD971F;">=</span> maxBound
+  mappend x y <span style="color: #FD971F;">=</span> toEnum <span style="color: #FD971F;">$</span> max (fromEnum x) (fromEnum y)
+
+<span style="color: #F92672;">instance</span> <span style="color: #66D9EF;">ColumnTypeable</span> <span style="color: #66D9EF;">UserCol</span> <span style="color: #F92672;">where</span>
+  colType <span style="color: #66D9EF;">TInt</span> <span style="color: #FD971F;">=</span> [t<span style="color: #FD971F;">|</span><span style="color: #66D9EF;">Int</span><span style="color: #FD971F;">|</span>]
+  colType <span style="color: #66D9EF;">TGender</span> <span style="color: #FD971F;">=</span> [t<span style="color: #FD971F;">|</span><span style="color: #66D9EF;">GenderT</span><span style="color: #FD971F;">|</span>]
+  colType <span style="color: #66D9EF;">TText</span> <span style="color: #FD971F;">=</span> [t<span style="color: #FD971F;">|</span><span style="color: #66D9EF;">T.Text</span><span style="color: #FD971F;">|</span>]
+  inferType <span style="color: #FD971F;">=</span> <span style="color: #F92672;">let</span> isInt <span style="color: #FD971F;">=</span> fmap (const <span style="color: #66D9EF;">TInt</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">Int</span> <span style="color: #FD971F;">-&gt;</span> <span style="color: #66D9EF;">UserCol</span>) <span style="color: #FD971F;">.</span> fromText
+                  isGen <span style="color: #FD971F;">=</span> bool <span style="color: #66D9EF;">Nothing</span> (<span style="color: #66D9EF;">Just</span> <span style="color: #66D9EF;">TGender</span>) <span style="color: #FD971F;">.</span> (<span style="color: #FD971F;">`elem`</span> [<span style="color: #E6DB74;">"M"</span>,<span style="color: #E6DB74;">"F"</span>])
+              <span style="color: #F92672;">in</span> fromMaybe <span style="color: #66D9EF;">TText</span> <span style="color: #FD971F;">.</span> mconcat <span style="color: #FD971F;">.</span> sequenceA [isGen, isInt]
+</pre>
+</div>
+</div>
+</div>
+</div>
+</body>
+</html>
