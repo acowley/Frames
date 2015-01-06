@@ -7,12 +7,12 @@
 -- Stone. Traditional dataframe tools built in R, Julia, Python,
 -- etc. expose a richer API than Frames does (so far).
 
--- The example data file used does not include column headers, nor does
--- it use commas to separate values, so it does not fall into the sweet
--- spot of CSV parsing that ~Frames~ is squarely aimed at. That said,
--- this mismatch of test data and library support is a great opportunity
--- to verify that ~Frames~ are flexible enough to meet a variety of
--- needs.
+-- The example data file used does not include column headers, nor
+-- does it use commas to separate values, so it does not fall into the
+-- sweet spot of CSV parsing that ~Frames~ is aimed at. That said,
+-- this mismatch of test data and library support is a great
+-- opportunity to verify that ~Frames~ are flexible enough to meet a
+-- variety of needs.
 
 -- We begin with rather a lot of imports to support a variety of test
 -- operations and parser customization. I encourage you to start with a
