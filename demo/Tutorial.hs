@@ -199,10 +199,19 @@ writers = P.filter ((== "writer") . view occupation)
 -- #+END_EXAMPLE
 
 -- Aha! The =gender= column is pretty simple, so let's go ahead and
--- define our own universe of column types. We will name this record
--- type ~U2~, and give all the generated column types and lenses a
--- prefix, "u2", so they don't conflict with the definitions we
--- generated earlier.
+-- define our own universe of column types.
+
+-- -- #+BEGIN_SRC haskell
+-- data GenderT = Male | Female deriving (Eq,Ord,Show)
+
+-- data UserCol = TInt | TGender | TText deriving (Eq,Show,Ord,Enum,Bounded)
+-- #+END_SRC
+
+-- We will also need a few instance that you can find in the [[Appendix: User Types][appendix]].
+
+-- We name this record type ~U2~, and give all the generated column types
+-- and lenses a prefix, "u2", so they don't conflict with the definitions
+-- we generated earlier.
 
 tableTypesPrefixedOpt' (Proxy::Proxy UserCol) 
                        ["user id", "age", "gender", "occupation", "zip code"]
