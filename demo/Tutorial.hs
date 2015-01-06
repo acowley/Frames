@@ -91,8 +91,7 @@ movies = inCoreAoS movieData
 
 -- *** Row Subset
 
--- Data may be inspected using either Haskell's traditional list API, or
--- =O(1)= indexing of individual rows...
+-- Data may be inspected using either Haskell's traditional list API...
 
 -- #+BEGIN_EXAMPLE
 -- λ> ms <- movies
