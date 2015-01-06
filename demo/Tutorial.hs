@@ -7,24 +7,32 @@
 -- Stone. Traditional dataframe tools built in R, Julia, Python,
 -- etc. expose a richer API than Frames does (so far).
 
+-- The example data file used does not include column headers, nor does
+-- it use commas to separate values, so it does not fall into the sweet
+-- spot of CSV parsing that ~Frames~ is squarely aimed at. That said,
+-- this mismatch of test data and library support is a great opportunity
+-- to verify that ~Frames~ are flexible enough to meet a variety of
+-- needs.
+
+-- We begin with rather a lot of imports to support a variety of test
+-- operations and parser customization. I encourage you to start with a
+-- smaller test program than this!
+
 import Control.Applicative
 import qualified Control.Foldl as L
 import qualified Data.Foldable as F
 import Data.Monoid
 import Lens.Family
 import Frames
-import Frames.CSV (ParserOptions(..), defaultParser, tableTypesOpt, readTableOpt)
-import Frames.CSV (ColumnTypeable(..), tableTypesPrefixedOpt')
+import Frames.CSV (tableTypesOpt, readTableOpt)
 import Pipes hiding (Proxy)
 import qualified Pipes.Prelude as P
 
-import TutorialUsers
-import Data.Readable (fromText)
-import Data.Bool (bool)
-import Data.Maybe (fromMaybe)
+-- A few other imports will be used for highly customized parsing [[Better Types][later]].
+
 import Data.Proxy
-import Data.Readable (Readable)
-import qualified Data.Text as T
+import Frames.CSV (ColumnTypeable(..), tableTypesPrefixedOpt')
+import TutorialUsers
 
 -- ** Data Import
 
@@ -34,39 +42,47 @@ import qualified Data.Text as T
 -- file whose column names are provided in a separate specification,
 -- we can override the default parsing options.
 
+-- The data set this example considers is rather far from the sweet spot
+-- of CSV processing that ~Frames~ is aimed it: it does not include
+-- column headers, nor does it use commas to separate values! However,
+-- these mismatches do provide an opportunity to see that ~Frames~ are
+-- flexible enough to meet a variety of needs.
+
 tableTypesOpt  ["user id", "age", "gender", "occupation", "zip code"]
                "|" "Users" "data/ml-100k/u.user"
 
--- This is a streaming representation of the full data set. If the
--- data set is too large to keep in memory, we can process it as it
--- streams through RAM. Alternately, if we want to run multiple
--- operations against a data set that can fit in RAM, we can do that.
-
-movieData :: Producer Users IO ()
-movieData = readTableOpt usersParser "data/ml-100k/u.user"
-
--- Here we have an in-memory representation.
-
-movies :: IO (Frame Users)
-movies = inCoreAoS movieData
-
--- ** Sanity Check
+-- This template haskell splice explicitly specifies column names, a
+-- separator string, the name for the inferred record type, and the data
+-- file from which to infer the record type.
 
 -- We can load the module into =cabal repl= to see what we have so far.
 
 -- #+BEGIN_EXAMPLE
--- λ> :t movies
--- movies :: IO (Frame Users)
 -- λ> :i Users
 -- type Users =
 --   Rec
 --     '["user id" :-> Int, "age" :-> Int, "gender" :-> Text,
 --       "occupation" :-> Text, "zip code" :-> Text]
---   	-- Defined at /Users/acowley/Documents/Projects/Frames/demo/Tutorial.hs:19:1
 -- #+END_EXAMPLE
 
 -- This lets us perform a quick check that the types are basically what
 -- we expect them to be.
+
+-- We now define a streaming representation of the full data set. If the
+-- data set is too large to keep in memory, we can process it as it
+-- streams through RAM.
+
+movieData :: Producer Users IO ()
+movieData = readTableOpt usersParser "data/ml-100k/u.user"
+
+-- Alternately, if we want to run multiple operations against a data set
+-- that /can/ fit in RAM, we can do that. Here we define an in-core (in
+-- memory) array of structures (AoS) representation.
+
+movies :: IO (Frame Users)
+movies = inCoreAoS movieData
+
+-- ** Sanity Check
 
 -- We can compute some easy statistics to see how things look.
 
@@ -89,7 +105,6 @@ movies = inCoreAoS movieData
 -- Here we are projecting the =age= column out of each record, and
 -- computing the minimum and maximum =age= for all rows.
 
-
 -- ** Subsetting
 
 -- *** Row Subset
@@ -98,7 +113,6 @@ movies = inCoreAoS movieData
 
 -- #+BEGIN_EXAMPLE
 -- λ> ms <- movies
-
 -- λ> mapM_ print (take 3 (toList ms))
 -- {user id :-> 1, age :-> 24, gender :-> "M", occupation :-> "technician", zip code :-> "85711"}
 -- {user id :-> 2, age :-> 53, gender :-> "F", occupation :-> "other", zip code :-> "94043"}
@@ -132,7 +146,7 @@ movies = inCoreAoS movieData
 -- We can consider a single column.
 
 -- #+BEGIN_EXAMPLE
--- λ> take 6 $ Data.Foldable.foldMap ((:[]) . view occupation) f
+-- λ> take 6 $ F.foldMap ((:[]) . view occupation) ms
 -- ["technician","other","writer","technician","other","executive"]
 -- #+END_EXAMPLE
 
@@ -153,11 +167,7 @@ miniUser = rcast
 
 -- *** Query / Conditional Subset
 
--- Filtering our frame is rather nicely done using the [[http://hackage.haskell.org/package/pipes][pipes]] package. So
--- I will restart my REPL session, and use =moviesP= instead of =movies=.
-
-moviesP :: IO (Producer Users IO ())
-moviesP = inCore movieData
+-- Filtering our frame is rather nicely done using the [[http://hackage.haskell.org/package/pipes][pipes]] package.
 
 writers :: (Occupation ∈ rs, Monad m) => Pipe (Rec rs) (Rec rs) m r
 writers = P.filter ((== "writer") . view occupation)
@@ -184,7 +194,7 @@ writers = P.filter ((== "writer") . view occupation)
 -- type for a column like =gender=.
 
 -- #+BEGIN_EXAMPLE
--- λ> L.fold L.nub `fmap` P.toListM (movieData >-> P.map (view gender))
+-- λ> L.purely P.fold L.nub (movieData >-> P.map (view gender))
 -- ["M", "F"]
 -- #+END_EXAMPLE
 
@@ -210,7 +220,6 @@ movieData2 = readTableOpt u2Parser "data/ml-100k/u.user"
 --   Rec
 --     '["user id" :-> Int, "age" :-> Int, "gender" :-> GenderT,
 --       "occupation" :-> Text, "zip code" :-> Text]
---   	-- Defined at /Users/acowley/Documents/Projects/Frames/demo/Tutorial.hs:190:1
 -- #+END_EXAMPLE
 
 -- Let's take the occupations of the first 10 female users:
@@ -257,7 +266,12 @@ femaleOccupations = P.filter ((== Female) . view u2gender)
 -- and its instances are used at compile time to infer the record type
 -- needed to represent the data file.
 
--- #+BEGIN_EXAMPLE
+-- This is clearly a bit of a mouthful, and probably not something you'd
+-- want to do for every data set. However, the /ability/ to refine the
+-- structure of parsed data is in keeping with the overall goal of
+-- ~Frames~: it's easy to take off, and the sky's the limit.
+
+-- -- #+begin_src haskell
 -- {-# LANGUAGE OverloadedStrings, TemplateHaskell #-}
 -- module TutorialUsers where
 -- import Control.Monad (mzero)
@@ -290,5 +304,8 @@ femaleOccupations = P.filter ((== Female) . view u2gender)
 --   inferType = let isInt = fmap (const TInt :: Int -> UserCol) . fromText
 --                   isGen = bool Nothing (Just TGender) . (`elem` ["M","F"])
 --               in \t -> fromMaybe TText $ isInt t <> isGen t
+-- #+end_src
 
--- #+END_EXAMPLE
+-- #+DATE:
+-- #+TITLE: Frames Tutorial
+-- #+OPTIONS: html-link-use-abs-url:nil html-postamble:nil
