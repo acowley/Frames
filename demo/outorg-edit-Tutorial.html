@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Frames Tutorial</title>
-<!-- 2015-01-06 Tue 14:18 -->
+<!-- 2015-01-06 Tue 15:29 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="generator" content="Org-mode" />
 <meta  name="author" content="Anthony Cowley" />
@@ -186,6 +186,12 @@
  pre.src {background-color: #272822; color: #F8F8F2;}</style>
 <style type="text/css">
  pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 500pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
 <style type="text/css">
  pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
 <style type="text/css">
@@ -557,10 +563,25 @@ type for a column like <code>gender</code>.
 
 <p>
 Aha! The <code>gender</code> column is pretty simple, so let's go ahead and
-define our own universe of column types. We will name this record
-type <code>U2</code>, and give all the generated column types and lenses a
-prefix, "u2", so they don't conflict with the definitions we
-generated earlier.
+define our own universe of column types.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-haskell"><span style="color: #F92672;">data</span> <span style="color: #66D9EF;">GenderT</span> <span style="color: #FD971F;">=</span> <span style="color: #66D9EF;">Male</span> <span style="color: #FD971F;">|</span> <span style="color: #66D9EF;">Female</span> <span style="color: #F92672;">deriving</span> (<span style="color: #66D9EF;">Eq</span>,<span style="color: #66D9EF;">Ord</span>,<span style="color: #66D9EF;">Show</span>)
+
+<span style="color: #F92672;">data</span> <span style="color: #66D9EF;">UserCol</span> <span style="color: #FD971F;">=</span> <span style="color: #66D9EF;">TInt</span> <span style="color: #FD971F;">|</span> <span style="color: #66D9EF;">TGender</span> <span style="color: #FD971F;">|</span> <span style="color: #66D9EF;">TText</span> <span style="color: #F92672;">deriving</span> (<span style="color: #66D9EF;">Eq</span>,<span style="color: #66D9EF;">Show</span>,<span style="color: #66D9EF;">Ord</span>,<span style="color: #66D9EF;">Enum</span>,<span style="color: #66D9EF;">Bounded</span>)
+</pre>
+</div>
+
+<p>
+We will also need a few instance that you can find in the <a href="#sec-2">appendix</a>.
+</p>
+
+<p>
+We name this record type <code>U2</code>, and give all the generated column types
+and lenses a prefix, "u2", so they don't conflict with the definitions
+we generated earlier.
 </p>
 
 <div class="org-src-container">
