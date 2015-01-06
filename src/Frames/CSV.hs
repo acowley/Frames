@@ -3,6 +3,7 @@
              FlexibleInstances,
              KindSignatures,
              LambdaCase,
+             MultiParamTypeClasses,
              OverloadedStrings,
              QuasiQuotes,
              ScopedTypeVariables,
@@ -35,13 +36,31 @@ import Frames.TypeLevel
 import Language.Haskell.TH
 import qualified Pipes as P
 import System.IO (Handle, hIsEOF, openFile, IOMode(..), withFile)
+import Control.Monad (when)
+import Data.Maybe (isNothing)
+import Control.Monad (void)
+
+data ParseOptions = ParseOptions { headerOverride :: Maybe [T.Text]
+                                 , columnSeparator :: Char -> Bool }
+
+-- | Default 'ParseOptions' get column names from a header line, and
+-- use commas to separate columns.
+defaultParser :: ParseOptions
+defaultParser = ParseOptions Nothing (== ',')
 
 -- | Helper to split a 'T.Text' on commas and strip leading and
 -- trailing whitespace from each resulting chunk.
-tokenizeRow :: T.Text -> [T.Text]
-tokenizeRow = map T.strip . T.splitOn ","
+tokenizeRow :: (Char -> Bool) -> T.Text -> [T.Text]
+tokenizeRow sep = map T.strip . T.split sep
 
 -- * Column Types
+
+-- | This class relates a universe of possible column types to Haskell
+-- types, and provides a mechanism to infer which type best represents
+-- some textual data.
+class ColumnTypeable a where
+  colType :: a -> Q Type
+  inferType :: T.Text -> a
 
 -- | The set of supported column data types.
 data ColType = TBool | TInt | TDouble | TText
@@ -52,19 +71,20 @@ instance Monoid ColType where
   mappend x y = toEnum $ max (fromEnum x) (fromEnum y)
 
 -- | Syntax for the Haskell type corresponding to a given 'ColType'.
-colType :: ColType -> Q Type
-colType TBool = [t|Bool|]
-colType TInt = [t|Int|]
-colType TDouble = [t|Double|]
-colType TText = [t|T.Text|]
+instance ColumnTypeable ColType where
+  colType TBool = [t|Bool|]
+  colType TInt = [t|Int|]
+  colType TDouble = [t|Double|]
+  colType TText = [t|T.Text|]
+  inferType = inferColType
 
 -- | Mapping from Haskell types to 'ColType's.
-class HaskToColType a where
-  haskToColType :: proxy a -> ColType
-instance HaskToColType Bool where haskToColType _ = TBool
-instance HaskToColType Int where haskToColType _ = TInt
-instance HaskToColType Double where haskToColType _ = TDouble
-instance HaskToColType T.Text where haskToColType _ = TText
+class HaskToColType a b where
+  haskToColType :: proxy a -> b
+instance HaskToColType Bool ColType where haskToColType _ = TBool
+instance HaskToColType Int ColType where haskToColType _ = TInt
+instance HaskToColType Double ColType where haskToColType _ = TDouble
+instance HaskToColType T.Text ColType where haskToColType _ = TText
 
 -- | See if some text can be parsed as a 'Bool'.
 inferBool :: T.Text -> Maybe ColType
@@ -83,9 +103,9 @@ inferDouble = fmap aux . fromText
         aux _ = TDouble
 
 -- | Determine the smallest type to represent some parsed text.
-inferType :: T.Text -> ColType
-inferType t = fromMaybe TText . getFirst $
-              foldMap (First . ($ t)) [inferBool, inferInt, inferDouble]
+inferColType :: T.Text -> ColType
+inferColType t = fromMaybe TText . getFirst $
+                 foldMap (First . ($ t)) [inferBool, inferInt, inferDouble]
 
 -- | Determine the smallest type to represent each column. NOTE: If
 -- different rows are of different lengths, things will go wrong.
@@ -97,21 +117,26 @@ mergeTypes (x:xs) = go x xs
 
 -- | Infer column types from a prefix (up to 1000 lines) of a CSV
 -- file.
-prefixInference :: Handle -> IO [ColType]
-prefixInference h = T.hGetLine h >>= go prefixSize . map inferType . tokenizeRow
+prefixInference :: (ColumnTypeable a, Monoid a)
+                => (Char -> Bool) -> Handle -> IO [a]
+prefixInference sep h = T.hGetLine h >>= go prefixSize . inferCols
   where prefixSize = 1000 :: Int
+        inferCols = map inferType . tokenizeRow sep
         go 0 ts = return ts
         go !n ts =
           hIsEOF h >>= \case
             True -> return ts
-            False -> T.hGetLine h >>=
-                     go (n - 1) . zipWith (<>) ts . map inferType . tokenizeRow
+            False -> T.hGetLine h >>= go (n - 1) . zipWith (<>) ts . inferCols
 
 -- | Extract column names and inferred types from a CSV file.
-readColHeaders :: FilePath -> IO [(T.Text, ColType)]
-readColHeaders f =  withFile f ReadMode $ \h ->
-                      zip <$> (tokenizeRow <$> T.hGetLine h)
-                          <*> prefixInference h
+readColHeaders :: (ColumnTypeable a, Monoid a)
+               => ParseOptions -> FilePath -> IO [(T.Text, a)]
+readColHeaders opts f =  withFile f ReadMode $ \h ->
+                         zip <$> maybe (tokenizeRow sep <$> T.hGetLine h)
+                                       pure
+                                       (headerOverride opts)
+                             <*> prefixInference sep h
+  where sep = columnSeparator opts
 
 -- * Loading Data
 
@@ -128,53 +153,69 @@ instance (Readable t, ReadRec ts) => ReadRec (s :-> t ': ts) where
   readRec (h:t) = fromText h :& readRec t
 
 -- | Read a 'RecF' from one line of CSV.
-readRow :: ReadRec rs => T.Text -> RecF Maybe rs
-readRow = readRec . tokenizeRow
+readRow :: ReadRec rs => (Char -> Bool) -> T.Text -> RecF Maybe rs
+readRow = (readRec .) . tokenizeRow
+
+-- | Produce rows where any given entry can fail to parse.
+readTableMaybeOpt :: (MonadIO m, ReadRec rs)
+                  => ParseOptions -> FilePath -> P.Producer (RecF Maybe rs) m ()
+readTableMaybeOpt opts csvFile =
+  do h <- liftIO $ do
+            h <- openFile csvFile ReadMode
+            when (isNothing $ headerOverride opts) (void $ T.hGetLine h)
+            return h
+     let sep = columnSeparator opts
+         go = liftIO (hIsEOF h) >>= \case
+              True -> return ()
+              False -> liftIO (readRow sep <$> T.hGetLine h) >>= P.yield >> go
+     go
+{-# INLINE readTableMaybeOpt #-}
 
 -- | Produce rows where any given entry can fail to parse.
 readTableMaybe :: (MonadIO m, ReadRec rs)
                => FilePath -> P.Producer (RecF Maybe rs) m ()
-readTableMaybe csvFile =
-  do h <- liftIO $ do
-            h <- openFile csvFile ReadMode
-            _ <- T.hGetLine h -- drop the header line
-            return h
-     let go = liftIO (hIsEOF h) >>= \case
-              True -> return ()
-              False -> liftIO (readRow <$> T.hGetLine h) >>= P.yield >> go
-     go
+readTableMaybe = readTableMaybeOpt defaultParser
 {-# INLINE readTableMaybe #-}
 
 -- | Returns a `MonadPlus` producer of rows for which each column was
 -- successfully parsed. This is typically slower than 'readTable'.
 readTable' :: forall m rs.
               (MonadPlus m, MonadIO m, ReadRec rs)
-           => FilePath -> m (Rec rs)
-readTable' csvFile =
+           => ParseOptions -> FilePath -> m (Rec rs)
+readTable' opts csvFile =
   do h <- liftIO $ do
             h <- openFile csvFile ReadMode
-            _ <- T.hGetLine h -- drop the header line
+            when (isNothing $ headerOverride opts) (void $ T.hGetLine h)
             return h
-     let go = liftIO (hIsEOF h) >>= \case
+     let sep = columnSeparator opts
+         go = liftIO (hIsEOF h) >>= \case
               True -> mzero
-              False -> let r = recMaybe . readRow <$> T.hGetLine h
+              False -> let r = recMaybe . readRow sep <$> T.hGetLine h
                        in liftIO r >>= maybe go (flip mplus go . return)
      go
 {-# INLINE readTable' #-}
 
 -- | Returns a producer of rows for which each column was successfully
 -- parsed.
-readTable :: forall m rs.
-              (MonadIO m, ReadRec rs)
-           => FilePath -> P.Producer (Rec rs) m ()
-readTable csvFile = readTableMaybe csvFile P.>-> go
+readTableOpt :: forall m rs.
+                (MonadIO m, ReadRec rs)
+             => ParseOptions -> FilePath -> P.Producer (Rec rs) m ()
+readTableOpt opts csvFile = readTableMaybeOpt opts csvFile P.>-> go
   where go = P.await >>= maybe go (\x -> P.yield x >> go) . recMaybe
+{-# INLINE readTableOpt #-}
+
+-- | Returns a producer of rows for which each column was successfully
+-- parsed.
+readTable :: forall m rs. (MonadIO m, ReadRec rs)
+          => FilePath -> P.Producer (Rec rs) m ()
+readTable = readTableOpt defaultParser
 {-# INLINE readTable #-}
+
 
 -- * Template Haskell
 
 -- | Generate a column type.
-recDec :: [(T.Text, ColType)] -> Q Type
+recDec :: ColumnTypeable a => [(T.Text, a)] -> Q Type
 recDec = appT [t|Rec|] . go
   where go [] = return PromotedNilT
         go ((n,t):cs) =
@@ -223,7 +264,7 @@ mkColPDec colTName colTy colPName = sequenceA [tySig, val, tySig', val']
 
 -- | For each column, we declare a type synonym for its type, and a
 -- Proxy value of that type.
-colDec :: T.Text -> T.Text -> ColType -> DecsQ
+colDec :: ColumnTypeable a => T.Text -> T.Text -> a -> DecsQ
 colDec prefix colName colTy = (:) <$> mkColTDec colTypeQ colTName'
                                   <*> mkColPDec colTName' colTyQ colPName
   where colTName = sanitizeTypeName (prefix <> colName)
@@ -234,11 +275,30 @@ colDec prefix colName colTy = (:) <$> mkColTDec colTypeQ colTName'
         colTyQ = colType colTy
         colTypeQ = [t|$(litT . strTyLit $ T.unpack colName) :-> $colTyQ|]
 
+-- * Default CSV Parsing
+
+-- | Generate a type for each row of a table. This will be something
+-- like @Rec ["x" :-> a, "y" :-> b, "z" :-> c]@. Possible column types
+-- are identified by the given proxy for a type universe. Column type
+-- synonyms are /not/ generated (see 'tableTypes').
+tableType' :: forall proxy a. (ColumnTypeable a, Monoid a)
+           => proxy a -> String -> FilePath -> DecsQ
+tableType' = flip tableTypeOpt' defaultParser
+
 -- | Generate a type for each row of a table. This will be something
 -- like @Rec ["x" :-> a, "y" :-> b, "z" :-> c]@.
 tableType :: String -> FilePath -> DecsQ
-tableType n csvFile = pure . TySynD (mkName n) [] <$>
-                      (runIO (readColHeaders csvFile) >>= recDec)
+tableType = tableTypeOpt defaultParser
+
+-- | Like 'tableType', but additionally generates a type synonym for
+-- each column, and a proxy value of that type. If the CSV file has
+-- column names \"foo\", \"bar\", and \"baz\", then this will declare
+-- @type Foo = "foo" :-> Int@, for example, @foo = rlens (Proxy ::
+-- Proxy Foo)@, and @foo' = rlens' (Proxy :: Proxy Foo)@. Possible
+-- column types are identified by the given proxy for a type universe.
+tableTypes' :: (ColumnTypeable a, Monoid a)
+            => proxy a -> String -> FilePath -> DecsQ
+tableTypes' = flip tableTypesOpt' defaultParser
 
 -- | Like 'tableType', but additionally generates a type synonym for
 -- each column, and a proxy value of that type. If the CSV file has
@@ -246,7 +306,22 @@ tableType n csvFile = pure . TySynD (mkName n) [] <$>
 -- @type Foo = "foo" :-> Int@, for example, @foo = rlens (Proxy :: Proxy
 -- Foo)@, and @foo' = rlens' (Proxy :: Proxy Foo)@.
 tableTypes :: String -> FilePath -> DecsQ
-tableTypes = flip tableTypesPrefixed ""
+-- tableTypes = tableTypesOpt [] [',']
+tableTypes = tableTypesOpt defaultParser
+
+-- | Like 'tableTypes', but prefixes each column type and proxy value
+-- name with the second argument. This is useful if you have very
+-- generic column names. For example, @tableTypesPrefixed "Row" "Col"
+-- myFile.csv@ will generate column types like @ColName@ with a
+-- corresponding lens value @colName@ where @Name@ is the name of a
+-- column in the CSV file.
+tableTypesPrefixed' :: forall proxy a. (ColumnTypeable a, Monoid a)
+                    => proxy a      -- ^ Universe of column types
+                    -> String       -- ^ Row type name
+                    -> String       -- ^ Column name prefix
+                    -> FilePath     -- ^ CSV file
+                    -> DecsQ
+tableTypesPrefixed' = flip tableTypesPrefixedOpt' defaultParser
 
 -- | Like 'tableTypes', but prefixes each column type and proxy value
 -- name with the second argument. This is useful if you have very
@@ -255,7 +330,70 @@ tableTypes = flip tableTypesPrefixed ""
 -- corresponding lens value @colName@ where @Name@ is the name of a
 -- column in the CSV file.
 tableTypesPrefixed :: String -> String -> FilePath -> DecsQ
-tableTypesPrefixed n prefix csvFile =
-  do headers <- runIO $ readColHeaders csvFile
-     (:) <$> (tySynD (mkName n) [] (recDec headers))
+tableTypesPrefixed = tableTypesPrefixedOpt defaultParser
+
+-- * Customized Data Set Parsing
+
+-- | Generate a type for each row of a table. This will be something
+-- like @Rec ["x" :-> a, "y" :-> b, "z" :-> c]@. Possible column types
+-- are identified by the given proxy for a type universe. Column type
+-- synonyms are /not/ generated (see 'tableTypes').
+tableTypeOpt' :: forall proxy a. (ColumnTypeable a, Monoid a)
+              => proxy a -> ParseOptions -> String -> FilePath -> DecsQ
+tableTypeOpt' _ opts n csvFile =
+    pure . TySynD (mkName n) [] <$>
+    (runIO (readColHeaders opts csvFile) >>= recDec')
+  where recDec' = recDec :: [(T.Text, a)] -> Q Type
+
+-- | Generate a type for each row of a table. This will be something
+-- like @Rec ["x" :-> a, "y" :-> b, "z" :-> c]@.
+tableTypeOpt :: ParseOptions -> String -> FilePath -> DecsQ
+tableTypeOpt = tableTypeOpt' (Proxy::Proxy ColType)
+
+-- | Like 'tableType', but additionally generates a type synonym for
+-- each column, and a proxy value of that type. If the CSV file has
+-- column names \"foo\", \"bar\", and \"baz\", then this will declare
+-- @type Foo = "foo" :-> Int@, for example, @foo = rlens (Proxy ::
+-- Proxy Foo)@, and @foo' = rlens' (Proxy :: Proxy Foo)@. Possible
+-- column types are identified by the given proxy for a type universe.
+tableTypesOpt' :: (ColumnTypeable a, Monoid a)
+               => proxy a -> ParseOptions -> String -> FilePath -> DecsQ
+tableTypesOpt' p opts = flip (tableTypesPrefixedOpt' p opts) ""
+
+-- | Like 'tableType', but additionally generates a type synonym for
+-- each column, and a proxy value of that type. If the CSV file has
+-- column names \"foo\", \"bar\", and \"baz\", then this will declare
+-- @type Foo = "foo" :-> Int@, for example, @foo = rlens (Proxy :: Proxy
+-- Foo)@, and @foo' = rlens' (Proxy :: Proxy Foo)@.
+
+tableTypesOpt :: ParseOptions -> String -> FilePath -> DecsQ
+tableTypesOpt = tableTypesOpt' (Proxy::Proxy ColType)
+
+-- | Like 'tableTypes', but prefixes each column type and proxy value
+-- name with the second argument. This is useful if you have very
+-- generic column names. For example, @tableTypesPrefixed "Row" "Col"
+-- myFile.csv@ will generate column types like @ColName@ with a
+-- corresponding lens value @colName@ where @Name@ is the name of a
+-- column in the CSV file. Possible column types are identified by the
+-- given proxy for a type universe.
+tableTypesPrefixedOpt' :: forall proxy a. (ColumnTypeable a, Monoid a)
+                       => proxy a      -- ^ Universe of column types
+                       -> ParseOptions -- ^ Parser Options
+                       -> String       -- ^ Row type name
+                       -> String       -- ^ Column name prefix
+                       -> FilePath     -- ^ CSV file
+                       -> DecsQ
+tableTypesPrefixedOpt' _ opts n prefix csvFile =
+  do headers <- runIO $ readColHeaders opts csvFile
+     (:) <$> (tySynD (mkName n) [] (recDec' headers))
          <*> (concat <$> mapM (uncurry $ colDec (T.pack prefix)) headers)
+  where recDec' = recDec :: [(T.Text, a)] -> Q Type
+
+-- | Like 'tableTypes', but prefixes each column type and proxy value
+-- name with the second argument. This is useful if you have very
+-- generic column names. For example, @tableTypesPrefixed "Row" "Col"
+-- myFile.csv@ will generate column types like @ColName@ with a
+-- corresponding lens value @colName@ where @Name@ is the name of a
+-- column in the CSV file.
+tableTypesPrefixedOpt :: ParseOptions -> String -> String -> FilePath -> DecsQ
+tableTypesPrefixedOpt = tableTypesPrefixedOpt' (Proxy::Proxy ColType)

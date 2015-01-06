@@ -71,6 +71,15 @@ executable demo
   default-language: Haskell2010
   ghc-options: -fllvm -O2
 
+executable tutorial
+  if !flag(demos)
+    buildable: False
+  main-is: Tutorial.hs
+  build-depends: base, Frames, lens-family-core, vector, text, template-haskell,
+                 foldl, pipes, readable
+  hs-source-dirs: demo
+  default-language: Haskell2010
+
 -- A short demo to compare with Pandas
 executable benchdemo
   if !flag(demos)
