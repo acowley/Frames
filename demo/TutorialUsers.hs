@@ -6,12 +6,7 @@ import Data.Maybe (fromMaybe)
 import Data.Monoid
 import Data.Readable (Readable(fromText))
 import qualified Data.Text as T
-import Frames.CSV (ParseOptions(..), defaultParser, ColumnTypeable(..))
-
-userParser :: ParseOptions
-userParser = defaultParser { columnSeparator = (== '|')
-                           , headerOverride = Just [ "user id", "age", "gender"
-                                                   , "occupation", "zip code"] }
+import Frames.CSV (ColumnTypeable(..))
 
 data GenderT = Male | Female deriving (Eq,Ord,Show)
 

@@ -13,7 +13,7 @@ import qualified Data.Foldable as F
 import Data.Monoid
 import Lens.Family
 import Frames
-import Frames.CSV (ParseOptions(..), defaultParser, tableTypesOpt, readTableOpt)
+import Frames.CSV (ParserOptions(..), defaultParser, tableTypesOpt, readTableOpt)
 import Frames.CSV (ColumnTypeable(..), tableTypesPrefixedOpt')
 import Pipes hiding (Proxy)
 import qualified Pipes.Prelude as P
@@ -23,6 +23,8 @@ import Data.Readable (fromText)
 import Data.Bool (bool)
 import Data.Maybe (fromMaybe)
 import Data.Proxy
+import Data.Readable (Readable)
+import qualified Data.Text as T
 
 -- ** Data Import
 
@@ -32,7 +34,8 @@ import Data.Proxy
 -- file whose column names are provided in a separate specification,
 -- we can override the default parsing options.
 
-tableTypesOpt userParser "Users" "data/ml-100k/u.user"
+tableTypesOpt  ["user id", "age", "gender", "occupation", "zip code"]
+               "|" "Users" "data/ml-100k/u.user"
 
 -- This is a streaming representation of the full data set. If the
 -- data set is too large to keep in memory, we can process it as it
@@ -40,7 +43,7 @@ tableTypesOpt userParser "Users" "data/ml-100k/u.user"
 -- operations against a data set that can fit in RAM, we can do that.
 
 movieData :: Producer Users IO ()
-movieData = readTableOpt userParser "data/ml-100k/u.user"
+movieData = readTableOpt usersParser "data/ml-100k/u.user"
 
 -- Here we have an in-memory representation.
 
@@ -186,14 +189,17 @@ writers = P.filter ((== "writer") . view occupation)
 -- #+END_EXAMPLE
 
 -- Aha! The =gender= column is pretty simple, so let's go ahead and
--- define our own universe of column types. We will give all the
--- generated column types and lenses a prefix, "u2", so they don't
--- conflict with the definitions we generated earlier.
+-- define our own universe of column types. We will name this record
+-- type ~U2~, and give all the generated column types and lenses a
+-- prefix, "u2", so they don't conflict with the definitions we
+-- generated earlier.
 
-tableTypesPrefixedOpt' (Proxy::Proxy UserCol) userParser "U2" "u2" "data/ml-100k/u.user"
+tableTypesPrefixedOpt' (Proxy::Proxy UserCol) 
+                       ["user id", "age", "gender", "occupation", "zip code"]
+                       "|" "U2" "u2" "data/ml-100k/u.user"
 
 movieData2 :: Producer U2 IO ()
-movieData2 = readTableOpt userParser "data/ml-100k/u.user"
+movieData2 = readTableOpt u2Parser "data/ml-100k/u.user"
 
 -- This new record type, =U2=, has a more interesting =gender=
 -- column.
@@ -244,11 +250,12 @@ femaleOccupations = P.filter ((== Female) . view u2gender)
 
 -- * Appendix: User Types
 
--- Here are the definitions needed to customize parsing to support a
--- missing header row and the vertical bar column separator. We also
--- define the ~UserCol~ type here with its more descriptive ~GenderT~
--- type. We have to define some of these things in a separate module from
--- our main work due to GHC's stage restrictions regarding Template Haskell.
+-- Here are the definitions needed to define the ~UserCol~ type with
+-- its more descriptive ~GenderT~ type. We have to define these things
+-- in a separate module from our main work due to GHC's stage
+-- restrictions regarding Template Haskell. Specifically, ~UserCol~
+-- and its instances are used at compile time to infer the record type
+-- needed to represent the data file.
 
 -- #+BEGIN_EXAMPLE
 -- {-# LANGUAGE OverloadedStrings, TemplateHaskell #-}
@@ -259,12 +266,7 @@ femaleOccupations = P.filter ((== Female) . view u2gender)
 -- import Data.Monoid
 -- import Data.Readable (Readable(fromText))
 -- import qualified Data.Text as T
--- import Frames.CSV (ParseOptions(..), defaultParser, ColumnTypeable(..))
-
--- userParser :: ParseOptions
--- userParser = defaultParser { columnSeparator = (== '|')
---                            , headerOverride = Just [ "user id", "age", "gender"
---                                                    , "occupation", "zip code"] }
+-- import Frames.CSV (ColumnTypeable(..))
 
 -- data GenderT = Male | Female deriving (Eq,Ord,Show)
 
