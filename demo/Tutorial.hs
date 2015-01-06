@@ -250,12 +250,12 @@ femaleOccupations = P.filter ((== Female) . view u2gender)
 -- badly formatted dates, for example, and efficiently query the data set
 -- with richly-typed queries.
 
--- Even better, did you notice the types of functions like
+-- Even better, did you notice the types of ~writers~ and
 -- ~femaleOccupations~? They are polymorphic over the full row type!
--- This means that if your schema changes, or you switch to a related
--- but different data set, *these functions can still be used without
--- even touching the code*. Just recompile against the new data set,
--- and you're good to go.
+-- This means that if your schema changes, or you switch to a related but
+-- different data set, *these functions can still be used without even
+-- touching the code*. Just recompile against the new data set, and
+-- you're good to go.
 
 -- * Appendix: User Types
 
