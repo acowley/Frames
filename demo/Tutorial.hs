@@ -83,6 +83,27 @@ movieStream = readTableOpt usersParser "data/ml-100k/u.user"
 loadMovies :: IO (Frame Users)
 loadMovies = inCoreAoS movieStream
 
+-- ** Streaming Cores?
+
+-- A ~Frame~ is an in-memory representation of your data. The ~Frames~
+-- library stores each column as compactly as it knows how, and lets you
+-- index your data as a structure of arrays (where each field of the
+-- structure is an array corresponding to a column of your data), or as
+-- an array of structures, also known as a ~Frame~. These latter
+-- structures correspond to rows of your data, and rows of data may be
+-- handled in a streaming fashion so that you are not limited to
+-- available RAM. In the streaming paradigm, you process each row
+-- individually as a single record.
+
+-- A ~Frame~ provides ~O(1)~ indexing, as well as any other operations
+-- you are familiar with based on the ~Foldable~ class. If a data set is
+-- small, keeping it in RAM is usually the fastest way to perform
+-- multiple analyses on that data that you can't fuse into a single
+-- traversal.
+
+-- Alternatively, a ~Producer~ of rows is a great way to whittle down a
+-- large data set before moving on to whatever you want to do next.
+
 -- ** Sanity Check
 
 -- We can compute some easy statistics to see how things look.
@@ -264,10 +285,12 @@ femaleOccupations = P.filter ((== Female) . view u2gender)
 
 -- Even better, did you notice the types of ~writers~ and
 -- ~femaleOccupations~? They are polymorphic over the full row type!
--- This means that if your schema changes, or you switch to a related but
--- different data set, *these functions can still be used without even
--- touching the code*. Just recompile against the new data set, and
--- you're good to go.
+-- That's what the ~(Occupation ∈ rs)~ constraint signifies: such a
+-- function will work for record types with any set of fields, ~rs~, so
+-- long as ~Occupation~ is an element of that set. This means that if
+-- your schema changes, or you switch to a related but different data
+-- set, *these functions can still be used without even touching the
+-- code*. Just recompile against the new data set, and you're good to go.
 
 -- * Appendix
 -- ** User Types
