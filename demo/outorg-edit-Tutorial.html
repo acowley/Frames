@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Frames Tutorial</title>
-<!-- 2015-01-06 Tue 18:55 -->
+<!-- 2015-01-07 Wed 12:22 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="generator" content="Org-mode" />
 <meta  name="author" content="Anthony Cowley" />
@@ -200,6 +200,8 @@
  pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
 <style type="text/css">
  pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
 <script type="text/javascript">
 /*
 @licstart  The following is the entire license notice for the
@@ -268,7 +270,12 @@ for the JavaScript code in this tag.
 <li><a href="#sec-1-4">1.4. Better Types</a></li>
 </ul>
 </li>
-<li><a href="#sec-2">2. Appendix: User Types</a></li>
+<li><a href="#sec-2">2. Appendix</a>
+<ul>
+<li><a href="#sec-2-1">2.1. User Types</a></li>
+<li><a href="#sec-2-2">2.2. Splice Dump</a></li>
+</ul>
+</li>
 </ul>
 </div>
 </div>
@@ -355,8 +362,10 @@ flexible enough to meet a variety of needs.
 
 <p>
 This template haskell splice explicitly specifies column names, a
-separator string, the name for the inferred record type, and the data
-file from which to infer the record type.
+separator string, the name for the inferred record type, and the
+data file from which to infer the record type. The result of this
+splice is included in an <a href="#sec-2-2">appendix</a> below so you
+can flip between the generated code and how it is used.
 </p>
 
 <p>
@@ -577,7 +586,7 @@ define our own universe of column types.
 </div>
 
 <p>
-We will also need a few instance that you can find in the <a href="#sec-2">appendix</a>.
+We will also need a few instance that you can find in an <a href="#sec-2-1">appendix</a>.
 </p>
 
 <p>
@@ -659,8 +668,11 @@ you're good to go.
 </div>
 
 <div id="outline-container-sec-2" class="outline-2">
-<h2 id="sec-2"><span class="section-number-2">2</span> Appendix: User Types</h2>
+<h2 id="sec-2"><span class="section-number-2">2</span> Appendix</h2>
 <div class="outline-text-2" id="text-2">
+</div><div id="outline-container-sec-2-1" class="outline-3">
+<h3 id="sec-2-1"><span class="section-number-3">2.1</span> User Types</h3>
+<div class="outline-text-3" id="text-2-1">
 <p>
 Here are the definitions needed to define the <code>UserCol</code> type with its
 more descriptive <code>GenderT</code> type. We have to define these things in a
@@ -714,6 +726,137 @@ structure of parsed data is in keeping with the overall goal of
   inferType <span style="color: #FD971F;">=</span> <span style="color: #F92672;">let</span> isInt <span style="color: #FD971F;">=</span> fmap (const <span style="color: #66D9EF;">TInt</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">Int</span> <span style="color: #FD971F;">-&gt;</span> <span style="color: #66D9EF;">UserCol</span>) <span style="color: #FD971F;">.</span> fromText
                   isGen <span style="color: #FD971F;">=</span> bool <span style="color: #66D9EF;">Nothing</span> (<span style="color: #66D9EF;">Just</span> <span style="color: #66D9EF;">TGender</span>) <span style="color: #FD971F;">.</span> (<span style="color: #FD971F;">`elem`</span> [<span style="color: #E6DB74;">"M"</span>,<span style="color: #E6DB74;">"F"</span>])
               <span style="color: #F92672;">in</span> fromMaybe <span style="color: #66D9EF;">TText</span> <span style="color: #FD971F;">.</span> mconcat <span style="color: #FD971F;">.</span> sequenceA [isGen, isInt]
+</pre>
+</div>
+</div>
+</div>
+
+<div id="outline-container-sec-2-2" class="outline-3">
+<h3 id="sec-2-2"><span class="section-number-3">2.2</span> Splice Dump</h3>
+<div class="outline-text-3" id="text-2-2">
+<p>
+The Template Haskell splices we use produce quite a lot of
+code. The raw dumps of these splices can be hard to read, but I have
+included some elisp code for cleaning up that output in the design
+notes for <code>Frames</code>. Here is what we get from the <code>tableTypesOpt</code>
+splice shown above.
+</p>
+
+<p>
+The overall structure is this:
+</p>
+
+<ul class="org-ul">
+<li>A <code>Rec</code> type called <code>Users</code> with all necessary columns
+</li>
+<li>A <code>usersParser</code> value that overrides parsing defaults
+</li>
+<li>A type synonym for each column that pairs the column name with its
+type
+</li>
+<li>A lens to work with each column on any given row
+</li>
+</ul>
+
+<p>
+Remember that for CSV files that include a header, the splice you
+write in your code need not include the column names or separator
+character.
+</p>
+
+<pre class="example">
+  tableTypesOpt
+    ["user id", "age", "gender", "occupation", "zip code"]
+    "|"
+    "Users"
+    "data/ml-100k/u.user"
+======&gt;
+  type Users =
+      Rec ["user id" :-&gt; Int, "age" :-&gt; Int, "gender" :-&gt; Text, "occupation" :-&gt; Text, "zip code" :-&gt; Text]
+
+  usersParser :: ParserOptions
+  usersParser
+    = ParserOptions
+        (Just
+           (map
+              T.pack
+              ["user id", "age", "gender", "occupation", "zip code"]))
+        (T.pack "|")
+
+  type UserId = "user id" :-&gt; Int
+
+  userId ::
+    forall f_aciy rs_aciz. (Functor f_aciy,
+                            RElem UserId rs_aciz ) =&gt;
+    (Int -&gt; f_aciy Int) -&gt; Rec rs_aciz -&gt; f_aciy (Rec rs_aciz)
+  userId = rlens (Proxy :: Proxy UserId)
+
+  userId' ::
+    forall g_aciA f_aciB rs_aciC. (Functor f_aciB,
+                                   RElem UserId rs_aciC ) =&gt;
+    (g_aciA Int -&gt; f_aciB (g_aciA Int))
+    -&gt; RecF g_aciA rs_aciC -&gt; f_aciB (RecF g_aciA rs_aciC)
+  userId' = rlens' (Proxy :: Proxy UserId)
+
+  type Age = "age" :-&gt; Int
+
+  age ::
+    forall f_aciD rs_aciE. (Functor f_aciD,
+                            RElem Age rs_aciE ) =&gt;
+    (Int -&gt; f_aciD Int) -&gt; Rec rs_aciE -&gt; f_aciD (Rec rs_aciE)
+  age = rlens (Proxy :: Proxy Age)
+
+  age' ::
+    forall g_aciF f_aciG rs_aciH. (Functor f_aciG,
+                                   RElem Age rs_aciH ) =&gt;
+    (g_aciF Int -&gt; f_aciG (g_aciF Int))
+    -&gt; RecF g_aciF rs_aciH -&gt; f_aciG (RecF g_aciF rs_aciH)
+  age' = rlens' (Proxy :: Proxy Age)
+
+  type Gender = "gender" :-&gt; Text
+
+  gender ::
+    forall f_aciI rs_aciJ. (Functor f_aciI,
+                            RElem Gender rs_aciJ ) =&gt;
+    (Text -&gt; f_aciI Text) -&gt; Rec rs_aciJ -&gt; f_aciI (Rec rs_aciJ)
+  gender = rlens (Proxy :: Proxy Gender)
+
+  gender' ::
+    forall g_aciK f_aciL rs_aciM. (Functor f_aciL,
+                                   RElem Gender rs_aciM ) =&gt;
+    (g_aciK Text -&gt; f_aciL (g_aciK Text))
+    -&gt; RecF g_aciK rs_aciM -&gt; f_aciL (RecF g_aciK rs_aciM)
+  gender' = rlens' (Proxy :: Proxy Gender)
+
+  type Occupation = "occupation" :-&gt; Text
+
+  occupation ::
+    forall f_aciN rs_aciO. (Functor f_aciN,
+                            RElem Occupation rs_aciO ) =&gt;
+    (Text -&gt; f_aciN Text) -&gt; Rec rs_aciO -&gt; f_aciN (Rec rs_aciO)
+  occupation = rlens (Proxy :: Proxy Occupation)
+
+  occupation' ::
+    forall g_aciP f_aciQ rs_aciR. (Functor f_aciQ,
+                                   RElem Occupation rs_aciR ) =&gt;
+    (g_aciP Text -&gt; f_aciQ (g_aciP Text))
+    -&gt; RecF g_aciP rs_aciR -&gt; f_aciQ (RecF g_aciP rs_aciR)
+  occupation' = rlens' (Proxy :: Proxy Occupation)
+
+  type ZipCode = "zip code" :-&gt; Text
+
+  zipCode ::
+    forall f_aciS rs_aciT. (Functor f_aciS,
+                            RElem ZipCode rs_aciT ) =&gt;
+    (Text -&gt; f_aciS Text) -&gt; Rec rs_aciT -&gt; f_aciS (Rec rs_aciT)
+  zipCode = rlens (Proxy :: Proxy ZipCode)
+
+  zipCode' ::
+    forall g_aciU f_aciV rs_aciW. (Functor f_aciV,
+                                   RElem ZipCode rs_aciW ) =&gt;
+    (g_aciU Text -&gt; f_aciV (g_aciU Text))
+    -&gt; RecF g_aciU rs_aciW -&gt; f_aciV (RecF g_aciU rs_aciW)
+  zipCode' = rlens' (Proxy :: Proxy ZipCode)
 </pre>
 </div>
 </div>
