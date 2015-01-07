@@ -1,6 +1,5 @@
 {-# LANGUAGE DataKinds, FlexibleContexts, OverloadedStrings,
              TemplateHaskell, TypeOperators #-}
--- * DataFrames Tutorial
 
 -- This is a semi-port of a
 -- [[http://ajkl.github.io/Dataframes/][dataframe tutorial]] Rosetta
@@ -34,7 +33,7 @@ import Data.Proxy
 import Frames.CSV (ColumnTypeable(..), tableTypesPrefixedOpt')
 import TutorialUsers
 
--- ** Data Import
+-- * Data Import
 
 -- We usually package column names with the data to keep things a bit
 -- more self-documenting. This might mean adding a row to the data
@@ -74,24 +73,24 @@ tableTypesOpt  ["user id", "age", "gender", "occupation", "zip code"]
 -- data set is too large to keep in memory, we can process it as it
 -- streams through RAM.
 
-movieData :: Producer Users IO ()
-movieData = readTableOpt usersParser "data/ml-100k/u.user"
+movieStream :: Producer Users IO ()
+movieStream = readTableOpt usersParser "data/ml-100k/u.user"
 
 -- Alternately, if we want to run multiple operations against a data set
 -- that /can/ fit in RAM, we can do that. Here we define an in-core (in
 -- memory) array of structures (AoS) representation.
 
-movies :: IO (Frame Users)
-movies = inCoreAoS movieData
+loadMovies :: IO (Frame Users)
+loadMovies = inCoreAoS movieStream
 
 -- ** Sanity Check
 
 -- We can compute some easy statistics to see how things look.
 
 -- #+BEGIN_EXAMPLE
--- λ> ms <- movies
+-- λ> ms <- loadMovies
 -- λ> L.fold L.minimum (view age <$> ms)
--- 7
+-- Just 7
 -- #+END_EXAMPLE
 
 -- When there are multiple properties we would like to compute, we can
@@ -99,7 +98,7 @@ movies = inCoreAoS movieData
 -- package
 
 -- #+BEGIN_EXAMPLE
--- λ> ms <- movies
+-- λ> ms <- loadMovies
 -- λ> L.fold (L.pretraverse age ((,) <$> L.minimum <*> L.maximum)) ms
 -- (Just 7,Just 73)
 -- #+END_EXAMPLE
@@ -107,15 +106,15 @@ movies = inCoreAoS movieData
 -- Here we are projecting the =age= column out of each record, and
 -- computing the minimum and maximum =age= for all rows.
 
--- ** Subsetting
+-- * Subsetting
 
--- *** Row Subset
+-- ** Row Subset
 
 -- Data may be inspected using either Haskell's traditional list API...
 
 -- #+BEGIN_EXAMPLE
--- λ> ms <- movies
--- λ> mapM_ print (take 3 (toList ms))
+-- λ> ms <- loadMovies
+-- λ> mapM_ print (take 3 (F.toList ms))
 -- {user id :-> 1, age :-> 24, gender :-> "M", occupation :-> "technician", zip code :-> "85711"}
 -- {user id :-> 2, age :-> 53, gender :-> "F", occupation :-> "other", zip code :-> "94043"}
 -- {user id :-> 3, age :-> 23, gender :-> "M", occupation :-> "writer", zip code :-> "32067"}
@@ -143,7 +142,7 @@ movies = inCoreAoS movieData
 -- {user id :-> 56, age :-> 25, gender :-> "M", occupation :-> "librarian", zip code :-> "46260"}
 -- #+END_EXAMPLE
 
--- *** Column Subset
+-- ** Column Subset
 
 -- We can consider a single column.
 
@@ -167,15 +166,17 @@ miniUser = rcast
 -- {occupation :-> "executive", gender :-> "M", age :-> 42}
 -- #+END_EXAMPLE
 
--- *** Query / Conditional Subset
+-- ** Query / Conditional Subset
 
--- Filtering our frame is rather nicely done using the [[http://hackage.haskell.org/package/pipes][pipes]] package.
+-- Filtering our frame is rather nicely done using the
+-- [[http://hackage.haskell.org/package/pipes][pipes]] package. Here
+-- we pick out the users whose occupation is "writer".
 
 writers :: (Occupation ∈ rs, Monad m) => Pipe (Rec rs) (Rec rs) m r
 writers = P.filter ((== "writer") . view occupation)
 
 -- #+BEGIN_EXAMPLE
--- λ> runEffect $ movieData >-> writers >-> P.take 6 >-> P.print
+-- λ> runEffect $ movieStream >-> writers >-> P.take 6 >-> P.print
 -- {user id :-> 3, age :-> 23, gender :-> "M", occupation :-> "writer", zip code :-> "32067"}
 -- {user id :-> 21, age :-> 26, gender :-> "M", occupation :-> "writer", zip code :-> "30068"}
 -- {user id :-> 22, age :-> 25, gender :-> "M", occupation :-> "writer", zip code :-> "40206"}
@@ -184,7 +185,7 @@ writers = P.filter ((== "writer") . view occupation)
 -- {user id :-> 122, age :-> 32, gender :-> "F", occupation :-> "writer", zip code :-> "22206"}
 -- #+END_EXAMPLE
 
--- ** Better Types
+-- * Better Types
 
 -- A common disappointment of parsing general data sets is the
 -- reliance on text for data representation even /after/ parsing. If
@@ -196,7 +197,7 @@ writers = P.filter ((== "writer") . view occupation)
 -- type for a column like =gender=.
 
 -- #+BEGIN_EXAMPLE
--- λ> L.purely P.fold L.nub (movieData >-> P.map (view gender))
+-- λ> L.purely P.fold L.nub (movieStream >-> P.map (view gender))
 -- ["M", "F"]
 -- #+END_EXAMPLE
 
@@ -219,8 +220,8 @@ tableTypesPrefixedOpt' (Proxy::Proxy UserCol)
                        ["user id", "age", "gender", "occupation", "zip code"]
                        "|" "U2" "u2" "data/ml-100k/u.user"
 
-movieData2 :: Producer U2 IO ()
-movieData2 = readTableOpt u2Parser "data/ml-100k/u.user"
+movieStream2 :: Producer U2 IO ()
+movieStream2 = readTableOpt u2Parser "data/ml-100k/u.user"
 
 -- This new record type, =U2=, has a more interesting =gender=
 -- column.
@@ -241,7 +242,7 @@ femaleOccupations = P.filter ((== Female) . view u2gender)
                     >-> P.map (view u2occupation)
 
 -- #+BEGIN_EXAMPLE
--- λ> runEffect $ movieData2 >-> femaleOccupations >-> P.take 10 >-> P.print
+-- λ> runEffect $ movieStream2 >-> femaleOccupations >-> P.take 10 >-> P.print
 -- "other"
 -- "other"
 -- "other"
@@ -288,16 +289,18 @@ femaleOccupations = P.filter ((== Female) . view u2gender)
 -- -- #+begin_src haskell
 -- {-# LANGUAGE OverloadedStrings, TemplateHaskell #-}
 -- module TutorialUsers where
--- import Control.Monad (mzero)
+-- import Control.Monad (liftM, mzero)
 -- import Data.Bool (bool)
 -- import Data.Maybe (fromMaybe)
 -- import Data.Monoid
 -- import Data.Readable (Readable(fromText))
 -- import qualified Data.Text as T
 -- import Data.Traversable (sequenceA)
+-- import qualified Data.Vector as V
 -- import Frames.CSV (ColumnTypeable(..))
+-- import Frames.InCore (VectorFor)
 
--- data GenderT = Male | Female deriving (Eq,Ord,Show)
+-- data GenderT = Male | Female deriving (Enum,Eq,Ord,Show)
 
 -- instance Readable GenderT where
 --   fromText t
@@ -310,7 +313,7 @@ femaleOccupations = P.filter ((== Female) . view u2gender)
 
 -- instance Monoid UserCol where
 --   mempty = maxBound
---   mappend x y = toEnum $ max (fromEnum x) (fromEnum y)
+--   mappend x y = if x == y then x else TText
 
 -- instance ColumnTypeable UserCol where
 --   colType TInt = [t|Int|]
@@ -319,6 +322,11 @@ femaleOccupations = P.filter ((== Female) . view u2gender)
 --   inferType = let isInt = fmap (const TInt :: Int -> UserCol) . fromText
 --                   isGen = bool Nothing (Just TGender) . (`elem` ["M","F"])
 --               in fromMaybe TText . mconcat . sequenceA [isGen, isInt]
+
+-- -- See @demo/TutorialUsers.hs@ in the repository for an example of how
+-- -- to define a packed representation for a custom column type. It uses
+-- -- the usual "Data.Vector.Generic" machinery.
+-- type instance VectorFor GenderT = V.Vector
 -- #+end_src
 
 -- ** Splice Dump
@@ -434,6 +442,9 @@ femaleOccupations = P.filter ((== Female) . view u2gender)
 --       -> RecF g_aciU rs_aciW -> f_aciV (RecF g_aciU rs_aciW)
 --     zipCode' = rlens' (Proxy :: Proxy ZipCode)
 -- #+END_EXAMPLE
+
+-- ** Thanks
+-- Thanks to Greg Hale for reviewing an early draft of this document.
 
 -- #+DATE:
 -- #+TITLE: Frames Tutorial
