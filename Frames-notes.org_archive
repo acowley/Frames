@@ -1,0 +1,16 @@
+#    -*- mode: org -*-
+
+
+Archived entries from file Frames-notes.org
+
+
+* DONE Parameterize type inference by a sum type
+  :PROPERTIES:
+  :ARCHIVE_TIME: 2015-01-06 Tue 19:05
+  :ARCHIVE_FILE: ~/Documents/Projects/Frames/Frames-notes.org
+  :ARCHIVE_OLPATH: Tasks
+  :ARCHIVE_CATEGORY: Frames-notes
+  :ARCHIVE_TODO: DONE
+  :END:
+The idea is to let the user call a Template Haskell function with
+the name of a sum type that has an instance of a class
