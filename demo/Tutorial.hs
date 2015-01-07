@@ -52,8 +52,10 @@ tableTypesOpt  ["user id", "age", "gender", "occupation", "zip code"]
                "|" "Users" "data/ml-100k/u.user"
 
 -- This template haskell splice explicitly specifies column names, a
--- separator string, the name for the inferred record type, and the data
--- file from which to infer the record type.
+-- separator string, the name for the inferred record type, and the
+-- data file from which to infer the record type. The result of this
+-- splice is included in an [[* Splice Dump][appendix]] below so you
+-- can flip between the generated code and how it is used.
 
 -- We can load the module into =cabal repl= to see what we have so far.
 
@@ -207,7 +209,7 @@ writers = P.filter ((== "writer") . view occupation)
 -- data UserCol = TInt | TGender | TText deriving (Eq,Show,Ord,Enum,Bounded)
 -- #+END_SRC
 
--- We will also need a few instance that you can find in the [[Appendix: User Types][appendix]].
+-- We will also need a few instance that you can find in an [[* User Types][appendix]].
 
 -- We name this record type ~U2~, and give all the generated column types
 -- and lenses a prefix, "u2", so they don't conflict with the definitions
@@ -266,7 +268,8 @@ femaleOccupations = P.filter ((== Female) . view u2gender)
 -- touching the code*. Just recompile against the new data set, and
 -- you're good to go.
 
--- * Appendix: User Types
+-- * Appendix
+-- ** User Types
 
 -- Here are the definitions needed to define the ~UserCol~ type with its
 -- more descriptive ~GenderT~ type. We have to define these things in a
@@ -317,6 +320,120 @@ femaleOccupations = P.filter ((== Female) . view u2gender)
 --                   isGen = bool Nothing (Just TGender) . (`elem` ["M","F"])
 --               in fromMaybe TText . mconcat . sequenceA [isGen, isInt]
 -- #+end_src
+
+-- ** Splice Dump
+-- The Template Haskell splices we use produce quite a lot of
+-- code. The raw dumps of these splices can be hard to read, but I have
+-- included some elisp code for cleaning up that output in the design
+-- notes for =Frames=. Here is what we get from the ~tableTypesOpt~
+-- splice shown above.
+
+-- The overall structure is this:
+
+-- - A ~Rec~ type called ~Users~ with all necessary columns
+-- - A ~usersParser~ value that overrides parsing defaults
+-- - A type synonym for each column that pairs the column name with its
+--   type
+-- - A lens to work with each column on any given row
+
+-- Remember that for CSV files that include a header, the splice you
+-- write in your code need not include the column names or separator
+-- character.
+
+-- #+BEGIN_EXAMPLE
+--     tableTypesOpt
+--       ["user id", "age", "gender", "occupation", "zip code"]
+--       "|"
+--       "Users"
+--       "data/ml-100k/u.user"
+--   ======>
+--     type Users =
+--         Rec ["user id" :-> Int, "age" :-> Int, "gender" :-> Text, "occupation" :-> Text, "zip code" :-> Text]
+
+--     usersParser :: ParserOptions
+--     usersParser
+--       = ParserOptions
+--           (Just
+--              (map
+--                 T.pack
+--                 ["user id", "age", "gender", "occupation", "zip code"]))
+--           (T.pack "|")
+
+--     type UserId = "user id" :-> Int
+
+--     userId ::
+--       forall f_aciy rs_aciz. (Functor f_aciy,
+--                               RElem UserId rs_aciz ) =>
+--       (Int -> f_aciy Int) -> Rec rs_aciz -> f_aciy (Rec rs_aciz)
+--     userId = rlens (Proxy :: Proxy UserId)
+
+--     userId' ::
+--       forall g_aciA f_aciB rs_aciC. (Functor f_aciB,
+--                                      RElem UserId rs_aciC ) =>
+--       (g_aciA Int -> f_aciB (g_aciA Int))
+--       -> RecF g_aciA rs_aciC -> f_aciB (RecF g_aciA rs_aciC)
+--     userId' = rlens' (Proxy :: Proxy UserId)
+
+--     type Age = "age" :-> Int
+
+--     age ::
+--       forall f_aciD rs_aciE. (Functor f_aciD,
+--                               RElem Age rs_aciE ) =>
+--       (Int -> f_aciD Int) -> Rec rs_aciE -> f_aciD (Rec rs_aciE)
+--     age = rlens (Proxy :: Proxy Age)
+
+--     age' ::
+--       forall g_aciF f_aciG rs_aciH. (Functor f_aciG,
+--                                      RElem Age rs_aciH ) =>
+--       (g_aciF Int -> f_aciG (g_aciF Int))
+--       -> RecF g_aciF rs_aciH -> f_aciG (RecF g_aciF rs_aciH)
+--     age' = rlens' (Proxy :: Proxy Age)
+
+--     type Gender = "gender" :-> Text
+
+--     gender ::
+--       forall f_aciI rs_aciJ. (Functor f_aciI,
+--                               RElem Gender rs_aciJ ) =>
+--       (Text -> f_aciI Text) -> Rec rs_aciJ -> f_aciI (Rec rs_aciJ)
+--     gender = rlens (Proxy :: Proxy Gender)
+
+--     gender' ::
+--       forall g_aciK f_aciL rs_aciM. (Functor f_aciL,
+--                                      RElem Gender rs_aciM ) =>
+--       (g_aciK Text -> f_aciL (g_aciK Text))
+--       -> RecF g_aciK rs_aciM -> f_aciL (RecF g_aciK rs_aciM)
+--     gender' = rlens' (Proxy :: Proxy Gender)
+
+--     type Occupation = "occupation" :-> Text
+
+--     occupation ::
+--       forall f_aciN rs_aciO. (Functor f_aciN,
+--                               RElem Occupation rs_aciO ) =>
+--       (Text -> f_aciN Text) -> Rec rs_aciO -> f_aciN (Rec rs_aciO)
+--     occupation = rlens (Proxy :: Proxy Occupation)
+
+--     occupation' ::
+--       forall g_aciP f_aciQ rs_aciR. (Functor f_aciQ,
+--                                      RElem Occupation rs_aciR ) =>
+--       (g_aciP Text -> f_aciQ (g_aciP Text))
+--       -> RecF g_aciP rs_aciR -> f_aciQ (RecF g_aciP rs_aciR)
+--     occupation' = rlens' (Proxy :: Proxy Occupation)
+
+--     type ZipCode = "zip code" :-> Text
+
+--     zipCode ::
+--       forall f_aciS rs_aciT. (Functor f_aciS,
+--                               RElem ZipCode rs_aciT ) =>
+--       (Text -> f_aciS Text) -> Rec rs_aciT -> f_aciS (Rec rs_aciT)
+--     zipCode = rlens (Proxy :: Proxy ZipCode)
+
+--     zipCode' ::
+--       forall g_aciU f_aciV rs_aciW. (Functor f_aciV,
+--                                      RElem ZipCode rs_aciW ) =>
+--       (g_aciU Text -> f_aciV (g_aciU Text))
+--       -> RecF g_aciU rs_aciW -> f_aciV (RecF g_aciU rs_aciW)
+--     zipCode' = rlens' (Proxy :: Proxy ZipCode)
+-- #+END_EXAMPLE
 
 -- #+DATE:
 -- #+TITLE: Frames Tutorial
