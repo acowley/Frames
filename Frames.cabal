@@ -55,7 +55,8 @@ executable getdata
   if !flag(demos)
     buildable: False
   main-is: GetData.hs
-  build-depends: base, bytestring, http-client, zip-archive
+  if flag(demos)
+    build-depends: base, bytestring, http-client, zip-archive
   hs-source-dirs: data
   default-language: Haskell2010
   ghc-options: -Wall
@@ -65,8 +66,9 @@ executable demo
   if !flag(demos)
     buildable: False
   main-is: Main.hs
-  build-depends: base, list-t, lens-family-core, transformers, Frames,
-                 vector, text, template-haskell, ghc-prim, readable, pipes
+  if flag(demos)
+    build-depends: base, list-t, lens-family-core, transformers, Frames,
+                   vector, text, template-haskell, ghc-prim, readable, pipes
   hs-source-dirs: demo
   default-language: Haskell2010
   ghc-options: -fllvm -O2
@@ -75,8 +77,9 @@ executable tutorial
   if !flag(demos)
     buildable: False
   main-is: Tutorial.hs
-  build-depends: base, Frames, lens-family-core, vector, text, template-haskell,
-                 foldl, pipes, readable
+  if flag(demos)
+    build-depends: base, Frames, lens-family-core, vector, text, template-haskell,
+                   foldl, pipes, readable
   hs-source-dirs: demo
   default-language: Haskell2010
 
@@ -85,7 +88,8 @@ executable benchdemo
   if !flag(demos)
     buildable: False
   main-is:          BenchDemo.hs
-  build-depends:    base, foldl, pipes, Frames, lens-family-core
+  if flag(demos)
+    build-depends:    base, foldl, pipes, Frames, lens-family-core
   hs-source-dirs:   benchmarks
   default-language: Haskell2010
   ghc-options:      -fllvm -O2
@@ -95,7 +99,8 @@ benchmark insurance
   type:             exitcode-stdio-1.0
   hs-source-dirs:   benchmarks
   main-is:          InsuranceBench.hs
-  build-depends:    base, criterion, Frames, lens-family-core, pipes,
-                    transformers
+  if flag(demos)
+    build-depends:    base, criterion, Frames, lens-family-core, pipes,
+                      transformers
   ghc-options:      -O2 -fllvm
   default-language: Haskell2010
