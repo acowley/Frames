@@ -83,7 +83,11 @@ data ColType = TBool | TInt | TDouble | TText
 
 instance Monoid ColType where
   mempty = maxBound
-  mappend x y = toEnum $ max (fromEnum x) (fromEnum y)
+  mappend TInt TDouble = TDouble
+  mappend TDouble TInt = TDouble
+  mappend x y
+      | x == y = x
+      | otherwise = TText
 
 -- | Syntax for the Haskell type corresponding to a given 'ColType'.
 instance ColumnTypeable ColType where
