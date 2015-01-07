@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Frames Tutorial</title>
-<!-- 2015-01-07 Wed 12:22 -->
+<!-- 2015-01-07 Wed 13:32 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="generator" content="Org-mode" />
 <meta  name="author" content="Anthony Cowley" />
@@ -202,6 +202,10 @@
  pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
 <style type="text/css">
  pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
 <script type="text/javascript">
 /*
 @licstart  The following is the entire license notice for the
@@ -256,24 +260,24 @@ for the JavaScript code in this tag.
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#sec-1">1. DataFrames Tutorial</a>
+<li><a href="#sec-1">1. Data Import</a>
 <ul>
-<li><a href="#sec-1-1">1.1. Data Import</a></li>
-<li><a href="#sec-1-2">1.2. Sanity Check</a></li>
-<li><a href="#sec-1-3">1.3. Subsetting</a>
-<ul>
-<li><a href="#sec-1-3-1">1.3.1. Row Subset</a></li>
-<li><a href="#sec-1-3-2">1.3.2. Column Subset</a></li>
-<li><a href="#sec-1-3-3">1.3.3. Query / Conditional Subset</a></li>
+<li><a href="#sec-1-1">1.1. Sanity Check</a></li>
 </ul>
 </li>
-<li><a href="#sec-1-4">1.4. Better Types</a></li>
+<li><a href="#sec-2">2. Subsetting</a>
+<ul>
+<li><a href="#sec-2-1">2.1. Row Subset</a></li>
+<li><a href="#sec-2-2">2.2. Column Subset</a></li>
+<li><a href="#sec-2-3">2.3. Query / Conditional Subset</a></li>
 </ul>
 </li>
-<li><a href="#sec-2">2. Appendix</a>
+<li><a href="#sec-3">3. Better Types</a></li>
+<li><a href="#sec-4">4. Appendix</a>
 <ul>
-<li><a href="#sec-2-1">2.1. User Types</a></li>
-<li><a href="#sec-2-2">2.2. Splice Dump</a></li>
+<li><a href="#sec-4-1">4.1. User Types</a></li>
+<li><a href="#sec-4-2">4.2. Splice Dump</a></li>
+<li><a href="#sec-4-3">4.3. Thanks</a></li>
 </ul>
 </li>
 </ul>
@@ -282,9 +286,7 @@ for the JavaScript code in this tag.
 <p>
 TemplateHaskell, TypeOperators #
 </p>
-<div id="outline-container-sec-1" class="outline-2">
-<h2 id="sec-1"><span class="section-number-2">1</span> DataFrames Tutorial</h2>
-<div class="outline-text-2" id="text-1">
+
 <p>
 This is a semi-port of a
 <a href="http://ajkl.github.io/Dataframes/">dataframe tutorial</a> Rosetta
@@ -322,7 +324,7 @@ smaller test program than this!
 </div>
 
 <p>
-A few other imports will be used for highly customized parsing <a href="#sec-1-4">later</a>.
+A few other imports will be used for highly customized parsing <a href="#sec-3">later</a>.
 </p>
 
 <div class="org-src-container">
@@ -332,11 +334,10 @@ A few other imports will be used for highly customized parsing <a href="#sec-1-4
 <span style="color: #F92672;">import</span> <span style="color: #66D9EF;">TutorialUsers</span>
 </pre>
 </div>
-</div>
 
-<div id="outline-container-sec-1-1" class="outline-3">
-<h3 id="sec-1-1"><span class="section-number-3">1.1</span> Data Import</h3>
-<div class="outline-text-3" id="text-1-1">
+<div id="outline-container-sec-1" class="outline-2">
+<h2 id="sec-1"><span class="section-number-2">1</span> Data Import</h2>
+<div class="outline-text-2" id="text-1">
 <p>
 We usually package column names with the data to keep things a bit
 more self-documenting. This might mean adding a row to the data
@@ -364,7 +365,7 @@ flexible enough to meet a variety of needs.
 This template haskell splice explicitly specifies column names, a
 separator string, the name for the inferred record type, and the
 data file from which to infer the record type. The result of this
-splice is included in an <a href="#sec-2-2">appendix</a> below so you
+splice is included in an <a href="#sec-4-2">appendix</a> below so you
 can flip between the generated code and how it is used.
 </p>
 
@@ -393,8 +394,8 @@ streams through RAM.
 
 <div class="org-src-container">
 
-<pre class="src src-haskell"><span style="color: #A6E22E;">movieData</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">Producer</span> <span style="color: #66D9EF;">Users</span> <span style="color: #66D9EF;">IO</span> <span style="color: #66D9EF;">()</span>
-<span style="color: #A6E22E;">movieData</span> <span style="color: #FD971F;">=</span> readTableOpt usersParser <span style="color: #E6DB74;">"data/ml-100k/u.user"</span>
+<pre class="src src-haskell"><span style="color: #A6E22E;">movieStream</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">Producer</span> <span style="color: #66D9EF;">Users</span> <span style="color: #66D9EF;">IO</span> <span style="color: #66D9EF;">()</span>
+<span style="color: #A6E22E;">movieStream</span> <span style="color: #FD971F;">=</span> readTableOpt usersParser <span style="color: #E6DB74;">"data/ml-100k/u.user"</span>
 </pre>
 </div>
 
@@ -406,24 +407,23 @@ memory) array of structures (AoS) representation.
 
 <div class="org-src-container">
 
-<pre class="src src-haskell"><span style="color: #A6E22E;">movies</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">IO</span> (<span style="color: #66D9EF;">Frame</span> <span style="color: #66D9EF;">Users</span>)
-<span style="color: #A6E22E;">movies</span> <span style="color: #FD971F;">=</span> inCoreAoS movieData
+<pre class="src src-haskell"><span style="color: #A6E22E;">loadMovies</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">IO</span> (<span style="color: #66D9EF;">Frame</span> <span style="color: #66D9EF;">Users</span>)
+<span style="color: #A6E22E;">loadMovies</span> <span style="color: #FD971F;">=</span> inCoreAoS movieStream
 </pre>
 </div>
 </div>
-</div>
 
-<div id="outline-container-sec-1-2" class="outline-3">
-<h3 id="sec-1-2"><span class="section-number-3">1.2</span> Sanity Check</h3>
-<div class="outline-text-3" id="text-1-2">
+<div id="outline-container-sec-1-1" class="outline-3">
+<h3 id="sec-1-1"><span class="section-number-3">1.1</span> Sanity Check</h3>
+<div class="outline-text-3" id="text-1-1">
 <p>
 We can compute some easy statistics to see how things look.
 </p>
 
 <pre class="example">
-λ&gt; ms &lt;- movies
+λ&gt; ms &lt;- loadMovies
 λ&gt; L.fold L.minimum (view age &lt;$&gt; ms)
-7
+Just 7
 </pre>
 
 <p>
@@ -433,7 +433,7 @@ package
 </p>
 
 <pre class="example">
-λ&gt; ms &lt;- movies
+λ&gt; ms &lt;- loadMovies
 λ&gt; L.fold (L.pretraverse age ((,) &lt;$&gt; L.minimum &lt;*&gt; L.maximum)) ms
 (Just 7,Just 73)
 </pre>
@@ -444,20 +444,21 @@ computing the minimum and maximum <code>age</code> for all rows.
 </p>
 </div>
 </div>
+</div>
 
-<div id="outline-container-sec-1-3" class="outline-3">
-<h3 id="sec-1-3"><span class="section-number-3">1.3</span> Subsetting</h3>
-<div class="outline-text-3" id="text-1-3">
-</div><div id="outline-container-sec-1-3-1" class="outline-4">
-<h4 id="sec-1-3-1"><span class="section-number-4">1.3.1</span> Row Subset</h4>
-<div class="outline-text-4" id="text-1-3-1">
+<div id="outline-container-sec-2" class="outline-2">
+<h2 id="sec-2"><span class="section-number-2">2</span> Subsetting</h2>
+<div class="outline-text-2" id="text-2">
+</div><div id="outline-container-sec-2-1" class="outline-3">
+<h3 id="sec-2-1"><span class="section-number-3">2.1</span> Row Subset</h3>
+<div class="outline-text-3" id="text-2-1">
 <p>
 Data may be inspected using either Haskell's traditional list API&#x2026;
 </p>
 
 <pre class="example">
-λ&gt; ms &lt;- movies
-λ&gt; mapM_ print (take 3 (toList ms))
+λ&gt; ms &lt;- loadMovies
+λ&gt; mapM_ print (take 3 (F.toList ms))
 {user id :-&gt; 1, age :-&gt; 24, gender :-&gt; "M", occupation :-&gt; "technician", zip code :-&gt; "85711"}
 {user id :-&gt; 2, age :-&gt; 53, gender :-&gt; "F", occupation :-&gt; "other", zip code :-&gt; "94043"}
 {user id :-&gt; 3, age :-&gt; 23, gender :-&gt; "M", occupation :-&gt; "writer", zip code :-&gt; "32067"}
@@ -491,9 +492,9 @@ This lets us view a subset of rows,
 </div>
 </div>
 
-<div id="outline-container-sec-1-3-2" class="outline-4">
-<h4 id="sec-1-3-2"><span class="section-number-4">1.3.2</span> Column Subset</h4>
-<div class="outline-text-4" id="text-1-3-2">
+<div id="outline-container-sec-2-2" class="outline-3">
+<h3 id="sec-2-2"><span class="section-number-3">2.2</span> Column Subset</h3>
+<div class="outline-text-3" id="text-2-2">
 <p>
 We can consider a single column.
 </p>
@@ -526,11 +527,13 @@ Or multiple columns,
 </div>
 </div>
 
-<div id="outline-container-sec-1-3-3" class="outline-4">
-<h4 id="sec-1-3-3"><span class="section-number-4">1.3.3</span> Query / Conditional Subset</h4>
-<div class="outline-text-4" id="text-1-3-3">
+<div id="outline-container-sec-2-3" class="outline-3">
+<h3 id="sec-2-3"><span class="section-number-3">2.3</span> Query / Conditional Subset</h3>
+<div class="outline-text-3" id="text-2-3">
 <p>
-Filtering our frame is rather nicely done using the <a href="http://hackage.haskell.org/package/pipes">pipes</a> package.
+Filtering our frame is rather nicely done using the
+<a href="http://hackage.haskell.org/package/pipes">pipes</a> package. Here
+we pick out the users whose occupation is "writer".
 </p>
 
 <div class="org-src-container">
@@ -541,7 +544,7 @@ Filtering our frame is rather nicely done using the <a href="http://hackage.hask
 </div>
 
 <pre class="example">
-λ&gt; runEffect $ movieData &gt;-&gt; writers &gt;-&gt; P.take 6 &gt;-&gt; P.print
+λ&gt; runEffect $ movieStream &gt;-&gt; writers &gt;-&gt; P.take 6 &gt;-&gt; P.print
 {user id :-&gt; 3, age :-&gt; 23, gender :-&gt; "M", occupation :-&gt; "writer", zip code :-&gt; "32067"}
 {user id :-&gt; 21, age :-&gt; 26, gender :-&gt; "M", occupation :-&gt; "writer", zip code :-&gt; "30068"}
 {user id :-&gt; 22, age :-&gt; 25, gender :-&gt; "M", occupation :-&gt; "writer", zip code :-&gt; "40206"}
@@ -553,9 +556,9 @@ Filtering our frame is rather nicely done using the <a href="http://hackage.hask
 </div>
 </div>
 
-<div id="outline-container-sec-1-4" class="outline-3">
-<h3 id="sec-1-4"><span class="section-number-3">1.4</span> Better Types</h3>
-<div class="outline-text-3" id="text-1-4">
+<div id="outline-container-sec-3" class="outline-2">
+<h2 id="sec-3"><span class="section-number-2">3</span> Better Types</h2>
+<div class="outline-text-2" id="text-3">
 <p>
 A common disappointment of parsing general data sets is the
 reliance on text for data representation even <i>after</i> parsing. If
@@ -568,7 +571,7 @@ type for a column like <code>gender</code>.
 </p>
 
 <pre class="example">
-λ&gt; L.purely P.fold L.nub (movieData &gt;-&gt; P.map (view gender))
+λ&gt; L.purely P.fold L.nub (movieStream &gt;-&gt; P.map (view gender))
 ["M", "F"]
 </pre>
 
@@ -586,7 +589,7 @@ define our own universe of column types.
 </div>
 
 <p>
-We will also need a few instance that you can find in an <a href="#sec-2-1">appendix</a>.
+We will also need a few instance that you can find in an <a href="#sec-4-1">appendix</a>.
 </p>
 
 <p>
@@ -601,8 +604,8 @@ we generated earlier.
                        [<span style="color: #E6DB74;">"user id"</span>, <span style="color: #E6DB74;">"age"</span>, <span style="color: #E6DB74;">"gender"</span>, <span style="color: #E6DB74;">"occupation"</span>, <span style="color: #E6DB74;">"zip code"</span>]
                        <span style="color: #E6DB74;">"|"</span> <span style="color: #E6DB74;">"U2"</span> <span style="color: #E6DB74;">"u2"</span> <span style="color: #E6DB74;">"data/ml-100k/u.user"</span>
 
-<span style="color: #A6E22E;">movieData2</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">Producer</span> <span style="color: #66D9EF;">U2</span> <span style="color: #66D9EF;">IO</span> <span style="color: #66D9EF;">()</span>
-<span style="color: #A6E22E;">movieData2</span> <span style="color: #FD971F;">=</span> readTableOpt u2Parser <span style="color: #E6DB74;">"data/ml-100k/u.user"</span>
+<span style="color: #A6E22E;">movieStream2</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">Producer</span> <span style="color: #66D9EF;">U2</span> <span style="color: #66D9EF;">IO</span> <span style="color: #66D9EF;">()</span>
+<span style="color: #A6E22E;">movieStream2</span> <span style="color: #FD971F;">=</span> readTableOpt u2Parser <span style="color: #E6DB74;">"data/ml-100k/u.user"</span>
 </pre>
 </div>
 
@@ -633,7 +636,7 @@ Let's take the occupations of the first 10 female users:
 </div>
 
 <pre class="example">
-λ&gt; runEffect $ movieData2 &gt;-&gt; femaleOccupations &gt;-&gt; P.take 10 &gt;-&gt; P.print
+λ&gt; runEffect $ movieStream2 &gt;-&gt; femaleOccupations &gt;-&gt; P.take 10 &gt;-&gt; P.print
 "other"
 "other"
 "other"
@@ -665,14 +668,13 @@ you're good to go.
 </p>
 </div>
 </div>
-</div>
 
-<div id="outline-container-sec-2" class="outline-2">
-<h2 id="sec-2"><span class="section-number-2">2</span> Appendix</h2>
-<div class="outline-text-2" id="text-2">
-</div><div id="outline-container-sec-2-1" class="outline-3">
-<h3 id="sec-2-1"><span class="section-number-3">2.1</span> User Types</h3>
-<div class="outline-text-3" id="text-2-1">
+<div id="outline-container-sec-4" class="outline-2">
+<h2 id="sec-4"><span class="section-number-2">4</span> Appendix</h2>
+<div class="outline-text-2" id="text-4">
+</div><div id="outline-container-sec-4-1" class="outline-3">
+<h3 id="sec-4-1"><span class="section-number-3">4.1</span> User Types</h3>
+<div class="outline-text-3" id="text-4-1">
 <p>
 Here are the definitions needed to define the <code>UserCol</code> type with its
 more descriptive <code>GenderT</code> type. We have to define these things in a
@@ -695,16 +697,18 @@ structure of parsed data is in keeping with the overall goal of
 
 <pre class="src src-haskell"><span style="color: #75715E; font-style: italic;">{-# LANGUAGE OverloadedStrings, TemplateHaskell #-}</span>
 <span style="color: #F92672;">module</span> <span style="color: #66D9EF;">TutorialUsers</span> <span style="color: #F92672;">where</span>
-<span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Control.Monad</span> (mzero)
+<span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Control.Monad</span> (liftM, mzero)
 <span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Data.Bool</span> (bool)
 <span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Data.Maybe</span> (fromMaybe)
 <span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Data.Monoid</span>
 <span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Data.Readable</span> (<span style="color: #66D9EF;">Readable</span>(fromText))
 <span style="color: #F92672;">import</span> <span style="color: #F92672;">qualified</span> <span style="color: #66D9EF;">Data.Text</span> <span style="color: #F92672;">as</span> <span style="color: #66D9EF;">T</span>
 <span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Data.Traversable</span> (sequenceA)
+<span style="color: #F92672;">import</span> <span style="color: #F92672;">qualified</span> <span style="color: #66D9EF;">Data.Vector</span> <span style="color: #F92672;">as</span> <span style="color: #66D9EF;">V</span>
 <span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Frames.CSV</span> (<span style="color: #66D9EF;">ColumnTypeable</span>(<span style="color: #FD971F;">..</span>))
+<span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Frames.InCore</span> (<span style="color: #66D9EF;">VectorFor</span>)
 
-<span style="color: #F92672;">data</span> <span style="color: #66D9EF;">GenderT</span> <span style="color: #FD971F;">=</span> <span style="color: #66D9EF;">Male</span> <span style="color: #FD971F;">|</span> <span style="color: #66D9EF;">Female</span> <span style="color: #F92672;">deriving</span> (<span style="color: #66D9EF;">Eq</span>,<span style="color: #66D9EF;">Ord</span>,<span style="color: #66D9EF;">Show</span>)
+<span style="color: #F92672;">data</span> <span style="color: #66D9EF;">GenderT</span> <span style="color: #FD971F;">=</span> <span style="color: #66D9EF;">Male</span> <span style="color: #FD971F;">|</span> <span style="color: #66D9EF;">Female</span> <span style="color: #F92672;">deriving</span> (<span style="color: #66D9EF;">Enum</span>,<span style="color: #66D9EF;">Eq</span>,<span style="color: #66D9EF;">Ord</span>,<span style="color: #66D9EF;">Show</span>)
 
 <span style="color: #F92672;">instance</span> <span style="color: #66D9EF;">Readable</span> <span style="color: #66D9EF;">GenderT</span> <span style="color: #F92672;">where</span>
   fromText t
@@ -717,7 +721,7 @@ structure of parsed data is in keeping with the overall goal of
 
 <span style="color: #F92672;">instance</span> <span style="color: #66D9EF;">Monoid</span> <span style="color: #66D9EF;">UserCol</span> <span style="color: #F92672;">where</span>
   mempty <span style="color: #FD971F;">=</span> maxBound
-  mappend x y <span style="color: #FD971F;">=</span> toEnum <span style="color: #FD971F;">$</span> max (fromEnum x) (fromEnum y)
+  mappend x y <span style="color: #FD971F;">=</span> <span style="color: #F92672;">if</span> x <span style="color: #FD971F;">==</span> y <span style="color: #F92672;">then</span> x <span style="color: #F92672;">else</span> <span style="color: #66D9EF;">TText</span>
 
 <span style="color: #F92672;">instance</span> <span style="color: #66D9EF;">ColumnTypeable</span> <span style="color: #66D9EF;">UserCol</span> <span style="color: #F92672;">where</span>
   colType <span style="color: #66D9EF;">TInt</span> <span style="color: #FD971F;">=</span> [t<span style="color: #FD971F;">|</span><span style="color: #66D9EF;">Int</span><span style="color: #FD971F;">|</span>]
@@ -726,14 +730,19 @@ structure of parsed data is in keeping with the overall goal of
   inferType <span style="color: #FD971F;">=</span> <span style="color: #F92672;">let</span> isInt <span style="color: #FD971F;">=</span> fmap (const <span style="color: #66D9EF;">TInt</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">Int</span> <span style="color: #FD971F;">-&gt;</span> <span style="color: #66D9EF;">UserCol</span>) <span style="color: #FD971F;">.</span> fromText
                   isGen <span style="color: #FD971F;">=</span> bool <span style="color: #66D9EF;">Nothing</span> (<span style="color: #66D9EF;">Just</span> <span style="color: #66D9EF;">TGender</span>) <span style="color: #FD971F;">.</span> (<span style="color: #FD971F;">`elem`</span> [<span style="color: #E6DB74;">"M"</span>,<span style="color: #E6DB74;">"F"</span>])
               <span style="color: #F92672;">in</span> fromMaybe <span style="color: #66D9EF;">TText</span> <span style="color: #FD971F;">.</span> mconcat <span style="color: #FD971F;">.</span> sequenceA [isGen, isInt]
+
+<span style="color: #75715E;">-- </span><span style="color: #75715E; font-style: italic;">See @demo/TutorialUsers.hs@ in the repository for an example of how</span>
+<span style="color: #75715E;">-- </span><span style="color: #75715E; font-style: italic;">to define a packed representation for a custom column type. It uses</span>
+<span style="color: #75715E;">-- </span><span style="color: #75715E; font-style: italic;">the usual "Data.Vector.Generic" machinery.</span>
+<span style="color: #F92672;">type</span> <span style="color: #F92672;">instance</span> <span style="color: #66D9EF;">VectorFor</span> <span style="color: #66D9EF;">GenderT</span> <span style="color: #FD971F;">=</span> <span style="color: #66D9EF;">V.Vector</span>
 </pre>
 </div>
 </div>
 </div>
 
-<div id="outline-container-sec-2-2" class="outline-3">
-<h3 id="sec-2-2"><span class="section-number-3">2.2</span> Splice Dump</h3>
-<div class="outline-text-3" id="text-2-2">
+<div id="outline-container-sec-4-2" class="outline-3">
+<h3 id="sec-4-2"><span class="section-number-3">4.2</span> Splice Dump</h3>
+<div class="outline-text-3" id="text-4-2">
 <p>
 The Template Haskell splices we use produce quite a lot of
 code. The raw dumps of these splices can be hard to read, but I have
@@ -858,6 +867,15 @@ character.
     -&gt; RecF g_aciU rs_aciW -&gt; f_aciV (RecF g_aciU rs_aciW)
   zipCode' = rlens' (Proxy :: Proxy ZipCode)
 </pre>
+</div>
+</div>
+
+<div id="outline-container-sec-4-3" class="outline-3">
+<h3 id="sec-4-3"><span class="section-number-3">4.3</span> Thanks</h3>
+<div class="outline-text-3" id="text-4-3">
+<p>
+Thanks to Greg Hale for reviewing an early draft of this document.
+</p>
 </div>
 </div>
 </div>
