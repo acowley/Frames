@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Frames Tutorial</title>
-<!-- 2015-01-07 Wed 13:32 -->
+<!-- 2015-01-07 Wed 13:51 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="generator" content="Org-mode" />
 <meta  name="author" content="Anthony Cowley" />
@@ -206,6 +206,8 @@
  pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
 <style type="text/css">
  pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
 <script type="text/javascript">
 /*
 @licstart  The following is the entire license notice for the
@@ -262,7 +264,8 @@ for the JavaScript code in this tag.
 <ul>
 <li><a href="#sec-1">1. Data Import</a>
 <ul>
-<li><a href="#sec-1-1">1.1. Sanity Check</a></li>
+<li><a href="#sec-1-1">1.1. Streaming Cores?</a></li>
+<li><a href="#sec-1-2">1.2. Sanity Check</a></li>
 </ul>
 </li>
 <li><a href="#sec-2">2. Subsetting</a>
@@ -414,8 +417,38 @@ memory) array of structures (AoS) representation.
 </div>
 
 <div id="outline-container-sec-1-1" class="outline-3">
-<h3 id="sec-1-1"><span class="section-number-3">1.1</span> Sanity Check</h3>
+<h3 id="sec-1-1"><span class="section-number-3">1.1</span> Streaming Cores?</h3>
 <div class="outline-text-3" id="text-1-1">
+<p>
+A <code>Frame</code> is an in-memory representation of your data. The <code>Frames</code>
+library stores each column as compactly as it knows how, and lets you
+index your data as a structure of arrays (where each field of the
+structure is an array corresponding to a column of your data), or as
+an array of structures, also known as a <code>Frame</code>. These latter
+structures correspond to rows of your data, and rows of data may be
+handled in a streaming fashion so that you are not limited to
+available RAM. In the streaming paradigm, you process each row
+individually as a single record.
+</p>
+
+<p>
+A <code>Frame</code> provides <code>O(1)</code> indexing, as well as any other operations
+you are familiar with based on the <code>Foldable</code> class. If a data set is
+small, keeping it in RAM is usually the fastest way to perform
+multiple analyses on that data that you can't fuse into a single
+traversal.
+</p>
+
+<p>
+Alternatively, a <code>Producer</code> of rows is a great way to whittle down a
+large data set before moving on to whatever you want to do next.
+</p>
+</div>
+</div>
+
+<div id="outline-container-sec-1-2" class="outline-3">
+<h3 id="sec-1-2"><span class="section-number-3">1.2</span> Sanity Check</h3>
+<div class="outline-text-3" id="text-1-2">
 <p>
 We can compute some easy statistics to see how things look.
 </p>
@@ -661,10 +694,12 @@ with richly-typed queries.
 <p>
 Even better, did you notice the types of <code>writers</code> and
 <code>femaleOccupations</code>? They are polymorphic over the full row type!
-This means that if your schema changes, or you switch to a related but
-different data set, <b>these functions can still be used without even
-touching the code</b>. Just recompile against the new data set, and
-you're good to go.
+That's what the <code>(Occupation ∈ rs)</code> constraint signifies: such a
+function will work for record types with any set of fields, <code>rs</code>, so
+long as <code>Occupation</code> is an element of that set. This means that if
+your schema changes, or you switch to a related but different data
+set, <b>these functions can still be used without even touching the
+code</b>. Just recompile against the new data set, and you're good to go.
 </p>
 </div>
 </div>
