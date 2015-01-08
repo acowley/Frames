@@ -119,7 +119,6 @@ loadMovies = inCoreAoS movieStream
 -- package
 
 -- #+BEGIN_EXAMPLE
--- λ> ms <- loadMovies
 -- λ> L.fold (L.pretraverse age ((,) <$> L.minimum <*> L.maximum)) ms
 -- (Just 7,Just 73)
 -- #+END_EXAMPLE
@@ -134,7 +133,6 @@ loadMovies = inCoreAoS movieStream
 -- Data may be inspected using either Haskell's traditional list API...
 
 -- #+BEGIN_EXAMPLE
--- λ> ms <- loadMovies
 -- λ> mapM_ print (take 3 (F.toList ms))
 -- {user id :-> 1, age :-> 24, gender :-> "M", occupation :-> "technician", zip code :-> "85711"}
 -- {user id :-> 2, age :-> 53, gender :-> "F", occupation :-> "other", zip code :-> "94043"}

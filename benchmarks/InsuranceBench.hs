@@ -6,7 +6,6 @@ import Criterion.Main
 import qualified Data.Foldable as F
 import Data.Functor.Identity
 import Frames
-import Lens.Family
 import qualified Pipes as P
 import qualified Pipes.Prelude as P
 

@@ -28,11 +28,12 @@ import Data.Readable (Readable(fromText))
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Traversable (sequenceA)
+import Data.Vinyl (RElem)
+import Data.Vinyl.TypeLevel (RIndex)
 import Frames.Col
 import Frames.Rec
 import Frames.RecF
 import Frames.RecLens
-import Frames.TypeLevel
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
 import qualified Pipes as P
@@ -168,8 +169,8 @@ instance ReadRec '[] where
   readRec _ = Nil
 
 instance (Readable t, ReadRec ts) => ReadRec (s :-> t ': ts) where
-  readRec [] = Nothing :& readRec []
-  readRec (h:t) = fromText h :& readRec t
+  readRec [] = frameCons Nothing (readRec [])
+  readRec (h:t) = frameCons (fromText h) (readRec t)
 
 -- | Read a 'RecF' from one line of CSV.
 readRow :: ReadRec rs => Separator -> T.Text -> RecF Maybe rs
@@ -197,11 +198,11 @@ readTableMaybe = readTableMaybeOpt defaultParser
 {-# INLINE readTableMaybe #-}
 
 -- | Returns a `MonadPlus` producer of rows for which each column was
--- successfully parsed. This is typically slower than 'readTable'.
-readTable' :: forall m rs.
-              (MonadPlus m, MonadIO m, ReadRec rs)
-           => ParserOptions -> FilePath -> m (Rec rs)
-readTable' opts csvFile =
+-- successfully parsed. This is typically slower than 'readTableOpt'.
+readTableOpt' :: forall m rs.
+                 (MonadPlus m, MonadIO m, ReadRec rs)
+              => ParserOptions -> FilePath -> m (Rec rs)
+readTableOpt' opts csvFile =
   do h <- liftIO $ do
             h <- openFile csvFile ReadMode
             when (isNothing $ headerOverride opts) (void $ T.hGetLine h)
@@ -212,6 +213,13 @@ readTable' opts csvFile =
               False -> let r = recMaybe . readRow sep <$> T.hGetLine h
                        in liftIO r >>= maybe go (flip mplus go . return)
      go
+{-# INLINE readTableOpt' #-}
+
+-- | Returns a `MonadPlus` producer of rows for which each column was
+-- successfully parsed. This is typically slower than 'readTable'.
+readTable' :: forall m rs. (MonadPlus m, MonadIO m, ReadRec rs)
+           => FilePath -> m (Rec rs)
+readTable' = readTableOpt' defaultParser
 {-# INLINE readTable' #-}
 
 -- | Returns a producer of rows for which each column was successfully
@@ -268,7 +276,7 @@ mkColPDec colTName colTy colPName = sequenceA [tySig, val, tySig', val']
                          -> Rec rs
                          -> f (Rec rs)
                          |]
-        tySig' = sigD nm' [t|(Functor f,
+        tySig' = sigD nm' [t|(Functor f, Functor g,
                              RElem $(conT colTName) rs (RIndex $(conT colTName) rs))
                           => (g $colTy -> f (g $colTy))
                           -> RecF g rs

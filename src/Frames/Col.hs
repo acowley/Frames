@@ -11,7 +11,7 @@ import GHC.TypeLits
 
 -- | A column's type includes a textual name and the data type of each
 -- element.
-newtype (:->) (s::Symbol) a = Col a
+newtype (:->) (s::Symbol) a = Col { getCol :: a }
   deriving (Eq,Ord,Num,Monoid,Real,RealFloat,RealFrac,Fractional,Floating)
 
 instance forall s a. (KnownSymbol s, Show a) => Show (s :-> a) where

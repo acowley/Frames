@@ -10,13 +10,14 @@
 module Frames.InCore where
 import Control.Applicative
 import Control.Monad.IO.Class (MonadIO(..))
-import Data.Functor.Identity
 import Data.Proxy
 import Data.Text (Text)
 import qualified Data.Vector as VB
 import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
 import qualified Data.Vector.Unboxed as VU
+import qualified Data.Vinyl as V
+import Data.Vinyl.Functor (Identity(..))
 import Frames.Col
 import Frames.Frame
 import Frames.Rec
@@ -70,22 +71,22 @@ instance RecVec '[] where
   allocRec _ = return Nil
   {-# INLINE allocRec #-}
 
-  freezeRec _ _ Nil = return Nil
+  freezeRec _ _ V.RNil = return V.RNil
   freezeRec _ _ _ = error "Impossible"
   {-# INLINE freezeRec #-}
 
-  growRec _ Nil = return Nil
+  growRec _ V.RNil = return V.RNil
   growRec _ _ = error "Impossible"
   {-# INLINE growRec #-}
 
-  indexRec _ _ _ = Nil
+  indexRec _ _ _ = V.RNil
   {-# INLINE indexRec #-}
 
-  writeRec _ _ Nil Nil = return ()
+  writeRec _ _ V.RNil V.RNil = return ()
   writeRec _ _ _ _ = error "Impossible"
   {-# INLINE writeRec #-}
 
-  produceRec _ Nil = Nil
+  produceRec _ V.RNil = V.RNil
   produceRec _ _ = error "Impossible"
   {-# INLINE produceRec #-}
 
@@ -98,28 +99,29 @@ instance forall s a rs.
   allocRec _ = (&:) <$> VGM.new initialCapacity <*> allocRec (Proxy::Proxy rs)
   {-# INLINE allocRec #-}
 
-  freezeRec _ n (Identity x :& xs) =
+  freezeRec _ n (Identity (Col x) V.:& xs) =
     (&:) <$> (VG.unsafeFreeze $ VGM.unsafeSlice 0 n x)
          <*> freezeRec (Proxy::Proxy rs) n xs
   freezeRec _ _ _ = error "Impossible"
   {-# INLINE freezeRec #-}
 
-  growRec _ (Identity x :& xs) = (&:) <$> VGM.grow x (VGM.length x)
-                                      <*> growRec (Proxy :: Proxy rs) xs
+  growRec _ (Identity (Col x) V.:& xs) = (&:) <$> VGM.grow x (VGM.length x)
+                                              <*> growRec (Proxy :: Proxy rs) xs
   growRec _ _ = error "Impossible"
   {-# INLINE growRec #-}
 
-  writeRec _ !i !(Identity v :& vs) (Identity x :& xs) =
+  writeRec _ !i !(Identity (Col v) V.:& vs) (Identity (Col x) V.:& xs) =
     VGM.unsafeWrite v i x >> writeRec (Proxy::Proxy rs) i vs xs
   writeRec _ _ _ _ = error "Impossible"
   {-# INLINE writeRec #-}
 
-  indexRec _ !i !(Identity x :& xs) =
+  indexRec _ !i !(Identity (Col x) V.:& xs) =
     x VG.! i &: indexRec (Proxy :: Proxy rs) i xs
   indexRec _ _ _ = error "Impossible"
   {-# INLINE indexRec #-}
 
-  produceRec _ (Identity v :& vs) = (v VG.!) :& produceRec (Proxy::Proxy rs) vs
+  produceRec _ (Identity (Col v) V.:& vs) = frameCons (v VG.!) $
+                                            produceRec (Proxy::Proxy rs) vs
   produceRec _ _ = error "Impossible"
   {-# INLINE produceRec #-}
 

@@ -4,9 +4,9 @@ module Frames.Frame where
 import Control.Applicative
 import Data.Foldable
 import Data.Monoid
+import Data.Vinyl.TypeLevel
 import Frames.Rec (Rec)
 import Frames.RecF (rappend)
-import Frames.TypeLevel
 
 -- | A 'Frame' is a finite collection of rows indexed by 'Int'.
 data Frame r = Frame { frameLength :: !Int
