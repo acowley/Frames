@@ -1,10 +1,10 @@
 {-# LANGUAGE DataKinds, FlexibleContexts, OverloadedStrings,
              TemplateHaskell, TypeOperators #-}
 
--- This is a semi-port of a
+-- This is a loose port of a
 -- [[http://ajkl.github.io/Dataframes/][dataframe tutorial]] Rosetta
--- Stone. Traditional dataframe tools built in R, Julia, Python,
--- etc. expose a richer API than Frames does (so far).
+-- Stone to compare traditional dataframe tools built in R, Julia,
+-- Python, etc. with ~Frames~.
 
 -- The example data file used does not include column headers, nor
 -- does it use commas to separate values, so it does not fall into the

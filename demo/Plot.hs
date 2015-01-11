@@ -44,7 +44,7 @@ mkPlots xs = do layout_title .= "Distributions"
                 mkPlot "Triglycerides" tris
   where ldls = map (view lBDLDL) xs
         tris = map (view lBXTR) xs
-  
+
 main :: IO ()
 main = do env <- defaultEnv bitmapAlignmentFns 640 480
           let chart2diagram = fst . runBackendR env . toRenderable . execEC
