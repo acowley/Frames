@@ -7,6 +7,12 @@ values for textual columns.
 
 We may be able to implement a similar utility with a type class whose
 instance for each column type is a Fold.
+
+** TODO Simplify the elisp to pretty print the splice dump
+Can't we handle /any/ infix operator? If the identifier in the
+function position of an application is parenthesized and begins with a
+colon, it's an operator.
+
 * Stage Restrictions
 One area where GHC's stage restrictions on Template Haskell bite us is
 in stating how to parse a particular file. The problem is that we
