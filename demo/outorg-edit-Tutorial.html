@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Frames Tutorial</title>
-<!-- 2015-01-19 Mon 23:47 -->
+<!-- 2015-01-20 Tue 00:20 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="generator" content="Org-mode" />
 <meta  name="author" content="Anthony Cowley" />
@@ -88,6 +88,14 @@
     { background-color: #ffff00; color: #000000; font-weight: bold; }
   /*]]>*/-->
 </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
 <style type="text/css">
  pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
 <style type="text/css">
@@ -519,7 +527,9 @@ define our own universe of column types.
 </div>
 
 <p>
-We will also need a few instance that you can find in an <a href="#sec-4-1">appendix</a>.
+The full code for the custom type may be found in an <a href="#sec-4-1">appendix</a>. Note
+that it must be defined in a separate module to satisfy GHC's stage
+restrictions related to Template Haskell.
 </p>
 
 <p>
@@ -608,14 +618,14 @@ code</b>. Just recompile against the new data set, and you're good to go.
 <h3 id="sec-4-1"><span class="section-number-3">4.1</span> User Types</h3>
 <div class="outline-text-3" id="text-4-1">
 <p>
-Here are the definitions needed to define the <code>UserCol</code> type with its
+Here are the definitions needed to define the <code>MyColumns</code> type with its
 more descriptive <code>GenderT</code> type. We have to define these things in a
 separate module from our main work due to GHC's stage restrictions
-regarding Template Haskell. Specifically, <code>UserCol</code> and its instances
+regarding Template Haskell. Specifically, <code>GenderT</code> and its instances
 are used at compile time to infer the record type needed to represent
-the data file. Notice the extension point here, though somewhat
-buried, is not too rough: you prepend new, more refined, type
-compatibility checks to the end of the <code>inferType</code> definition.
+the data file. Notice the extension point here is not too rough: you
+prepend new, more refined, type compatibility checks to the head of
+<code>CommonColumns</code>, or you can build up your own list of expected types.
 </p>
 
 <p>
@@ -631,14 +641,10 @@ off, and the sky's the limit.
 <span style="color: #75715E; font-style: italic;">             MultiParamTypeClasses, OverloadedStrings, TemplateHaskell,</span>
 <span style="color: #75715E; font-style: italic;">             TypeFamilies, TypeOperators #-}</span>
 <span style="color: #F92672;">module</span> <span style="color: #66D9EF;">TutorialUsers</span> <span style="color: #F92672;">where</span>
-<span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Control.Monad</span> (liftM, mzero)
+<span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Control.Monad</span> (mzero)
 <span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Data.Readable</span> (<span style="color: #66D9EF;">Readable</span>(fromText))
-<span style="color: #F92672;">import</span> <span style="color: #F92672;">qualified</span> <span style="color: #66D9EF;">Data.Text</span> <span style="color: #F92672;">as</span> <span style="color: #66D9EF;">T</span>
 <span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Data.Typeable</span>
 <span style="color: #F92672;">import</span> <span style="color: #F92672;">qualified</span> <span style="color: #66D9EF;">Data.Vector</span> <span style="color: #F92672;">as</span> <span style="color: #66D9EF;">V</span>
-<span style="color: #F92672;">import</span> <span style="color: #F92672;">qualified</span> <span style="color: #66D9EF;">Data.Vector.Generic</span> <span style="color: #F92672;">as</span> <span style="color: #66D9EF;">VG</span>
-<span style="color: #F92672;">import</span> <span style="color: #F92672;">qualified</span> <span style="color: #66D9EF;">Data.Vector.Generic.Mutable</span> <span style="color: #F92672;">as</span> <span style="color: #66D9EF;">VGM</span>
-<span style="color: #F92672;">import</span> <span style="color: #F92672;">qualified</span> <span style="color: #66D9EF;">Data.Vector.Unboxed</span> <span style="color: #F92672;">as</span> <span style="color: #66D9EF;">VU</span>
 <span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Frames.InCore</span> (<span style="color: #66D9EF;">VectorFor</span>)
 <span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Frames</span>
 
@@ -650,11 +656,9 @@ off, and the sky's the limit.
 <span style="color: #F92672;">type</span> <span style="color: #F92672;">instance</span> <span style="color: #66D9EF;">VectorFor</span> <span style="color: #66D9EF;">GenderT</span> <span style="color: #FD971F;">=</span> <span style="color: #66D9EF;">V.Vector</span>
 
 <span style="color: #F92672;">instance</span> <span style="color: #66D9EF;">Readable</span> <span style="color: #66D9EF;">GenderT</span> <span style="color: #F92672;">where</span>
-  fromText t
-      <span style="color: #FD971F;">|</span> t' <span style="color: #FD971F;">==</span> <span style="color: #E6DB74;">"m"</span> <span style="color: #FD971F;">=</span> return <span style="color: #66D9EF;">Male</span>
-      <span style="color: #FD971F;">|</span> t' <span style="color: #FD971F;">==</span> <span style="color: #E6DB74;">"f"</span> <span style="color: #FD971F;">=</span> return <span style="color: #66D9EF;">Female</span>
-      <span style="color: #FD971F;">|</span> otherwise <span style="color: #FD971F;">=</span> mzero
-    <span style="color: #F92672;">where</span> t' <span style="color: #FD971F;">=</span> <span style="color: #F8F8F2; background-color: #272822;">T.toCaseFold</span> t
+  fromText <span style="color: #E6DB74;">"M"</span> <span style="color: #FD971F;">=</span> return <span style="color: #66D9EF;">Male</span>
+  fromText <span style="color: #E6DB74;">"F"</span> <span style="color: #FD971F;">=</span> return <span style="color: #66D9EF;">Female</span>
+  fromText <span style="color: #F92672;">_</span> <span style="color: #FD971F;">=</span> mzero
 
 <span style="color: #F92672;">type</span> <span style="color: #66D9EF;">Columns'</span> <span style="color: #FD971F;">=</span> <span style="color: #66D9EF;">GenderT</span> '<span style="color: #66D9EF;">:</span> <span style="color: #66D9EF;">CommonColumns</span>
 </pre>
