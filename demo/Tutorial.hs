@@ -20,7 +20,6 @@
 import Control.Applicative
 import qualified Control.Foldl as L
 import qualified Data.Foldable as F
-import Data.Monoid
 import Lens.Family
 import Frames
 import Frames.CSV (tableTypesOpt, readTableOpt)
@@ -30,7 +29,7 @@ import qualified Pipes.Prelude as P
 -- A few other imports will be used for highly customized parsing [[Better Types][later]].
 
 import Data.Proxy
-import Frames.CSV (ColumnTypeable(..), tableTypesPrefixedOpt')
+import Frames.CSV (tableTypesPrefixedOpt')
 import TutorialUsers
 
 -- * Data Import
@@ -224,18 +223,27 @@ writers = P.filter ((== "writer") . view occupation)
 -- define our own universe of column types.
 
 -- -- #+BEGIN_SRC haskell
--- data GenderT = Male | Female deriving (Eq,Ord,Show)
+-- data GenderT = Male | Female deriving (Eq,Show,Typeable)
 
--- data UserCol = TInt | TGender | TText deriving (Eq,Show,Ord,Enum,Bounded)
+-- type instance VectorFor GenderT = V.Vector
+
+-- instance Readable GenderT where
+--   fromText "M" = return Male
+--   fromText "F" = return Female
+--   fromText _ = mzero
+
+-- type MyColumns = GenderT ': CommonColumns
 -- #+END_SRC
 
--- We will also need a few instances that you can find in an [[* User Types][appendix]].
+-- The full code for the custom type may be found in an [[* User Types][appendix]]. Note
+-- that it must be defined in a separate module to satisfy GHC's stage
+-- restrictions related to Template Haskell.
 
 -- We name this record type ~U2~, and give all the generated column types
 -- and lenses a prefix, "u2", so they don't conflict with the definitions
 -- we generated earlier.
 
-tableTypesPrefixedOpt' (Proxy::Proxy UserCol) 
+tableTypesPrefixedOpt' (Proxy :: Proxy (ColumnUniverse MyColumns))
                        ["user id", "age", "gender", "occupation", "zip code"]
                        "|" "U2" "u2" "data/ml-100k/u.user"
 
@@ -253,25 +261,25 @@ movieStream2 = readTableOpt u2Parser "data/ml-100k/u.user"
 --       "occupation" :-> Text, "zip code" :-> Text]
 -- #+END_EXAMPLE
 
--- Let's take the occupations of the first 10 female users:
+-- Let's take the occupations of the first 10 male users:
 
-femaleOccupations :: (U2gender ∈ rs, U2occupation ∈ rs, Monad m)
-                  => Pipe (Rec rs) Text m r
-femaleOccupations = P.filter ((== Female) . view u2gender)
-                    >-> P.map (view u2occupation)
+maleOccupations :: (U2gender ∈ rs, U2occupation ∈ rs, Monad m)
+                => Pipe (Rec rs) Text m r
+maleOccupations = P.filter ((== Male) . view u2gender)
+                  >-> P.map (view u2occupation)
 
 -- #+BEGIN_EXAMPLE
--- λ> runEffect $ movieStream2 >-> femaleOccupations >-> P.take 10 >-> P.print
--- "other"
--- "other"
--- "other"
--- "other"
+-- λ> runEffect $ movieStream2 >-> maleOccupations >-> P.take 10 >-> P.print
+-- "technician"
+-- "writer"
+-- "technician"
+-- "executive"
+-- "administrator"
+-- "administrator"
+-- "student"
+-- "lawyer"
 -- "educator"
--- "other"
--- "homemaker"
--- "artist"
--- "artist"
--- "librarian"
+-- "scientist"
 -- #+END_EXAMPLE
 
 -- So there we go! We've done both row and column subset queries with a
@@ -302,52 +310,36 @@ femaleOccupations = P.filter ((== Female) . view u2gender)
 -- buried, is not too rough: you prepend new, more refined, type
 -- compatibility checks to the end of the ~inferType~ definition.
 
--- This is clearly a bit of a mouthful, and probably not something you'd
--- want to do for every data set. However, the /ability/ to refine the
--- structure of parsed data is in keeping with the overall goal of
--- ~Frames~: it's easy to take off, and the sky's the limit.
+-- This may not be something you'd want to do for every data
+-- set. However, the /ability/ to refine the structure of parsed data
+-- is in keeping with the overall goal of ~Frames~: it's easy to take
+-- off, and the sky's the limit.
 
 -- -- #+begin_src haskell
--- {-# LANGUAGE OverloadedStrings, TemplateHaskell #-}
+-- {-# LANGUAGE DataKinds, DeriveDataTypeable, GeneralizedNewtypeDeriving,
+--              MultiParamTypeClasses, OverloadedStrings, TemplateHaskell,
+--              TypeFamilies, TypeOperators #-}
 -- module TutorialUsers where
--- import Control.Monad (liftM, mzero)
--- import Data.Bool (bool)
--- import Data.Maybe (fromMaybe)
--- import Data.Monoid
+-- import Control.Monad (mzero)
 -- import Data.Readable (Readable(fromText))
--- import qualified Data.Text as T
--- import Data.Traversable (sequenceA)
+-- import Data.Typeable
 -- import qualified Data.Vector as V
--- import Frames.CSV (ColumnTypeable(..))
 -- import Frames.InCore (VectorFor)
+-- import Frames
 
--- data GenderT = Male | Female deriving (Enum,Eq,Ord,Show)
-
--- instance Readable GenderT where
---   fromText t
---       | t' == "m" = return Male
---       | t' == "f" = return Female
---       | otherwise = mzero
---     where t' = T.toCaseFold t
-
--- data UserCol = TInt | TGender | TText deriving (Eq,Show,Ord,Enum,Bounded)
-
--- instance Monoid UserCol where
---   mempty = maxBound
---   mappend x y = if x == y then x else TText
-
--- instance ColumnTypeable UserCol where
---   colType TInt = [t|Int|]
---   colType TGender = [t|GenderT|]
---   colType TText = [t|T.Text|]
---   inferType = let isInt = fmap (const TInt :: Int -> UserCol) . fromText
---                   isGen = bool Nothing (Just TGender) . (`elem` ["M","F"])
---               in fromMaybe TText . mconcat . sequenceA [isGen, isInt]
+-- data GenderT = Male | Female deriving (Enum,Eq,Ord,Show,Typeable)
 
 -- -- See @demo/TutorialUsers.hs@ in the repository for an example of how
 -- -- to define a packed representation for a custom column type. It uses
 -- -- the usual "Data.Vector.Generic" machinery.
 -- type instance VectorFor GenderT = V.Vector
+
+-- instance Readable GenderT where
+--   fromText "M" = return Male
+--   fromText "F" = return Female
+--   fromText _ = mzero
+
+-- type Columns' = GenderT ': CommonColumns
 -- #+end_src
 
 -- ** Splice Dump
@@ -391,76 +383,81 @@ femaleOccupations = P.filter ((== Female) . view u2gender)
 --     type UserId = "user id" :-> Int
 
 --     userId ::
---       forall f_aciy rs_aciz. (Functor f_aciy,
---                               RElem UserId rs_aciz ) =>
---       (Int -> f_aciy Int) -> Rec rs_aciz -> f_aciy (Rec rs_aciz)
+--       forall f_acWF rs_acWG. (Functor f_acWF,
+--                               RElem UserId rs_acWG (Data.Vinyl.TypeLevel.RIndex UserId rs_acWG)) =>
+--       (Int -> f_acWF Int) -> Rec rs_acWG -> f_acWF (Rec rs_acWG)
 --     userId = rlens (Proxy :: Proxy UserId)
 
 --     userId' ::
---       forall g_aciA f_aciB rs_aciC. (Functor f_aciB,
---                                      RElem UserId rs_aciC ) =>
---       (g_aciA Int -> f_aciB (g_aciA Int))
---       -> RecF g_aciA rs_aciC -> f_aciB (RecF g_aciA rs_aciC)
+--       forall g_acWH f_acWI rs_acWJ. (Functor f_acWI,
+--                                      Functor g_acWH,
+--                                      RElem UserId rs_acWJ (Data.Vinyl.TypeLevel.RIndex UserId rs_acWJ)) =>
+--       (g_acWH Int -> f_acWI (g_acWH Int))
+--       -> RecF g_acWH rs_acWJ -> f_acWI (RecF g_acWH rs_acWJ)
 --     userId' = rlens' (Proxy :: Proxy UserId)
 
 --     type Age = "age" :-> Int
 
 --     age ::
---       forall f_aciD rs_aciE. (Functor f_aciD,
---                               RElem Age rs_aciE ) =>
---       (Int -> f_aciD Int) -> Rec rs_aciE -> f_aciD (Rec rs_aciE)
+--       forall f_acWK rs_acWL. (Functor f_acWK,
+--                               RElem Age rs_acWL (Data.Vinyl.TypeLevel.RIndex Age rs_acWL)) =>
+--       (Int -> f_acWK Int) -> Rec rs_acWL -> f_acWK (Rec rs_acWL)
 --     age = rlens (Proxy :: Proxy Age)
 
 --     age' ::
---       forall g_aciF f_aciG rs_aciH. (Functor f_aciG,
---                                      RElem Age rs_aciH ) =>
---       (g_aciF Int -> f_aciG (g_aciF Int))
---       -> RecF g_aciF rs_aciH -> f_aciG (RecF g_aciF rs_aciH)
+--       forall g_acWM f_acWN rs_acWO. (Functor f_acWN,
+--                                      Functor g_acWM,
+--                                      RElem Age rs_acWO (Data.Vinyl.TypeLevel.RIndex Age rs_acWO)) =>
+--       (g_acWM Int -> f_acWN (g_acWM Int))
+--       -> RecF g_acWM rs_acWO -> f_acWN (RecF g_acWM rs_acWO)
 --     age' = rlens' (Proxy :: Proxy Age)
 
 --     type Gender = "gender" :-> Text
 
 --     gender ::
---       forall f_aciI rs_aciJ. (Functor f_aciI,
---                               RElem Gender rs_aciJ ) =>
---       (Text -> f_aciI Text) -> Rec rs_aciJ -> f_aciI (Rec rs_aciJ)
+--       forall f_acWP rs_acWQ. (Functor f_acWP,
+--                               RElem Gender rs_acWQ (Data.Vinyl.TypeLevel.RIndex Gender rs_acWQ)) =>
+--       (Text -> f_acWP Text) -> Rec rs_acWQ -> f_acWP (Rec rs_acWQ)
 --     gender = rlens (Proxy :: Proxy Gender)
 
 --     gender' ::
---       forall g_aciK f_aciL rs_aciM. (Functor f_aciL,
---                                      RElem Gender rs_aciM ) =>
---       (g_aciK Text -> f_aciL (g_aciK Text))
---       -> RecF g_aciK rs_aciM -> f_aciL (RecF g_aciK rs_aciM)
+--       forall g_acWR f_acWS rs_acWT. (Functor f_acWS,
+--                                      Functor g_acWR,
+--                                      RElem Gender rs_acWT (Data.Vinyl.TypeLevel.RIndex Gender rs_acWT)) =>
+--       (g_acWR Text -> f_acWS (g_acWR Text))
+--       -> RecF g_acWR rs_acWT -> f_acWS (RecF g_acWR rs_acWT)
 --     gender' = rlens' (Proxy :: Proxy Gender)
 
 --     type Occupation = "occupation" :-> Text
 
 --     occupation ::
---       forall f_aciN rs_aciO. (Functor f_aciN,
---                               RElem Occupation rs_aciO ) =>
---       (Text -> f_aciN Text) -> Rec rs_aciO -> f_aciN (Rec rs_aciO)
+--       forall f_acWU rs_acWV. (Functor f_acWU,
+--                               RElem Occupation rs_acWV (Data.Vinyl.TypeLevel.RIndex Occupation rs_acWV)) =>
+--       (Text -> f_acWU Text) -> Rec rs_acWV -> f_acWU (Rec rs_acWV)
 --     occupation = rlens (Proxy :: Proxy Occupation)
 
 --     occupation' ::
---       forall g_aciP f_aciQ rs_aciR. (Functor f_aciQ,
---                                      RElem Occupation rs_aciR ) =>
---       (g_aciP Text -> f_aciQ (g_aciP Text))
---       -> RecF g_aciP rs_aciR -> f_aciQ (RecF g_aciP rs_aciR)
+--       forall g_acWW f_acWX rs_acWY. (Functor f_acWX,
+--                                      Functor g_acWW,
+--                                      RElem Occupation rs_acWY (Data.Vinyl.TypeLevel.RIndex Occupation rs_acWY)) =>
+--       (g_acWW Text -> f_acWX (g_acWW Text))
+--       -> RecF g_acWW rs_acWY -> f_acWX (RecF g_acWW rs_acWY)
 --     occupation' = rlens' (Proxy :: Proxy Occupation)
 
 --     type ZipCode = "zip code" :-> Text
 
 --     zipCode ::
---       forall f_aciS rs_aciT. (Functor f_aciS,
---                               RElem ZipCode rs_aciT ) =>
---       (Text -> f_aciS Text) -> Rec rs_aciT -> f_aciS (Rec rs_aciT)
+--       forall f_acWZ rs_acX0. (Functor f_acWZ,
+--                               RElem ZipCode rs_acX0 (Data.Vinyl.TypeLevel.RIndex ZipCode rs_acX0)) =>
+--       (Text -> f_acWZ Text) -> Rec rs_acX0 -> f_acWZ (Rec rs_acX0)
 --     zipCode = rlens (Proxy :: Proxy ZipCode)
 
 --     zipCode' ::
---       forall g_aciU f_aciV rs_aciW. (Functor f_aciV,
---                                      RElem ZipCode rs_aciW ) =>
---       (g_aciU Text -> f_aciV (g_aciU Text))
---       -> RecF g_aciU rs_aciW -> f_aciV (RecF g_aciU rs_aciW)
+--       forall g_acX1 f_acX2 rs_acX3. (Functor f_acX2,
+--                                      Functor g_acX1,
+--                                      RElem ZipCode rs_acX3 (Data.Vinyl.TypeLevel.RIndex ZipCode rs_acX3)) =>
+--       (g_acX1 Text -> f_acX2 (g_acX1 Text))
+--       -> RecF g_acX1 rs_acX3 -> f_acX2 (RecF g_acX1 rs_acX3)
 --     zipCode' = rlens' (Proxy :: Proxy ZipCode)
 -- #+END_EXAMPLE
 

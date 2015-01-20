@@ -18,11 +18,10 @@ import Control.Applicative ((<$>), pure, (<*>))
 import Control.Arrow (first)
 import Control.Monad (MonadPlus(..))
 import Control.Monad.IO.Class
-import Data.Bool (bool)
 import Data.Char (isAlpha, isAlphaNum, toLower, toUpper)
 import Data.Foldable (foldMap)
 import Data.Maybe (fromMaybe)
-import Data.Monoid ((<>), Monoid(..), First(..))
+import Data.Monoid ((<>), Monoid(..))
 import Data.Proxy
 import Data.Readable (Readable(fromText))
 import qualified Data.Text as T
@@ -31,6 +30,8 @@ import Data.Traversable (sequenceA)
 import Data.Vinyl (RElem)
 import Data.Vinyl.TypeLevel (RIndex)
 import Frames.Col
+import Frames.ColumnTypeable
+import Frames.ColumnUniverse
 import Frames.Rec
 import Frames.RecF
 import Frames.RecLens
@@ -64,76 +65,12 @@ defaultParser = ParserOptions Nothing (T.pack defaultSep)
 defaultSep :: String
 defaultSep = ","
 
+-- * Parsing
+
 -- | Helper to split a 'T.Text' on commas and strip leading and
 -- trailing whitespace from each resulting chunk.
 tokenizeRow :: Separator -> T.Text -> [T.Text]
 tokenizeRow sep = map T.strip . T.splitOn sep
-
--- * Column Types
-
--- | This class relates a universe of possible column types to Haskell
--- types, and provides a mechanism to infer which type best represents
--- some textual data.
-class ColumnTypeable a where
-  colType :: a -> Q Type
-  inferType :: T.Text -> a
-
--- | The set of supported column data types.
-data ColType = TBool | TInt | TDouble | TText
-  deriving (Bounded,Enum,Eq,Ord,Show)
-
-instance Monoid ColType where
-  mempty = maxBound
-  mappend TInt TDouble = TDouble
-  mappend TDouble TInt = TDouble
-  mappend x y
-      | x == y = x
-      | otherwise = TText
-
--- | Syntax for the Haskell type corresponding to a given 'ColType'.
-instance ColumnTypeable ColType where
-  colType TBool = [t|Bool|]
-  colType TInt = [t|Int|]
-  colType TDouble = [t|Double|]
-  colType TText = [t|T.Text|]
-  inferType = inferColType
-
--- | Mapping from Haskell types to 'ColType's.
-class HaskToColType a b where
-  haskToColType :: proxy a -> b
-instance HaskToColType Bool ColType where haskToColType _ = TBool
-instance HaskToColType Int ColType where haskToColType _ = TInt
-instance HaskToColType Double ColType where haskToColType _ = TDouble
-instance HaskToColType T.Text ColType where haskToColType _ = TText
-
--- | See if some text can be parsed as a 'Bool'.
-inferBool :: T.Text -> Maybe ColType
-inferBool = bool Nothing (Just TBool) . (`elem` ["false", "true"]) . T.toLower
-
--- | See if some text can be parsed as a 'Int'.
-inferInt :: T.Text -> Maybe ColType
-inferInt = fmap aux . fromText
-  where aux :: Int -> ColType
-        aux _ = TInt
-
--- | See if some text can be parsed as a 'Double'.
-inferDouble :: T.Text -> Maybe ColType
-inferDouble = fmap aux . fromText
-  where aux :: Double -> ColType
-        aux _ = TDouble
-
--- | Determine the smallest type to represent some parsed text.
-inferColType :: T.Text -> ColType
-inferColType t = fromMaybe TText . getFirst $
-                 foldMap (First . ($ t)) [inferBool, inferInt, inferDouble]
-
--- | Determine the smallest type to represent each column. NOTE: If
--- different rows are of different lengths, things will go wrong.
-mergeTypes :: [[ColType]] -> [ColType]
-mergeTypes [] = []
-mergeTypes (x:xs) = go x xs
-  where go acc [] = acc
-        go acc (y:ys) = go (zipWith (<>) acc y) ys
 
 -- | Infer column types from a prefix (up to 1000 lines) of a CSV
 -- file.
@@ -376,7 +313,7 @@ tableTypeOpt' _ colNames sep n csvFile =
 -- | Generate a type for each row of a table. This will be something
 -- like @Rec ["x" :-> a, "y" :-> b, "z" :-> c]@.
 tableTypeOpt :: [String] -> String -> String -> FilePath -> DecsQ
-tableTypeOpt = tableTypeOpt' (Proxy::Proxy ColType)
+tableTypeOpt = tableTypeOpt' (Proxy::Proxy Columns)
 
 -- | Like 'tableType', but additionally generates a type synonym for
 -- each column, and a proxy value of that type. If the CSV file has
@@ -394,7 +331,7 @@ tableTypesOpt' p colNames sep = flip (tableTypesPrefixedOpt' p colNames sep) ""
 -- @type Foo = "foo" :-> Int@, for example, @foo = rlens (Proxy :: Proxy
 -- Foo)@, and @foo' = rlens' (Proxy :: Proxy Foo)@.
 tableTypesOpt :: [String] -> String -> String -> FilePath -> DecsQ
-tableTypesOpt = tableTypesOpt' (Proxy::Proxy ColType)
+tableTypesOpt = tableTypesOpt' (Proxy::Proxy Columns)
 
 -- | Like 'tableTypes', but prefixes each column type and proxy value
 -- name with the second argument. This is useful if you have very
@@ -437,4 +374,4 @@ tableTypesPrefixedOpt' _ colNames sep n prefix csvFile =
 tableTypesPrefixedOpt :: [String] -> String
                       -> String -> String
                       -> FilePath -> DecsQ
-tableTypesPrefixedOpt = tableTypesPrefixedOpt' (Proxy::Proxy ColType)
+tableTypesPrefixedOpt = tableTypesPrefixedOpt' (Proxy::Proxy Columns)

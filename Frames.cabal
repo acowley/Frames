@@ -27,6 +27,9 @@ flag demos
 library
   exposed-modules:     Frames
                        Frames.Col
+                       Frames.ColumnTypeable
+                       Frames.ColumnUniverse
+                       Frames.CoRec
                        Frames.CSV
                        Frames.Frame
                        Frames.InCore

@@ -1,48 +1,32 @@
-{-# LANGUAGE GeneralizedNewtypeDeriving, MultiParamTypeClasses,
-             OverloadedStrings, TemplateHaskell, TypeFamilies #-}
+{-# LANGUAGE DataKinds, DeriveDataTypeable, GeneralizedNewtypeDeriving,
+             MultiParamTypeClasses, OverloadedStrings, TemplateHaskell,
+             TypeFamilies, TypeOperators #-}
 module TutorialUsers where
 import Control.Monad (liftM, mzero)
-import Data.Bool (bool)
-import Data.Maybe (fromMaybe)
-import Data.Monoid
 import Data.Readable (Readable(fromText))
-import qualified Data.Text as T
-import Data.Traversable (sequenceA)
+import Data.Typeable
 import qualified Data.Vector as V
 import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
 import qualified Data.Vector.Unboxed as VU
-import Frames.CSV (ColumnTypeable(..))
 import Frames.InCore (VectorFor)
+import Frames
 
-data GenderT = Male | Female deriving (Enum,Eq,Ord,Show)
-
-instance Readable GenderT where
-  fromText t
-      | t' == "m" = return Male
-      | t' == "f" = return Female
-      | otherwise = mzero
-    where t' = T.toCaseFold t
-
-data UserCol = TInt | TGender | TText deriving (Eq,Show,Ord,Enum,Bounded)
-
-instance Monoid UserCol where
-  mempty = maxBound
-  mappend x y = if x == y then x else TText
-
-instance ColumnTypeable UserCol where
-  colType TInt = [t|Int|]
-  colType TGender = [t|GenderT|]
-  colType TText = [t|T.Text|]
-  inferType = let isInt = fmap (const TInt :: Int -> UserCol) . fromText
-                  isGen = bool Nothing (Just TGender) . (`elem` ["M","F"])
-              in fromMaybe TText . mconcat . sequenceA [isGen, isInt]
+data GenderT = Male | Female deriving (Enum,Eq,Ord,Show,Typeable)
 
 type instance VectorFor GenderT = V.Vector
 
+instance Readable GenderT where
+  fromText "M" = return Male
+  fromText "F" = return Female
+  fromText _ = mzero
+
+type MyColumns = GenderT ': CommonColumns
+
 -- * Packed Representation
 
-newtype GenderU = GenderU { getGenderU :: GenderT } deriving (Eq,Ord,Show,Enum)
+newtype GenderU = GenderU { getGenderU :: GenderT }
+    deriving (Eq,Ord,Show,Enum,Typeable)
 
 -- Let's go all the way and support an efficient packed representation
 -- for our type. If you don't want to, or can't, provide an 'VU.Unbox'

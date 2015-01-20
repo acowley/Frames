@@ -5,6 +5,7 @@
 module Frames
   ( module Data.Vinyl.Lens
   , module Frames.Col
+  , module Frames.ColumnUniverse
   , module Frames.CSV
   , module Frames.Frame
   , module Frames.InCore
@@ -17,6 +18,7 @@ module Frames
 import Data.Text (Text)
 import Data.Vinyl.Lens hiding (rlens, rget, rput)
 import Frames.Col ((:->)(..))
+import Frames.ColumnUniverse
 import Frames.CSV (readTable, readTableMaybe, readTable', 
                    tableType, tableTypes, tableTypesPrefixed)
 import Frames.Frame
