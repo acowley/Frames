@@ -101,7 +101,7 @@ executable demo
 executable tutorial
   if !flag(demos)
     buildable: False
-  main-is: Tutorial.hs
+  main-is: TutorialMain.hs
   if flag(demos)
     build-depends: base, Frames, lens-family-core, vector, text, template-haskell,
                    foldl, pipes, readable
