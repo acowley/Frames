@@ -231,7 +231,7 @@ writers = P.filter ((== "writer") . view occupation)
 -- data UserCol = TInt | TGender | TText deriving (Eq,Show,Ord,Enum,Bounded)
 -- #+END_SRC
 
--- We will also need a few instance that you can find in an [[* User Types][appendix]].
+-- We will also need a few instances that you can find in an [[* User Types][appendix]].
 
 -- We name this record type ~U2~, and give all the generated column types
 -- and lenses a prefix, "u2", so they don't conflict with the definitions
