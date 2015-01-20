@@ -301,14 +301,14 @@ maleOccupations = P.filter ((== Male) . view u2gender)
 -- * Appendix
 -- ** User Types
 
--- Here are the definitions needed to define the ~UserCol~ type with its
+-- Here are the definitions needed to define the ~MyColumns~ type with its
 -- more descriptive ~GenderT~ type. We have to define these things in a
 -- separate module from our main work due to GHC's stage restrictions
--- regarding Template Haskell. Specifically, ~UserCol~ and its instances
+-- regarding Template Haskell. Specifically, ~GenderT~ and its instances
 -- are used at compile time to infer the record type needed to represent
--- the data file. Notice the extension point here, though somewhat
--- buried, is not too rough: you prepend new, more refined, type
--- compatibility checks to the end of the ~inferType~ definition.
+-- the data file. Notice the extension point here is not too rough: you
+-- prepend new, more refined, type compatibility checks to the head of
+-- ~CommonColumns~, or you can build up your own list of expected types.
 
 -- This may not be something you'd want to do for every data
 -- set. However, the /ability/ to refine the structure of parsed data
