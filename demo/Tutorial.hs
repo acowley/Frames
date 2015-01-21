@@ -4,14 +4,25 @@
 -- This is a loose port of a
 -- [[http://ajkl.github.io/Dataframes/][dataframe tutorial]] Rosetta
 -- Stone to compare traditional dataframe tools built in R, Julia,
--- Python, etc. with ~Frames~.
+-- Python, etc. with
+-- ~[[https://github.com/acowley/Frames][Frames]]~. Performing data
+-- analysis in Haskell brings with it a few advantages:
 
--- The example data file used does not include column headers, nor
--- does it use commas to separate values, so it does not fall into the
--- sweet spot of CSV parsing that ~Frames~ is aimed at. That said,
--- this mismatch of test data and library support is a great
--- opportunity to verify that ~Frames~ are flexible enough to meet a
--- variety of needs.
+-- - Interactive exploration is supported in GHCi
+-- - GHC produces fast, memory-efficient code when you're ready to run a
+--   program that might take a bit of time
+-- - You get to use Haskell to write your own functions when what you
+--   want isn't already defined in the library
+-- - The code you write is /statically typed/ so that mismatches between
+--   your code and your data data are found by the type checker
+
+-- The example [[http://grouplens.org/datasets/movielens/][data]] file
+-- used (specifically, the =u.user= file from the /MovieLens 100k/
+-- data set) does not include column headers, nor does it use commas
+-- to separate values, so it does not fall into the sweet spot of CSV
+-- parsing that ~Frames~ is aimed at. That said, this mismatch of test
+-- data and library support is a great opportunity to verify that
+-- ~Frames~ are flexible enough to meet a variety of needs.
 
 -- We begin with rather a lot of imports to support a variety of test
 -- operations and parser customization. I encourage you to start with a
@@ -22,13 +33,13 @@ import qualified Control.Foldl as L
 import qualified Data.Foldable as F
 import Lens.Family
 import Frames
-import Frames.CSV (readTableOpt)
+import Frames.CSV (readTableOpt, rowGen, RowGen(..))
 import Pipes hiding (Proxy)
 import qualified Pipes.Prelude as P
 
 -- A few other imports will be used for highly customized parsing [[Better Types][later]].
 
-import Frames.CSV (rowGen, RowGen(..), colQ)
+import Frames.CSV (colQ)
 import TutorialUsers
 
 -- * Data Import
@@ -40,7 +51,7 @@ import TutorialUsers
 -- as,
 
 -- -- #+BEGIN_SRC haskell
--- tableTypes "Users" "data/ml-100k/u.user"
+-- tableTypes "User" "data/ml-100k/u.user"
 -- #+END_SRC
 
 -- The data set /this/ example considers is rather far from the sweet
@@ -49,7 +60,7 @@ import TutorialUsers
 -- these mismatches do provide an opportunity to see that the ~Frames~
 -- library is flexible enough to meet a variety of needs.
 
-tableTypes'  rowGen { rowTypeName = "Users"
+tableTypes'  rowGen { rowTypeName = "User"
                     , columnNames = [ "user id", "age", "gender"
                                     , "occupation", "zip code" ]
                     , separator = "|" }
@@ -62,11 +73,18 @@ tableTypes'  rowGen { rowTypeName = "Users"
 -- is included in an [[* Splice Dump][appendix]] below so you can flip
 -- between the generated code and how it is used.
 
+-- Since this data is far from the ideal CSV file, we have to tell
+-- ~Frames~ how to interpret the data so that it can decide what data
+-- type to use for each column. Having the types depend upon the data in
+-- the given file is a useful exercise in this domain as the actual shape
+-- of the data is of paramount importance during the early import and
+-- exploration phases of data analysis.
+
 -- We can load the module into =cabal repl= to see what we have so far.
 
 -- #+BEGIN_EXAMPLE
--- λ> :i Users
--- type Users =
+-- λ> :i User
+-- type User =
 --   Rec
 --     '["user id" :-> Int, "age" :-> Int, "gender" :-> Text,
 --       "occupation" :-> Text, "zip code" :-> Text]
@@ -79,27 +97,27 @@ tableTypes'  rowGen { rowTypeName = "Users"
 -- data set is too large to keep in memory, we can process it as it
 -- streams through RAM.
 
-movieStream :: Producer Users IO ()
-movieStream = readTableOpt usersParser "data/ml-100k/u.user"
+movieStream :: Producer User IO ()
+movieStream = readTableOpt userParser "data/ml-100k/u.user"
 
 -- Alternately, if we want to run multiple operations against a data set
 -- that /can/ fit in RAM, we can do that. Here we define an in-core (in
 -- memory) array of structures (AoS) representation.
 
-loadMovies :: IO (Frame Users)
+loadMovies :: IO (Frame User)
 loadMovies = inCoreAoS movieStream
 
 -- ** Streaming Cores?
 
 -- A ~Frame~ is an in-memory representation of your data. The ~Frames~
--- library stores each column as compactly as it knows how, and lets you
--- index your data as a structure of arrays (where each field of the
--- structure is an array corresponding to a column of your data), or as
--- an array of structures, also known as a ~Frame~. These latter
--- structures correspond to rows of your data, and rows of data may be
--- handled in a streaming fashion so that you are not limited to
--- available RAM. In the streaming paradigm, you process each row
--- individually as a single record.
+-- library stores each column as compactly as it knows how, and lets
+-- you index your data as a structure of arrays (where each field of
+-- the structure is an array corresponding to a column of your data),
+-- or as an array of structures, also known as a ~Frame~. These latter
+-- structures correspond to rows of your data. Alternatively, rows of
+-- data may be handled in a streaming fashion so that you are not
+-- limited to available RAM. In the streaming paradigm, you process
+-- each row individually as a single record.
 
 -- A ~Frame~ provides ~O(1)~ indexing, as well as any other operations
 -- you are familiar with based on the ~Foldable~ class. If a data set is
@@ -109,6 +127,16 @@ loadMovies = inCoreAoS movieStream
 
 -- Alternatively, a ~Producer~ of rows is a great way to whittle down a
 -- large data set before moving on to whatever you want to do next.
+
+-- The upshot is that you can work with your data as a collection of
+-- rows with either a densely packed in-memory reporesentation -- a
+-- ~Frame~ -- or a stream of rows provided by a ~Producer~. The choice
+-- depends on if you want to perform multiple queries against your
+-- data, and, if so, whether you have enough RAM to hold the data. If
+-- the answer to both of those questions is /"Yes!"/, consider using a
+-- ~Frame~ as in the ~loadMovies~ example. If the answer to either
+-- question is /"Nope!"/, you will be better off with a ~Producer~, as
+-- in the ~movieStream~ example.
 
 -- ** Sanity Check
 
@@ -122,15 +150,18 @@ loadMovies = inCoreAoS movieStream
 
 -- When there are multiple properties we would like to compute, we can
 -- fuse multiple traversals into one pass using something like the [[http://hackage.haskell.org/package/foldl][foldl]]
--- package
+-- package,
+
+minMax :: Ord a => L.Fold a (Maybe a, Maybe a)
+minMax = (,) <$> L.minimum <*> L.maximum
 
 -- #+BEGIN_EXAMPLE
--- λ> L.fold (L.pretraverse age ((,) <$> L.minimum <*> L.maximum)) ms
+-- λ> L.fold (L.pretraverse age minMax) ms
 -- (Just 7,Just 73)
 -- #+END_EXAMPLE
 
 -- Here we are projecting the =age= column out of each record, and
--- computing the minimum and maximum =age= for all rows.
+-- computing the minimum and maximum =age= across all rows.
 
 -- * Subsetting
 
@@ -178,7 +209,7 @@ loadMovies = inCoreAoS movieStream
 
 -- Or multiple columns,
 
-miniUser :: Users -> Rec [Occupation, Gender, Age]
+miniUser :: User -> Rec [Occupation, Gender, Age]
 miniUser = rcast
 
 -- #+BEGIN_EXAMPLE
@@ -216,7 +247,7 @@ writers = P.filter ((== "writer") . view occupation)
 -- reliance on text for data representation even /after/ parsing. If
 -- you find that the default ~Columns~ spectrum of potential column
 -- types that =Frames= uses doesn't capture desired structure, you can
--- go ahead and define your own universe of column types! The =Users=
+-- go ahead and define your own universe of column types! The =User=
 -- row types we've been playing with here is rather boring: it only
 -- uses =Int= and =Text= column types. But =Text= is far too vague a
 -- type for a column like =gender=.
@@ -242,9 +273,10 @@ writers = P.filter ((== "writer") . view occupation)
 -- type MyColumns = GenderT ': CommonColumns
 -- #+END_SRC
 
--- The full code for the custom type may be found in an [[* User Types][appendix]]. Note
--- that it must be defined in a separate module to satisfy GHC's stage
--- restrictions related to Template Haskell.
+-- Note that these definitions must be imported from a separate module
+-- to satisfy GHC's stage restrictions related to Template
+-- Haskell. The full code for the custom type may be found in an [[*
+-- User Types][appendix]].
 
 -- We name this record type ~U2~, and give all the generated column types
 -- and lenses a prefix, "u2", so they don't conflict with the definitions
@@ -362,8 +394,8 @@ maleOccupations = P.filter ((== Male) . view u2gender)
 
 -- The overall structure is this:
 
--- - A ~Rec~ type called ~Users~ with all necessary columns
--- - A ~usersParser~ value that overrides parsing defaults
+-- - A ~Rec~ type called ~User~ with all necessary columns
+-- - A ~userParser~ value that overrides parsing defaults
 -- - A type synonym for each column that pairs the column name with its
 --   type
 -- - A lens to work with each column on any given row
@@ -375,18 +407,18 @@ maleOccupations = P.filter ((== Male) . view u2gender)
 -- #+BEGIN_EXAMPLE
 --     tableTypes'
 --       (rowGen
---          {rowTypeName = "Users",
+--          {rowTypeName = "User",
 --           columnNames = ["user id", "age", "gender", "occupation",
 --                          "zip code"],
 --           separator = "|"})
 --       "data/ml-100k/u.user"
 --   ======>
 --     /Users/acowley/Documents/Projects/Frames/demo/Tutorial.hs:(52,1)-(56,34)
---     type Users =
+--     type User =
 --         Rec ["user id" :-> Int, "age" :-> Int, "gender" :-> Text, "occupation" :-> Text, "zip code" :-> Text]
 
---     usersParser :: ParserOptions
---     usersParser
+--     userParser :: ParserOptions
+--     userParser
 --       = ParserOptions
 --           (Just
 --              (map
@@ -478,7 +510,7 @@ maleOccupations = P.filter ((== Male) . view u2gender)
 -- #+END_EXAMPLE
 
 -- ** Thanks
--- Thanks to Greg Hale for reviewing an early draft of this document.
+-- Thanks to Greg Hale and Ben Gamari for reviewing early drafts of this document.
 
 -- #+DATE:
 -- #+TITLE: Frames Tutorial
