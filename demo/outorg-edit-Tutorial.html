@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Frames Tutorial</title>
-<!-- 2015-01-20 Tue 00:20 -->
+<!-- 2015-01-20 Tue 19:27 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="generator" content="Org-mode" />
 <meta  name="author" content="Anthony Cowley" />
@@ -88,6 +88,34 @@
     { background-color: #ffff00; color: #000000; font-weight: bold; }
   /*]]>*/-->
 </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
 <style type="text/css">
  pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
 <style type="text/css">
@@ -220,7 +248,7 @@ smaller test program than this!
 <span style="color: #F92672;">import</span> <span style="color: #F92672;">qualified</span> <span style="color: #66D9EF;">Data.Foldable</span> <span style="color: #F92672;">as</span> <span style="color: #66D9EF;">F</span>
 <span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Lens.Family</span>
 <span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Frames</span>
-<span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Frames.CSV</span> (tableTypesOpt, readTableOpt)
+<span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Frames.CSV</span> (readTableOpt)
 <span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Pipes</span> <span style="color: #F92672;">hiding</span> (<span style="color: #66D9EF;">Proxy</span>)
 <span style="color: #F92672;">import</span> <span style="color: #F92672;">qualified</span> <span style="color: #66D9EF;">Pipes.Prelude</span> <span style="color: #F92672;">as</span> <span style="color: #66D9EF;">P</span>
 </pre>
@@ -232,8 +260,7 @@ A few other imports will be used for highly customized parsing <a href="#sec-3">
 
 <div class="org-src-container">
 
-<pre class="src src-haskell"><span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Data.Proxy</span>
-<span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Frames.CSV</span> (tableTypesPrefixedOpt')
+<pre class="src src-haskell"><span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Frames.CSV</span> (rowGen, <span style="color: #66D9EF;">RowGen</span>(<span style="color: #FD971F;">..</span>), colQ)
 <span style="color: #F92672;">import</span> <span style="color: #66D9EF;">TutorialUsers</span>
 </pre>
 </div>
@@ -243,33 +270,43 @@ A few other imports will be used for highly customized parsing <a href="#sec-3">
 <div class="outline-text-2" id="text-1">
 <p>
 We usually package column names with the data to keep things a bit
-more self-documenting. This might mean adding a row to the data
-file with the column names, but, if we must use a particular data
-file whose column names are provided in a separate specification,
-we can override the default parsing options.
-</p>
-
-<p>
-The data set this example considers is rather far from the sweet spot
-of CSV processing that <code>Frames</code> is aimed it: it does not include
-column headers, nor does it use commas to separate values! However,
-these mismatches do provide an opportunity to see that <code>Frames</code> are
-flexible enough to meet a variety of needs.
+more self-documenting. In the common case where a data file has a
+header row providing column names, and columns are separated by
+commas, generating the types needed to import a data set is as simple
+as,
 </p>
 
 <div class="org-src-container">
 
-<pre class="src src-haskell"><span style="color: #A6E22E;">tableTypesOpt</span>  [<span style="color: #E6DB74;">"user id"</span>, <span style="color: #E6DB74;">"age"</span>, <span style="color: #E6DB74;">"gender"</span>, <span style="color: #E6DB74;">"occupation"</span>, <span style="color: #E6DB74;">"zip code"</span>]
-               <span style="color: #E6DB74;">"|"</span> <span style="color: #E6DB74;">"Users"</span> <span style="color: #E6DB74;">"data/ml-100k/u.user"</span>
+<pre class="src src-haskell"><span style="color: #A6E22E;">tableTypes</span> <span style="color: #E6DB74;">"Users"</span> <span style="color: #E6DB74;">"data/ml-100k/u.user"</span>
 </pre>
 </div>
 
 <p>
-This template haskell splice explicitly specifies column names, a
-separator string, the name for the inferred record type, and the
-data file from which to infer the record type. The result of this
-splice is included in an <a href="#sec-4-2">appendix</a> below so you
-can flip between the generated code and how it is used.
+The data set <i>this</i> example considers is rather far from the sweet
+spot of CSV processing that <code>Frames</code> is aimed it: it does not include
+column headers, nor does it use commas to separate values!  However,
+these mismatches do provide an opportunity to see that the <code>Frames</code>
+library is flexible enough to meet a variety of needs.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-haskell"><span style="color: #A6E22E;">tableTypes'</span>  rowGen { rowTypeName <span style="color: #FD971F;">=</span> <span style="color: #E6DB74;">"Users"</span>
+                    , columnNames <span style="color: #FD971F;">=</span> [ <span style="color: #E6DB74;">"user id"</span>, <span style="color: #E6DB74;">"age"</span>, <span style="color: #E6DB74;">"gender"</span>
+                                    , <span style="color: #E6DB74;">"occupation"</span>, <span style="color: #E6DB74;">"zip code"</span> ]
+                    , separator <span style="color: #FD971F;">=</span> <span style="color: #E6DB74;">"|"</span> }
+             <span style="color: #E6DB74;">"data/ml-100k/u.user"</span>
+</pre>
+</div>
+
+<p>
+This template haskell splice explicitly specifies the name for the
+inferred record type, column names, a separator string, and the
+data file from which to infer the record type (i.e. what type
+should be used to represent each column). The result of this splice
+is included in an <a href="#sec-4-2">appendix</a> below so you can flip
+between the generated code and how it is used.
 </p>
 
 <p>
@@ -493,7 +530,7 @@ we pick out the users whose occupation is "writer".
 <p>
 A common disappointment of parsing general data sets is the
 reliance on text for data representation even <i>after</i> parsing. If
-you find that the default <code>ColType</code> spectrum of potential column
+you find that the default <code>Columns</code> spectrum of potential column
 types that <code>Frames</code> uses doesn't capture desired structure, you can
 go ahead and define your own universe of column types! The <code>Users</code>
 row types we've been playing with here is rather boring: it only
@@ -540,9 +577,13 @@ we generated earlier.
 
 <div class="org-src-container">
 
-<pre class="src src-haskell"><span style="color: #A6E22E;">tableTypesPrefixedOpt'</span> (<span style="color: #66D9EF;">Proxy</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">Proxy</span> (<span style="color: #66D9EF;">ColumnUniverse</span> <span style="color: #66D9EF;">MyColumns</span>))
-                       [<span style="color: #E6DB74;">"user id"</span>, <span style="color: #E6DB74;">"age"</span>, <span style="color: #E6DB74;">"gender"</span>, <span style="color: #E6DB74;">"occupation"</span>, <span style="color: #E6DB74;">"zip code"</span>]
-                       <span style="color: #E6DB74;">"|"</span> <span style="color: #E6DB74;">"U2"</span> <span style="color: #E6DB74;">"u2"</span> <span style="color: #E6DB74;">"data/ml-100k/u.user"</span>
+<pre class="src src-haskell"><span style="color: #A6E22E;">tableTypes'</span> rowGen { rowTypeName <span style="color: #FD971F;">=</span> <span style="color: #E6DB74;">"U2"</span>
+                   , columnNames <span style="color: #FD971F;">=</span> [ <span style="color: #E6DB74;">"user id"</span>, <span style="color: #E6DB74;">"age"</span>, <span style="color: #E6DB74;">"gender"</span>
+                                   , <span style="color: #E6DB74;">"occupation"</span>, <span style="color: #E6DB74;">"zip code"</span> ]
+                   , separator <span style="color: #FD971F;">=</span> <span style="color: #E6DB74;">"|"</span>
+                   , tablePrefix <span style="color: #FD971F;">=</span> <span style="color: #E6DB74;">"u2"</span>
+                   , columnUniverse <span style="color: #FD971F;">=</span> <span style="color: #FD971F;">$</span>(colQ ''MyColumns) }
+            <span style="color: #E6DB74;">"data/ml-100k/u.user"</span>
 
 <span style="color: #A6E22E;">movieStream2</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">Producer</span> <span style="color: #66D9EF;">U2</span> <span style="color: #66D9EF;">IO</span> <span style="color: #66D9EF;">()</span>
 <span style="color: #A6E22E;">movieStream2</span> <span style="color: #FD971F;">=</span> readTableOpt u2Parser <span style="color: #E6DB74;">"data/ml-100k/u.user"</span>
@@ -591,7 +632,7 @@ Let's take the occupations of the first 10 male users:
 
 <p>
 So there we go! We've done both row and column subset queries with a
-strongly typed query (namely, <code>(== Female)</code>). Another situation in
+strongly typed query (namely, <code>(== Male)</code>). Another situation in
 which one might want to define a custom universe of column types is
 when dealing with dates. This would let you both reject rows with
 badly formatted dates, for example, and efficiently query the data set
@@ -600,7 +641,7 @@ with richly-typed queries.
 
 <p>
 Even better, did you notice the types of <code>writers</code> and
-<code>femaleOccupations</code>? They are polymorphic over the full row type!
+<code>maleOccupations</code>? They are polymorphic over the full row type!
 That's what the <code>(Occupation ∈ rs)</code> constraint signifies: such a
 function will work for record types with any set of fields, <code>rs</code>, so
 long as <code>Occupation</code> is an element of that set. This means that if
@@ -660,7 +701,7 @@ off, and the sky's the limit.
   fromText <span style="color: #E6DB74;">"F"</span> <span style="color: #FD971F;">=</span> return <span style="color: #66D9EF;">Female</span>
   fromText <span style="color: #F92672;">_</span> <span style="color: #FD971F;">=</span> mzero
 
-<span style="color: #F92672;">type</span> <span style="color: #66D9EF;">Columns'</span> <span style="color: #FD971F;">=</span> <span style="color: #66D9EF;">GenderT</span> '<span style="color: #66D9EF;">:</span> <span style="color: #66D9EF;">CommonColumns</span>
+<span style="color: #F92672;">type</span> <span style="color: #66D9EF;">MyColumns</span> <span style="color: #FD971F;">=</span> <span style="color: #66D9EF;">GenderT</span> '<span style="color: #66D9EF;">:</span> <span style="color: #66D9EF;">CommonColumns</span>
 </pre>
 </div>
 </div>
@@ -700,12 +741,15 @@ character.
 </p>
 
 <pre class="example">
-    tableTypesOpt
-      ["user id", "age", "gender", "occupation", "zip code"]
-      "|"
-      "Users"
+    tableTypes'
+      (rowGen
+         {rowTypeName = "Users",
+          columnNames = ["user id", "age", "gender", "occupation",
+                         "zip code"],
+          separator = "|"})
       "data/ml-100k/u.user"
   ======&gt;
+    /Users/acowley/Documents/Projects/Frames/demo/Tutorial.hs:(52,1)-(56,34)
     type Users =
         Rec ["user id" :-&gt; Int, "age" :-&gt; Int, "gender" :-&gt; Text, "occupation" :-&gt; Text, "zip code" :-&gt; Text]
 
@@ -721,81 +765,83 @@ character.
     type UserId = "user id" :-&gt; Int
 
     userId ::
-      forall f_acWF rs_acWG. (Functor f_acWF,
-                              RElem UserId rs_acWG (Data.Vinyl.TypeLevel.RIndex UserId rs_acWG)) =&gt;
-      (Int -&gt; f_acWF Int) -&gt; Rec rs_acWG -&gt; f_acWF (Rec rs_acWG)
+      forall f_ad5z rs_ad5A. (Functor f_ad5z,
+                              RElem UserId rs_ad5A (RIndex UserId rs_ad5A)) =&gt;
+      (Int -&gt; f_ad5z Int) -&gt; Rec rs_ad5A -&gt; f_ad5z (Rec rs_ad5A)
     userId = rlens (Proxy :: Proxy UserId)
 
     userId' ::
-      forall g_acWH f_acWI rs_acWJ. (Functor f_acWI,
-                                     Functor g_acWH,
-                                     RElem UserId rs_acWJ (Data.Vinyl.TypeLevel.RIndex UserId rs_acWJ)) =&gt;
-      (g_acWH Int -&gt; f_acWI (g_acWH Int))
-      -&gt; RecF g_acWH rs_acWJ -&gt; f_acWI (RecF g_acWH rs_acWJ)
+      forall g_ad5B f_ad5C rs_ad5D. (Functor f_ad5C,
+                                     Functor g_ad5B,
+                                     RElem UserId rs_ad5D (RIndex UserId rs_ad5D)) =&gt;
+      (g_ad5B Int -&gt; f_ad5C (g_ad5B Int))
+      -&gt; RecF g_ad5B rs_ad5D -&gt; f_ad5C (RecF g_ad5B rs_ad5D)
     userId' = rlens' (Proxy :: Proxy UserId)
 
     type Age = "age" :-&gt; Int
 
     age ::
-      forall f_acWK rs_acWL. (Functor f_acWK,
-                              RElem Age rs_acWL (Data.Vinyl.TypeLevel.RIndex Age rs_acWL)) =&gt;
-      (Int -&gt; f_acWK Int) -&gt; Rec rs_acWL -&gt; f_acWK (Rec rs_acWL)
+      forall f_ad5E rs_ad5F. (Functor f_ad5E,
+                              RElem Age rs_ad5F (RIndex Age rs_ad5F)) =&gt;
+      (Int -&gt; f_ad5E Int) -&gt; Rec rs_ad5F -&gt; f_ad5E (Rec rs_ad5F)
     age = rlens (Proxy :: Proxy Age)
 
     age' ::
-      forall g_acWM f_acWN rs_acWO. (Functor f_acWN,
-                                     Functor g_acWM,
-                                     RElem Age rs_acWO (Data.Vinyl.TypeLevel.RIndex Age rs_acWO)) =&gt;
-      (g_acWM Int -&gt; f_acWN (g_acWM Int))
-      -&gt; RecF g_acWM rs_acWO -&gt; f_acWN (RecF g_acWM rs_acWO)
+      forall g_ad5G f_ad5H rs_ad5I. (Functor f_ad5H,
+                                     Functor g_ad5G,
+                                     RElem Age rs_ad5I (RIndex Age rs_ad5I)) =&gt;
+      (g_ad5G Int -&gt; f_ad5H (g_ad5G Int))
+      -&gt; RecF g_ad5G rs_ad5I -&gt; f_ad5H (RecF g_ad5G rs_ad5I)
     age' = rlens' (Proxy :: Proxy Age)
 
     type Gender = "gender" :-&gt; Text
 
     gender ::
-      forall f_acWP rs_acWQ. (Functor f_acWP,
-                              RElem Gender rs_acWQ (Data.Vinyl.TypeLevel.RIndex Gender rs_acWQ)) =&gt;
-      (Text -&gt; f_acWP Text) -&gt; Rec rs_acWQ -&gt; f_acWP (Rec rs_acWQ)
+      forall f_ad5J rs_ad5K. (Functor f_ad5J,
+                              RElem Gender rs_ad5K (RIndex Gender rs_ad5K)) =&gt;
+      (Text -&gt; f_ad5J Text) -&gt; Rec rs_ad5K -&gt; f_ad5J (Rec rs_ad5K)
     gender = rlens (Proxy :: Proxy Gender)
 
     gender' ::
-      forall g_acWR f_acWS rs_acWT. (Functor f_acWS,
-                                     Functor g_acWR,
-                                     RElem Gender rs_acWT (Data.Vinyl.TypeLevel.RIndex Gender rs_acWT)) =&gt;
-      (g_acWR Text -&gt; f_acWS (g_acWR Text))
-      -&gt; RecF g_acWR rs_acWT -&gt; f_acWS (RecF g_acWR rs_acWT)
+      forall g_ad5L f_ad5M rs_ad5N. (Functor f_ad5M,
+                                     Functor g_ad5L,
+                                     RElem Gender rs_ad5N (RIndex Gender rs_ad5N)) =&gt;
+      (g_ad5L Text -&gt; f_ad5M (g_ad5L Text))
+      -&gt; RecF g_ad5L rs_ad5N -&gt; f_ad5M (RecF g_ad5L rs_ad5N)
     gender' = rlens' (Proxy :: Proxy Gender)
 
     type Occupation = "occupation" :-&gt; Text
 
     occupation ::
-      forall f_acWU rs_acWV. (Functor f_acWU,
-                              RElem Occupation rs_acWV (Data.Vinyl.TypeLevel.RIndex Occupation rs_acWV)) =&gt;
-      (Text -&gt; f_acWU Text) -&gt; Rec rs_acWV -&gt; f_acWU (Rec rs_acWV)
-    occupation = rlens (Proxy :: Proxy Occupation)
+      forall f_ad5O rs_ad5P. (Functor f_ad5O,
+                              RElem Occupation rs_ad5P (RIndex Occupation rs_ad5P)) =&gt;
+      (Text -&gt; f_ad5O Text) -&gt; Rec rs_ad5P -&gt; f_ad5O (Rec rs_ad5P)
+    occupation
+      = rlens (Proxy :: Proxy Occupation)
 
     occupation' ::
-      forall g_acWW f_acWX rs_acWY. (Functor f_acWX,
-                                     Functor g_acWW,
-                                     RElem Occupation rs_acWY (Data.Vinyl.TypeLevel.RIndex Occupation rs_acWY)) =&gt;
-      (g_acWW Text -&gt; f_acWX (g_acWW Text))
-      -&gt; RecF g_acWW rs_acWY -&gt; f_acWX (RecF g_acWW rs_acWY)
-    occupation' = rlens' (Proxy :: Proxy Occupation)
+      forall g_ad5Q f_ad5R rs_ad5S. (Functor f_ad5R,
+                                     Functor g_ad5Q,
+                                     RElem Occupation rs_ad5S (RIndex Occupation rs_ad5S)) =&gt;
+      (g_ad5Q Text -&gt; f_ad5R (g_ad5Q Text))
+      -&gt; RecF g_ad5Q rs_ad5S -&gt; f_ad5R (RecF g_ad5Q rs_ad5S)
+    occupation'
+      = rlens' (Proxy :: Proxy Occupation)
 
     type ZipCode = "zip code" :-&gt; Text
 
     zipCode ::
-      forall f_acWZ rs_acX0. (Functor f_acWZ,
-                              RElem ZipCode rs_acX0 (Data.Vinyl.TypeLevel.RIndex ZipCode rs_acX0)) =&gt;
-      (Text -&gt; f_acWZ Text) -&gt; Rec rs_acX0 -&gt; f_acWZ (Rec rs_acX0)
+      forall f_ad5T rs_ad5U. (Functor f_ad5T,
+                              RElem ZipCode rs_ad5U (RIndex ZipCode rs_ad5U)) =&gt;
+      (Text -&gt; f_ad5T Text) -&gt; Rec rs_ad5U -&gt; f_ad5T (Rec rs_ad5U)
     zipCode = rlens (Proxy :: Proxy ZipCode)
 
     zipCode' ::
-      forall g_acX1 f_acX2 rs_acX3. (Functor f_acX2,
-                                     Functor g_acX1,
-                                     RElem ZipCode rs_acX3 (Data.Vinyl.TypeLevel.RIndex ZipCode rs_acX3)) =&gt;
-      (g_acX1 Text -&gt; f_acX2 (g_acX1 Text))
-      -&gt; RecF g_acX1 rs_acX3 -&gt; f_acX2 (RecF g_acX1 rs_acX3)
+      forall g_ad5V f_ad5W rs_ad5X. (Functor f_ad5W,
+                                     Functor g_ad5V,
+                                     RElem ZipCode rs_ad5X (RIndex ZipCode rs_ad5X)) =&gt;
+      (g_ad5V Text -&gt; f_ad5W (g_ad5V Text))
+      -&gt; RecF g_ad5V rs_ad5X -&gt; f_ad5W (RecF g_ad5V rs_ad5X)
     zipCode' = rlens' (Proxy :: Proxy ZipCode)
 </pre>
 </div>
