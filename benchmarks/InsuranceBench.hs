@@ -9,15 +9,12 @@ import Frames
 import qualified Pipes as P
 import qualified Pipes.Prelude as P
 
-csv :: FilePath
-csv = "data/FL2.csv"
-
 tableTypes "Ins" "data/FL2.csv"
 
 type TinyIns = Rec [PolicyID, PointLatitude, PointLongitude]
 
 tblP :: P.Producer Ins IO ()
-tblP = readTable csv
+tblP = readTable "data/FL2.csv"
 
 -- Strict pair
 data P a = P !a !a
