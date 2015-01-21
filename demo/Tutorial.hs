@@ -241,6 +241,16 @@ writers = P.filter ((== "writer") . view occupation)
 -- {user id :-> 122, age :-> 32, gender :-> "F", occupation :-> "writer", zip code :-> "22206"}
 -- #+END_EXAMPLE
 
+-- If you're not too keen on all the ~pipes~ syntax in that example, you
+-- could also write it using a helper function provided by ~Frames~,
+
+-- #+BEGIN_EXAMPLE
+-- λ> pipePreview movieStream 6 writers
+-- #+END_EXAMPLE
+
+-- This is a handy way to try out various maps and filters you may want
+-- to eventually apply to a large data set.
+
 -- * Better Types
 
 -- A common disappointment of parsing general data sets is the

@@ -35,6 +35,7 @@ library
                        Frames.ColumnUniverse
                        Frames.CoRec
                        Frames.CSV
+                       Frames.Exploration
                        Frames.Frame
                        Frames.InCore
                        Frames.Rec

@@ -7,6 +7,7 @@ module Frames
   , module Frames.Col
   , module Frames.ColumnUniverse
   , module Frames.CSV
+  , module Frames.Exploration
   , module Frames.Frame
   , module Frames.InCore
   , module Frames.Rec
@@ -21,6 +22,7 @@ import Frames.Col ((:->)(..))
 import Frames.ColumnUniverse
 import Frames.CSV (readTable, readTableMaybe, readTable', 
                    tableType, tableTypes, tableType', tableTypes')
+import Frames.Exploration
 import Frames.Frame
 import Frames.InCore (inCore, inCoreSoA,
                       inCoreAoS, inCoreAoS', toAoS)
