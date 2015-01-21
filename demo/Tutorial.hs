@@ -22,38 +22,45 @@ import qualified Control.Foldl as L
 import qualified Data.Foldable as F
 import Lens.Family
 import Frames
-import Frames.CSV (tableTypesOpt, readTableOpt)
+import Frames.CSV (readTableOpt)
 import Pipes hiding (Proxy)
 import qualified Pipes.Prelude as P
 
 -- A few other imports will be used for highly customized parsing [[Better Types][later]].
 
-import Data.Proxy
-import Frames.CSV (tableTypesPrefixedOpt')
+import Frames.CSV (rowGen, RowGen(..), colQ)
 import TutorialUsers
 
 -- * Data Import
 
 -- We usually package column names with the data to keep things a bit
--- more self-documenting. This might mean adding a row to the data
--- file with the column names, but, if we must use a particular data
--- file whose column names are provided in a separate specification,
--- we can override the default parsing options.
+-- more self-documenting. In the common case where a data file has a
+-- header row providing column names, and columns are separated by
+-- commas, generating the types needed to import a data set is as simple
+-- as,
 
--- The data set this example considers is rather far from the sweet spot
--- of CSV processing that ~Frames~ is aimed it: it does not include
--- column headers, nor does it use commas to separate values! However,
--- these mismatches do provide an opportunity to see that ~Frames~ are
--- flexible enough to meet a variety of needs.
+-- -- #+BEGIN_SRC haskell
+-- tableTypes "Users" "data/ml-100k/u.user"
+-- #+END_SRC
 
-tableTypesOpt  ["user id", "age", "gender", "occupation", "zip code"]
-               "|" "Users" "data/ml-100k/u.user"
+-- The data set /this/ example considers is rather far from the sweet
+-- spot of CSV processing that ~Frames~ is aimed it: it does not include
+-- column headers, nor does it use commas to separate values!  However,
+-- these mismatches do provide an opportunity to see that the ~Frames~
+-- library is flexible enough to meet a variety of needs.
 
--- This template haskell splice explicitly specifies column names, a
--- separator string, the name for the inferred record type, and the
--- data file from which to infer the record type. The result of this
--- splice is included in an [[* Splice Dump][appendix]] below so you
--- can flip between the generated code and how it is used.
+tableTypes'  rowGen { rowTypeName = "Users"
+                    , columnNames = [ "user id", "age", "gender"
+                                    , "occupation", "zip code" ]
+                    , separator = "|" }
+             "data/ml-100k/u.user"
+
+-- This template haskell splice explicitly specifies the name for the
+-- inferred record type, column names, a separator string, and the
+-- data file from which to infer the record type (i.e. what type
+-- should be used to represent each column). The result of this splice
+-- is included in an [[* Splice Dump][appendix]] below so you can flip
+-- between the generated code and how it is used.
 
 -- We can load the module into =cabal repl= to see what we have so far.
 
@@ -207,7 +214,7 @@ writers = P.filter ((== "writer") . view occupation)
 
 -- A common disappointment of parsing general data sets is the
 -- reliance on text for data representation even /after/ parsing. If
--- you find that the default =ColType= spectrum of potential column
+-- you find that the default ~Columns~ spectrum of potential column
 -- types that =Frames= uses doesn't capture desired structure, you can
 -- go ahead and define your own universe of column types! The =Users=
 -- row types we've been playing with here is rather boring: it only
@@ -243,9 +250,13 @@ writers = P.filter ((== "writer") . view occupation)
 -- and lenses a prefix, "u2", so they don't conflict with the definitions
 -- we generated earlier.
 
-tableTypesPrefixedOpt' (Proxy :: Proxy (ColumnUniverse MyColumns))
-                       ["user id", "age", "gender", "occupation", "zip code"]
-                       "|" "U2" "u2" "data/ml-100k/u.user"
+tableTypes' rowGen { rowTypeName = "U2"
+                   , columnNames = [ "user id", "age", "gender"
+                                   , "occupation", "zip code" ]
+                   , separator = "|"
+                   , tablePrefix = "u2"
+                   , columnUniverse = $(colQ ''MyColumns) }
+            "data/ml-100k/u.user"
 
 movieStream2 :: Producer U2 IO ()
 movieStream2 = readTableOpt u2Parser "data/ml-100k/u.user"
@@ -283,14 +294,14 @@ maleOccupations = P.filter ((== Male) . view u2gender)
 -- #+END_EXAMPLE
 
 -- So there we go! We've done both row and column subset queries with a
--- strongly typed query (namely, ~(== Female)~). Another situation in
+-- strongly typed query (namely, ~(== Male)~). Another situation in
 -- which one might want to define a custom universe of column types is
 -- when dealing with dates. This would let you both reject rows with
 -- badly formatted dates, for example, and efficiently query the data set
 -- with richly-typed queries.
 
 -- Even better, did you notice the types of ~writers~ and
--- ~femaleOccupations~? They are polymorphic over the full row type!
+-- ~maleOccupations~? They are polymorphic over the full row type!
 -- That's what the ~(Occupation ∈ rs)~ constraint signifies: such a
 -- function will work for record types with any set of fields, ~rs~, so
 -- long as ~Occupation~ is an element of that set. This means that if
@@ -339,7 +350,7 @@ maleOccupations = P.filter ((== Male) . view u2gender)
 --   fromText "F" = return Female
 --   fromText _ = mzero
 
--- type Columns' = GenderT ': CommonColumns
+-- type MyColumns = GenderT ': CommonColumns
 -- #+end_src
 
 -- ** Splice Dump
@@ -362,12 +373,15 @@ maleOccupations = P.filter ((== Male) . view u2gender)
 -- character.
 
 -- #+BEGIN_EXAMPLE
---     tableTypesOpt
---       ["user id", "age", "gender", "occupation", "zip code"]
---       "|"
---       "Users"
+--     tableTypes'
+--       (rowGen
+--          {rowTypeName = "Users",
+--           columnNames = ["user id", "age", "gender", "occupation",
+--                          "zip code"],
+--           separator = "|"})
 --       "data/ml-100k/u.user"
 --   ======>
+--     /Users/acowley/Documents/Projects/Frames/demo/Tutorial.hs:(52,1)-(56,34)
 --     type Users =
 --         Rec ["user id" :-> Int, "age" :-> Int, "gender" :-> Text, "occupation" :-> Text, "zip code" :-> Text]
 
@@ -383,81 +397,83 @@ maleOccupations = P.filter ((== Male) . view u2gender)
 --     type UserId = "user id" :-> Int
 
 --     userId ::
---       forall f_acWF rs_acWG. (Functor f_acWF,
---                               RElem UserId rs_acWG (Data.Vinyl.TypeLevel.RIndex UserId rs_acWG)) =>
---       (Int -> f_acWF Int) -> Rec rs_acWG -> f_acWF (Rec rs_acWG)
+--       forall f_ad5z rs_ad5A. (Functor f_ad5z,
+--                               RElem UserId rs_ad5A (RIndex UserId rs_ad5A)) =>
+--       (Int -> f_ad5z Int) -> Rec rs_ad5A -> f_ad5z (Rec rs_ad5A)
 --     userId = rlens (Proxy :: Proxy UserId)
 
 --     userId' ::
---       forall g_acWH f_acWI rs_acWJ. (Functor f_acWI,
---                                      Functor g_acWH,
---                                      RElem UserId rs_acWJ (Data.Vinyl.TypeLevel.RIndex UserId rs_acWJ)) =>
---       (g_acWH Int -> f_acWI (g_acWH Int))
---       -> RecF g_acWH rs_acWJ -> f_acWI (RecF g_acWH rs_acWJ)
+--       forall g_ad5B f_ad5C rs_ad5D. (Functor f_ad5C,
+--                                      Functor g_ad5B,
+--                                      RElem UserId rs_ad5D (RIndex UserId rs_ad5D)) =>
+--       (g_ad5B Int -> f_ad5C (g_ad5B Int))
+--       -> RecF g_ad5B rs_ad5D -> f_ad5C (RecF g_ad5B rs_ad5D)
 --     userId' = rlens' (Proxy :: Proxy UserId)
 
 --     type Age = "age" :-> Int
 
 --     age ::
---       forall f_acWK rs_acWL. (Functor f_acWK,
---                               RElem Age rs_acWL (Data.Vinyl.TypeLevel.RIndex Age rs_acWL)) =>
---       (Int -> f_acWK Int) -> Rec rs_acWL -> f_acWK (Rec rs_acWL)
+--       forall f_ad5E rs_ad5F. (Functor f_ad5E,
+--                               RElem Age rs_ad5F (RIndex Age rs_ad5F)) =>
+--       (Int -> f_ad5E Int) -> Rec rs_ad5F -> f_ad5E (Rec rs_ad5F)
 --     age = rlens (Proxy :: Proxy Age)
 
 --     age' ::
---       forall g_acWM f_acWN rs_acWO. (Functor f_acWN,
---                                      Functor g_acWM,
---                                      RElem Age rs_acWO (Data.Vinyl.TypeLevel.RIndex Age rs_acWO)) =>
---       (g_acWM Int -> f_acWN (g_acWM Int))
---       -> RecF g_acWM rs_acWO -> f_acWN (RecF g_acWM rs_acWO)
+--       forall g_ad5G f_ad5H rs_ad5I. (Functor f_ad5H,
+--                                      Functor g_ad5G,
+--                                      RElem Age rs_ad5I (RIndex Age rs_ad5I)) =>
+--       (g_ad5G Int -> f_ad5H (g_ad5G Int))
+--       -> RecF g_ad5G rs_ad5I -> f_ad5H (RecF g_ad5G rs_ad5I)
 --     age' = rlens' (Proxy :: Proxy Age)
 
 --     type Gender = "gender" :-> Text
 
 --     gender ::
---       forall f_acWP rs_acWQ. (Functor f_acWP,
---                               RElem Gender rs_acWQ (Data.Vinyl.TypeLevel.RIndex Gender rs_acWQ)) =>
---       (Text -> f_acWP Text) -> Rec rs_acWQ -> f_acWP (Rec rs_acWQ)
+--       forall f_ad5J rs_ad5K. (Functor f_ad5J,
+--                               RElem Gender rs_ad5K (RIndex Gender rs_ad5K)) =>
+--       (Text -> f_ad5J Text) -> Rec rs_ad5K -> f_ad5J (Rec rs_ad5K)
 --     gender = rlens (Proxy :: Proxy Gender)
 
 --     gender' ::
---       forall g_acWR f_acWS rs_acWT. (Functor f_acWS,
---                                      Functor g_acWR,
---                                      RElem Gender rs_acWT (Data.Vinyl.TypeLevel.RIndex Gender rs_acWT)) =>
---       (g_acWR Text -> f_acWS (g_acWR Text))
---       -> RecF g_acWR rs_acWT -> f_acWS (RecF g_acWR rs_acWT)
+--       forall g_ad5L f_ad5M rs_ad5N. (Functor f_ad5M,
+--                                      Functor g_ad5L,
+--                                      RElem Gender rs_ad5N (RIndex Gender rs_ad5N)) =>
+--       (g_ad5L Text -> f_ad5M (g_ad5L Text))
+--       -> RecF g_ad5L rs_ad5N -> f_ad5M (RecF g_ad5L rs_ad5N)
 --     gender' = rlens' (Proxy :: Proxy Gender)
 
 --     type Occupation = "occupation" :-> Text
 
 --     occupation ::
---       forall f_acWU rs_acWV. (Functor f_acWU,
---                               RElem Occupation rs_acWV (Data.Vinyl.TypeLevel.RIndex Occupation rs_acWV)) =>
---       (Text -> f_acWU Text) -> Rec rs_acWV -> f_acWU (Rec rs_acWV)
---     occupation = rlens (Proxy :: Proxy Occupation)
+--       forall f_ad5O rs_ad5P. (Functor f_ad5O,
+--                               RElem Occupation rs_ad5P (RIndex Occupation rs_ad5P)) =>
+--       (Text -> f_ad5O Text) -> Rec rs_ad5P -> f_ad5O (Rec rs_ad5P)
+--     occupation
+--       = rlens (Proxy :: Proxy Occupation)
 
 --     occupation' ::
---       forall g_acWW f_acWX rs_acWY. (Functor f_acWX,
---                                      Functor g_acWW,
---                                      RElem Occupation rs_acWY (Data.Vinyl.TypeLevel.RIndex Occupation rs_acWY)) =>
---       (g_acWW Text -> f_acWX (g_acWW Text))
---       -> RecF g_acWW rs_acWY -> f_acWX (RecF g_acWW rs_acWY)
---     occupation' = rlens' (Proxy :: Proxy Occupation)
+--       forall g_ad5Q f_ad5R rs_ad5S. (Functor f_ad5R,
+--                                      Functor g_ad5Q,
+--                                      RElem Occupation rs_ad5S (RIndex Occupation rs_ad5S)) =>
+--       (g_ad5Q Text -> f_ad5R (g_ad5Q Text))
+--       -> RecF g_ad5Q rs_ad5S -> f_ad5R (RecF g_ad5Q rs_ad5S)
+--     occupation'
+--       = rlens' (Proxy :: Proxy Occupation)
 
 --     type ZipCode = "zip code" :-> Text
 
 --     zipCode ::
---       forall f_acWZ rs_acX0. (Functor f_acWZ,
---                               RElem ZipCode rs_acX0 (Data.Vinyl.TypeLevel.RIndex ZipCode rs_acX0)) =>
---       (Text -> f_acWZ Text) -> Rec rs_acX0 -> f_acWZ (Rec rs_acX0)
+--       forall f_ad5T rs_ad5U. (Functor f_ad5T,
+--                               RElem ZipCode rs_ad5U (RIndex ZipCode rs_ad5U)) =>
+--       (Text -> f_ad5T Text) -> Rec rs_ad5U -> f_ad5T (Rec rs_ad5U)
 --     zipCode = rlens (Proxy :: Proxy ZipCode)
 
 --     zipCode' ::
---       forall g_acX1 f_acX2 rs_acX3. (Functor f_acX2,
---                                      Functor g_acX1,
---                                      RElem ZipCode rs_acX3 (Data.Vinyl.TypeLevel.RIndex ZipCode rs_acX3)) =>
---       (g_acX1 Text -> f_acX2 (g_acX1 Text))
---       -> RecF g_acX1 rs_acX3 -> f_acX2 (RecF g_acX1 rs_acX3)
+--       forall g_ad5V f_ad5W rs_ad5X. (Functor f_ad5W,
+--                                      Functor g_ad5V,
+--                                      RElem ZipCode rs_ad5X (RIndex ZipCode rs_ad5X)) =>
+--       (g_ad5V Text -> f_ad5W (g_ad5V Text))
+--       -> RecF g_ad5V rs_ad5X -> f_ad5W (RecF g_ad5V rs_ad5X)
 --     zipCode' = rlens' (Proxy :: Proxy ZipCode)
 -- #+END_EXAMPLE
 

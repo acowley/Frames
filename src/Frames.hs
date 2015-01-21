@@ -20,7 +20,7 @@ import Data.Vinyl.Lens hiding (rlens, rget, rput)
 import Frames.Col ((:->)(..))
 import Frames.ColumnUniverse
 import Frames.CSV (readTable, readTableMaybe, readTable', 
-                   tableType, tableTypes, tableTypesPrefixed)
+                   tableType, tableTypes, tableType', tableTypes')
 import Frames.Frame
 import Frames.InCore (inCore, inCoreSoA,
                       inCoreAoS, inCoreAoS', toAoS)

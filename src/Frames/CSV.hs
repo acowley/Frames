@@ -6,6 +6,7 @@
              MultiParamTypeClasses,
              OverloadedStrings,
              QuasiQuotes,
+             RecordWildCards,
              ScopedTypeVariables,
              TemplateHaskell,
              TypeOperators #-}
@@ -175,7 +176,6 @@ readTable :: forall m rs. (MonadIO m, ReadRec rs)
 readTable = readTableOpt defaultParser
 {-# INLINE readTable #-}
 
-
 -- * Template Haskell
 
 -- | Generate a column type.
@@ -240,28 +240,43 @@ colDec prefix colName colTy = (:) <$> mkColTDec colTypeQ colTName'
 
 -- * Default CSV Parsing
 
--- | Generate a type for each row of a table. This will be something
--- like @Rec ["x" :-> a, "y" :-> b, "z" :-> c]@. Possible column types
--- are identified by the given proxy for a type universe. Column type
--- synonyms are /not/ generated (see 'tableTypes').
-tableType' :: forall proxy a. (ColumnTypeable a, Monoid a)
-           => proxy a -> String -> FilePath -> DecsQ
-tableType' p = tableTypeOpt' p [] defaultSep
+-- | Control how row and named column types are generated.
+data RowGen a = RowGen { columnNames    :: [String]
+                       -- ^ Use these column names. If empty, expect a
+                       -- header row in the data file to provide
+                       -- column names.
+                       , tablePrefix    :: String
+                       -- ^ A common prefix to use for every generated
+                       -- declaration.
+                       , separator      :: String
+                       -- ^ The string that separates the columns on a
+                       -- row.
+                       , rowTypeName    :: String
+                       -- ^ The row type that enumerates all
+                       -- columns.
+                       , columnUniverse :: Proxy a
+                       -- ^ A type that identifies all the types that
+                       -- can be used to classify a column. This is
+                       -- essentially a type-level list of types. See
+                       -- 'colQ'.
+                       }
+
+-- | Shorthand for a 'Proxy' value of 'ColumnUniverse' applied to the
+-- given type list.
+colQ :: Name -> Q Exp
+colQ n = [e| (Proxy :: Proxy (ColumnUniverse $(conT n))) |]
+
+-- | A default 'RowGen'. This instructs the type inference engine to
+-- get column names from the data file, use the default column
+-- separator (a comma), infer column types from the default 'Columns'
+-- set of types, and produce a row type with name @Row@.
+rowGen :: RowGen Columns
+rowGen = RowGen [] "" defaultSep "Row" Proxy
 
 -- | Generate a type for each row of a table. This will be something
 -- like @Rec ["x" :-> a, "y" :-> b, "z" :-> c]@.
 tableType :: String -> FilePath -> DecsQ
-tableType = tableTypeOpt [] defaultSep
-
--- | Like 'tableType', but additionally generates a type synonym for
--- each column, and a proxy value of that type. If the CSV file has
--- column names \"foo\", \"bar\", and \"baz\", then this will declare
--- @type Foo = "foo" :-> Int@, for example, @foo = rlens (Proxy ::
--- Proxy Foo)@, and @foo' = rlens' (Proxy :: Proxy Foo)@. Possible
--- column types are identified by the given proxy for a type universe.
-tableTypes' :: (ColumnTypeable a, Monoid a)
-            => proxy a -> String -> FilePath -> DecsQ
-tableTypes' p =  tableTypesOpt' p [] defaultSep
+tableType n = tableType' rowGen { rowTypeName = n }
 
 -- | Like 'tableType', but additionally generates a type synonym for
 -- each column, and a proxy value of that type. If the CSV file has
@@ -269,109 +284,43 @@ tableTypes' p =  tableTypesOpt' p [] defaultSep
 -- @type Foo = "foo" :-> Int@, for example, @foo = rlens (Proxy :: Proxy
 -- Foo)@, and @foo' = rlens' (Proxy :: Proxy Foo)@.
 tableTypes :: String -> FilePath -> DecsQ
-tableTypes = tableTypesOpt [] defaultSep
-
--- | Like 'tableTypes', but prefixes each column type and proxy value
--- name with the second argument. This is useful if you have very
--- generic column names. For example, @tableTypesPrefixed "Row" "Col"
--- myFile.csv@ will generate column types like @ColName@ with a
--- corresponding lens value @colName@ where @Name@ is the name of a
--- column in the CSV file.
-tableTypesPrefixed' :: forall proxy a. (ColumnTypeable a, Monoid a)
-                    => proxy a      -- ^ Universe of column types
-                    -> String       -- ^ Row type name
-                    -> String       -- ^ Column name prefix
-                    -> FilePath     -- ^ CSV file
-                    -> DecsQ
-tableTypesPrefixed' p = tableTypesPrefixedOpt' p [] defaultSep
-
--- | Like 'tableTypes', but prefixes each column type and proxy value
--- name with the second argument. This is useful if you have very
--- generic column names. For example, @tableTypesPrefixed "Row" "Col"
--- myFile.csv@ will generate column types like @ColName@ with a
--- corresponding lens value @colName@ where @Name@ is the name of a
--- column in the CSV file.
-tableTypesPrefixed :: String -> String -> FilePath -> DecsQ
-tableTypesPrefixed = tableTypesPrefixedOpt [] defaultSep
+tableTypes n = tableTypes' rowGen { rowTypeName = n }
 
 -- * Customized Data Set Parsing
 
--- | Generate a type for each row of a table. This will be something
--- like @Rec ["x" :-> a, "y" :-> b, "z" :-> c]@. Possible column types
--- are identified by the given proxy for a type universe. Column type
--- synonyms are /not/ generated (see 'tableTypes').
-tableTypeOpt' :: forall proxy a. (ColumnTypeable a, Monoid a)
-              => proxy a -> [String] -> String -> String -> FilePath -> DecsQ
-tableTypeOpt' _ colNames sep n csvFile =
-    pure . TySynD (mkName n) [] <$>
+-- | Generate a type for a row a table. This will be something like
+-- @Rec ["x" :-> a, "y" :-> b, "z" :-> c]@.  Column type synonyms are
+-- /not/ generated (see 'tableTypes'').
+tableType' :: forall a. (ColumnTypeable a, Monoid a)
+           => RowGen a -> FilePath -> DecsQ
+tableType' (RowGen {..}) csvFile =
+    pure . TySynD (mkName rowTypeName) [] <$>
     (runIO (readColHeaders opts csvFile) >>= recDec')
   where recDec' = recDec :: [(T.Text, a)] -> Q Type
-        colNames' | null colNames = Nothing
-                  | otherwise = Just (map T.pack colNames)
-        opts = ParserOptions colNames' (T.pack sep)
+        colNames' | null columnNames = Nothing
+                  | otherwise = Just (map T.pack columnNames)
+        opts = ParserOptions colNames' (T.pack separator)
 
--- | Generate a type for each row of a table. This will be something
--- like @Rec ["x" :-> a, "y" :-> b, "z" :-> c]@.
-tableTypeOpt :: [String] -> String -> String -> FilePath -> DecsQ
-tableTypeOpt = tableTypeOpt' (Proxy::Proxy Columns)
-
--- | Like 'tableType', but additionally generates a type synonym for
+-- | Like 'tableType'', but additionally generates a type synonym for
 -- each column, and a proxy value of that type. If the CSV file has
 -- column names \"foo\", \"bar\", and \"baz\", then this will declare
 -- @type Foo = "foo" :-> Int@, for example, @foo = rlens (Proxy ::
--- Proxy Foo)@, and @foo' = rlens' (Proxy :: Proxy Foo)@. Possible
--- column types are identified by the given proxy for a type universe.
-tableTypesOpt' :: (ColumnTypeable a, Monoid a)
-               => proxy a -> [String] -> String -> String -> FilePath -> DecsQ
-tableTypesOpt' p colNames sep = flip (tableTypesPrefixedOpt' p colNames sep) ""
-
--- | Like 'tableType', but additionally generates a type synonym for
--- each column, and a proxy value of that type. If the CSV file has
--- column names \"foo\", \"bar\", and \"baz\", then this will declare
--- @type Foo = "foo" :-> Int@, for example, @foo = rlens (Proxy :: Proxy
--- Foo)@, and @foo' = rlens' (Proxy :: Proxy Foo)@.
-tableTypesOpt :: [String] -> String -> String -> FilePath -> DecsQ
-tableTypesOpt = tableTypesOpt' (Proxy::Proxy Columns)
-
--- | Like 'tableTypes', but prefixes each column type and proxy value
--- name with the second argument. This is useful if you have very
--- generic column names. For example, @tableTypesPrefixed "Row" "Col"
--- myFile.csv@ will generate column types like @ColName@ with a
--- corresponding lens value @colName@ where @Name@ is the name of a
--- column in the CSV file. Possible column types are identified by the
--- given proxy for a type universe.
-tableTypesPrefixedOpt' :: forall proxy a. (ColumnTypeable a, Monoid a)
-                       => proxy a  -- ^ Universe of column types
-                       -> [String] -- ^ Column names
-                       -> String   -- ^ Separator string
-                       -> String   -- ^ Row type name
-                       -> String   -- ^ Column name prefix
-                       -> FilePath -- ^ CSV file
-                       -> DecsQ
-tableTypesPrefixedOpt' _ colNames sep n prefix csvFile =
+-- Proxy Foo)@, and @foo' = rlens' (Proxy :: Proxy Foo)@.
+tableTypes' :: forall a. (ColumnTypeable a, Monoid a)
+            => RowGen a -> FilePath -> DecsQ
+tableTypes' (RowGen {..}) csvFile =
   do headers <- runIO $ readColHeaders opts csvFile
-     recTy <- tySynD (mkName n) [] (recDec' headers)
-     let optsName = case n of
+     recTy <- tySynD (mkName rowTypeName) [] (recDec' headers)
+     let optsName = case rowTypeName of
                       [] -> error "Row type name shouldn't be empty"
                       h:t -> mkName $ toLower h : t ++ "Parser"
      optsTy <- sigD optsName [t|ParserOptions|]
      optsDec <- valD (varP optsName) (normalB $ lift opts) []
-     colDecs <- concat <$> mapM (uncurry $ colDec (T.pack prefix)) headers
-     return (recTy : optsTy : optsDec : colDecs)     
+     colDecs <- concat <$> mapM (uncurry $ colDec (T.pack tablePrefix)) headers
+     return (recTy : optsTy : optsDec : colDecs)
      -- (:) <$> (tySynD (mkName n) [] (recDec' headers))
      --     <*> (concat <$> mapM (uncurry $ colDec (T.pack prefix)) headers)
   where recDec' = recDec :: [(T.Text, a)] -> Q Type
-        colNames' | null colNames = Nothing
-                  | otherwise = Just (map T.pack colNames)
-        opts = ParserOptions colNames' (T.pack sep)
-
--- | Like 'tableTypes', but prefixes each column type and proxy value
--- name with the second argument. This is useful if you have very
--- generic column names. For example, @tableTypesPrefixed "Row" "Col"
--- myFile.csv@ will generate column types like @ColName@ with a
--- corresponding lens value @colName@ where @Name@ is the name of a
--- column in the CSV file.
-tableTypesPrefixedOpt :: [String] -> String
-                      -> String -> String
-                      -> FilePath -> DecsQ
-tableTypesPrefixedOpt = tableTypesPrefixedOpt' (Proxy::Proxy Columns)
+        colNames' | null columnNames = Nothing
+                  | otherwise = Just (map T.pack columnNames)
+        opts = ParserOptions colNames' (T.pack separator)
