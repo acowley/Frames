@@ -104,6 +104,8 @@ unreadable mess. Here's how to use these functions to clean things up:
   ;; Unqualify names
   (replace-stringf "GHC.Types.:" "':")
   (replace-stringf "Data.Text." "T.")
+  (replace-stringf "Data.Proxy." "")
+  (replace-stringf "Data.Vinyl.TypeLevel." "")
   (replace-stringf "Frames.CSV.ParserOptions" "ParserOptions")
 
   ;; Erase inferrable type
