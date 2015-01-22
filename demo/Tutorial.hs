@@ -5,7 +5,7 @@
 -- [[http://ajkl.github.io/Dataframes/][dataframe tutorial]] Rosetta
 -- Stone to compare traditional dataframe tools built in R, Julia,
 -- Python, etc. with
--- ~[[https://github.com/acowley/Frames][Frames]]~. Performing data
+-- [[https://github.com/acowley/Frames][Frames]]. Performing data
 -- analysis in Haskell brings with it a few advantages:
 
 -- - Interactive exploration is supported in GHCi
@@ -414,7 +414,7 @@ maleOccupations = P.filter ((== Male) . view u2gender)
 -- write in your code need not include the column names or separator
 -- character.
 
--- #+BEGIN_EXAMPLE
+-- -- #+BEGIN_SRC haskell
 --     tableTypes'
 --       (rowGen
 --          {rowTypeName = "User",
@@ -423,7 +423,6 @@ maleOccupations = P.filter ((== Male) . view u2gender)
 --           separator = "|"})
 --       "data/ml-100k/u.user"
 --   ======>
---     /Users/acowley/Documents/Projects/Frames/demo/Tutorial.hs:(52,1)-(56,34)
 --     type User =
 --         Rec ["user id" :-> Int, "age" :-> Int, "gender" :-> Text, "occupation" :-> Text, "zip code" :-> Text]
 
@@ -517,7 +516,7 @@ maleOccupations = P.filter ((== Male) . view u2gender)
 --       (g_ad5V Text -> f_ad5W (g_ad5V Text))
 --       -> RecF g_ad5V rs_ad5X -> f_ad5W (RecF g_ad5V rs_ad5X)
 --     zipCode' = rlens' (Proxy :: Proxy ZipCode)
--- #+END_EXAMPLE
+-- #+END_SRC
 
 -- ** Thanks
 -- Thanks to Greg Hale and Ben Gamari for reviewing early drafts of this document.
