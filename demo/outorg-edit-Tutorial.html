@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Frames Tutorial</title>
-<!-- 2015-01-21 Wed 19:24 -->
+<!-- 2015-01-22 Thu 16:36 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="generator" content="Org-mode" />
 <meta  name="author" content="Anthony Cowley" />
@@ -158,6 +158,10 @@
  pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
 <style type="text/css">
  pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2; overflow: scroll;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2; overflow: scroll;} body { max-width: 600pt; margin: auto} </style>
 <style type="text/css">
  pre.src {background-color: #272822; color: #F8F8F2; overflow: scroll;} body { max-width: 600pt; margin: auto} </style>
 <style type="text/css">
@@ -441,10 +445,11 @@ rows with either a densely packed in-memory reporesentation &#x2013; a
 <code>Frame</code> &#x2013; or a stream of rows provided by a <code>Producer</code>. The choice
 depends on if you want to perform multiple queries against your
 data, and, if so, whether you have enough RAM to hold the data. If
-the answer to both of those questions is, <i>Yes!</i>, consider using a
-<code>Frame</code> as in the <code>loadMovies</code> example. If the answer to either
-question is, <i>Nope!</i>, you will be better off with a <code>Producer</code>, as
-in the <code>movieStream</code> example.
+the answer to both of those questions is,
+<i>"Yes!"</i>, consider using a <code>Frame</code> as in the
+<code>loadMovies</code> example. If the answer to either question is,
+<i>"Nope!"</i>, you will be better off with a
+<code>Producer</code>, as in the <code>movieStream</code> example.
 </p>
 </div>
 </div>
@@ -799,10 +804,10 @@ off, and the sky's the limit.
 <div class="outline-text-3" id="text-4-2">
 <p>
 The Template Haskell splices we use produce quite a lot of
-code. The raw dumps of these splices can be hard to read, but I have
-included some elisp code for cleaning up that output in the design
-notes for <code>Frames</code>. Here is what we get from the <code>tableTypesOpt</code>
-splice shown above.
+code. The raw dumps of these splices can be hard to read, but I
+have included some elisp code for cleaning up that output in the
+design notes for <code>Frames</code>. Here is what we get from the
+<code>tableTypes'</code> splice shown above.
 </p>
 
 <p>
