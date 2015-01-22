@@ -133,9 +133,9 @@ loadMovies = inCoreAoS movieStream
 -- ~Frame~ -- or a stream of rows provided by a ~Producer~. The choice
 -- depends on if you want to perform multiple queries against your
 -- data, and, if so, whether you have enough RAM to hold the data. If
--- the answer to both of those questions is /"Yes!"/, consider using a
+-- the answer to both of those questions is, /Yes!/, consider using a
 -- ~Frame~ as in the ~loadMovies~ example. If the answer to either
--- question is /"Nope!"/, you will be better off with a ~Producer~, as
+-- question is, /Nope!/, you will be better off with a ~Producer~, as
 -- in the ~movieStream~ example.
 
 -- ** Sanity Check
