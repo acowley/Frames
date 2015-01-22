@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Frames Tutorial</title>
-<!-- 2015-01-20 Tue 19:27 -->
+<!-- 2015-01-21 Wed 19:17 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="generator" content="Org-mode" />
 <meta  name="author" content="Anthony Cowley" />
@@ -134,6 +134,32 @@
  pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
 <style type="text/css">
  pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2; overflow: scroll;} body { max-width: 600pt; margin: auto} </style>
 <script type="text/javascript">
 /*
 @licstart  The following is the entire license notice for the
@@ -223,16 +249,33 @@ for the JavaScript code in this tag.
 This is a loose port of a
 <a href="http://ajkl.github.io/Dataframes/">dataframe tutorial</a> Rosetta
 Stone to compare traditional dataframe tools built in R, Julia,
-Python, etc. with <code>Frames</code>.
+Python, etc. with
+<a href="https://github.com/acowley/Frames">Frames</a>. Performing data
+analysis in Haskell brings with it a few advantages:
 </p>
 
+<ul class="org-ul">
+<li>Interactive exploration is supported in GHCi
+</li>
+<li>GHC produces fast, memory-efficient code when you're ready to run a
+program that might take a bit of time
+</li>
+<li>You get to use Haskell to write your own functions when what you
+want isn't already defined in the library
+</li>
+<li>The code you write is <i>statically typed</i> so that mismatches between
+your code and your data data are found by the type checker
+</li>
+</ul>
+
 <p>
-The example data file used does not include column headers, nor
-does it use commas to separate values, so it does not fall into the
-sweet spot of CSV parsing that <code>Frames</code> is aimed at. That said,
-this mismatch of test data and library support is a great
-opportunity to verify that <code>Frames</code> are flexible enough to meet a
-variety of needs.
+The example <a href="http://grouplens.org/datasets/movielens/">data</a> file
+used (specifically, the <code>u.user</code> file from the <i>MovieLens 100k</i>
+data set) does not include column headers, nor does it use commas
+to separate values, so it does not fall into the sweet spot of CSV
+parsing that <code>Frames</code> is aimed at. That said, this mismatch of test
+data and library support is a great opportunity to verify that
+<code>Frames</code> are flexible enough to meet a variety of needs.
 </p>
 
 <p>
@@ -248,7 +291,7 @@ smaller test program than this!
 <span style="color: #F92672;">import</span> <span style="color: #F92672;">qualified</span> <span style="color: #66D9EF;">Data.Foldable</span> <span style="color: #F92672;">as</span> <span style="color: #66D9EF;">F</span>
 <span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Lens.Family</span>
 <span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Frames</span>
-<span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Frames.CSV</span> (readTableOpt)
+<span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Frames.CSV</span> (readTableOpt, rowGen, <span style="color: #66D9EF;">RowGen</span>(<span style="color: #FD971F;">..</span>))
 <span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Pipes</span> <span style="color: #F92672;">hiding</span> (<span style="color: #66D9EF;">Proxy</span>)
 <span style="color: #F92672;">import</span> <span style="color: #F92672;">qualified</span> <span style="color: #66D9EF;">Pipes.Prelude</span> <span style="color: #F92672;">as</span> <span style="color: #66D9EF;">P</span>
 </pre>
@@ -260,7 +303,7 @@ A few other imports will be used for highly customized parsing <a href="#sec-3">
 
 <div class="org-src-container">
 
-<pre class="src src-haskell"><span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Frames.CSV</span> (rowGen, <span style="color: #66D9EF;">RowGen</span>(<span style="color: #FD971F;">..</span>), colQ)
+<pre class="src src-haskell"><span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Frames.CSV</span> (colQ)
 <span style="color: #F92672;">import</span> <span style="color: #66D9EF;">TutorialUsers</span>
 </pre>
 </div>
@@ -278,7 +321,7 @@ as,
 
 <div class="org-src-container">
 
-<pre class="src src-haskell"><span style="color: #A6E22E;">tableTypes</span> <span style="color: #E6DB74;">"Users"</span> <span style="color: #E6DB74;">"data/ml-100k/u.user"</span>
+<pre class="src src-haskell"><span style="color: #A6E22E;">tableTypes</span> <span style="color: #E6DB74;">"User"</span> <span style="color: #E6DB74;">"data/ml-100k/u.user"</span>
 </pre>
 </div>
 
@@ -292,7 +335,7 @@ library is flexible enough to meet a variety of needs.
 
 <div class="org-src-container">
 
-<pre class="src src-haskell"><span style="color: #A6E22E;">tableTypes'</span>  rowGen { rowTypeName <span style="color: #FD971F;">=</span> <span style="color: #E6DB74;">"Users"</span>
+<pre class="src src-haskell"><span style="color: #A6E22E;">tableTypes'</span>  rowGen { rowTypeName <span style="color: #FD971F;">=</span> <span style="color: #E6DB74;">"User"</span>
                     , columnNames <span style="color: #FD971F;">=</span> [ <span style="color: #E6DB74;">"user id"</span>, <span style="color: #E6DB74;">"age"</span>, <span style="color: #E6DB74;">"gender"</span>
                                     , <span style="color: #E6DB74;">"occupation"</span>, <span style="color: #E6DB74;">"zip code"</span> ]
                     , separator <span style="color: #FD971F;">=</span> <span style="color: #E6DB74;">"|"</span> }
@@ -310,12 +353,21 @@ between the generated code and how it is used.
 </p>
 
 <p>
+Since this data is far from the ideal CSV file, we have to tell
+<code>Frames</code> how to interpret the data so that it can decide what data
+type to use for each column. Having the types depend upon the data in
+the given file is a useful exercise in this domain as the actual shape
+of the data is of paramount importance during the early import and
+exploration phases of data analysis.
+</p>
+
+<p>
 We can load the module into <code>cabal repl</code> to see what we have so far.
 </p>
 
 <pre class="example">
-λ&gt; :i Users
-type Users =
+λ&gt; :i User
+type User =
   Rec
     '["user id" :-&gt; Int, "age" :-&gt; Int, "gender" :-&gt; Text,
       "occupation" :-&gt; Text, "zip code" :-&gt; Text]
@@ -334,8 +386,8 @@ streams through RAM.
 
 <div class="org-src-container">
 
-<pre class="src src-haskell"><span style="color: #A6E22E;">movieStream</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">Producer</span> <span style="color: #66D9EF;">Users</span> <span style="color: #66D9EF;">IO</span> <span style="color: #66D9EF;">()</span>
-<span style="color: #A6E22E;">movieStream</span> <span style="color: #FD971F;">=</span> readTableOpt usersParser <span style="color: #E6DB74;">"data/ml-100k/u.user"</span>
+<pre class="src src-haskell"><span style="color: #A6E22E;">movieStream</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">Producer</span> <span style="color: #66D9EF;">User</span> <span style="color: #66D9EF;">IO</span> <span style="color: #66D9EF;">()</span>
+<span style="color: #A6E22E;">movieStream</span> <span style="color: #FD971F;">=</span> readTableOpt userParser <span style="color: #E6DB74;">"data/ml-100k/u.user"</span>
 </pre>
 </div>
 
@@ -347,7 +399,7 @@ memory) array of structures (AoS) representation.
 
 <div class="org-src-container">
 
-<pre class="src src-haskell"><span style="color: #A6E22E;">loadMovies</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">IO</span> (<span style="color: #66D9EF;">Frame</span> <span style="color: #66D9EF;">Users</span>)
+<pre class="src src-haskell"><span style="color: #A6E22E;">loadMovies</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">IO</span> (<span style="color: #66D9EF;">Frame</span> <span style="color: #66D9EF;">User</span>)
 <span style="color: #A6E22E;">loadMovies</span> <span style="color: #FD971F;">=</span> inCoreAoS movieStream
 </pre>
 </div>
@@ -358,14 +410,14 @@ memory) array of structures (AoS) representation.
 <div class="outline-text-3" id="text-1-1">
 <p>
 A <code>Frame</code> is an in-memory representation of your data. The <code>Frames</code>
-library stores each column as compactly as it knows how, and lets you
-index your data as a structure of arrays (where each field of the
-structure is an array corresponding to a column of your data), or as
-an array of structures, also known as a <code>Frame</code>. These latter
-structures correspond to rows of your data, and rows of data may be
-handled in a streaming fashion so that you are not limited to
-available RAM. In the streaming paradigm, you process each row
-individually as a single record.
+library stores each column as compactly as it knows how, and lets
+you index your data as a structure of arrays (where each field of
+the structure is an array corresponding to a column of your data),
+or as an array of structures, also known as a <code>Frame</code>. These latter
+structures correspond to rows of your data. Alternatively, rows of
+data may be handled in a streaming fashion so that you are not
+limited to available RAM. In the streaming paradigm, you process
+each row individually as a single record.
 </p>
 
 <p>
@@ -379,6 +431,18 @@ traversal.
 <p>
 Alternatively, a <code>Producer</code> of rows is a great way to whittle down a
 large data set before moving on to whatever you want to do next.
+</p>
+
+<p>
+The upshot is that you can work with your data as a collection of
+rows with either a densely packed in-memory reporesentation &#x2013; a
+<code>Frame</code> &#x2013; or a stream of rows provided by a <code>Producer</code>. The choice
+depends on if you want to perform multiple queries against your
+data, and, if so, whether you have enough RAM to hold the data. If
+the answer to both of those questions is /"Yes!"/, consider using a
+<code>Frame</code> as in the <code>loadMovies</code> example. If the answer to either
+question is /"Nope!"/, you will be better off with a <code>Producer</code>, as
+in the <code>movieStream</code> example.
 </p>
 </div>
 </div>
@@ -399,17 +463,24 @@ Just 7
 <p>
 When there are multiple properties we would like to compute, we can
 fuse multiple traversals into one pass using something like the <a href="http://hackage.haskell.org/package/foldl">foldl</a>
-package
+package,
 </p>
 
+<div class="org-src-container">
+
+<pre class="src src-haskell"><span style="color: #A6E22E;">minMax</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">Ord</span> a <span style="color: #FD971F;">=&gt;</span> <span style="color: #66D9EF;">L.Fold</span> a (<span style="color: #66D9EF;">Maybe</span> a, <span style="color: #66D9EF;">Maybe</span> a)
+<span style="color: #A6E22E;">minMax</span> <span style="color: #FD971F;">=</span> <span style="color: #66D9EF;">(,)</span> <span style="color: #FD971F;">&lt;$&gt;</span> <span style="color: #F8F8F2; background-color: #272822;">L.minimum</span> <span style="color: #FD971F;">&lt;*&gt;</span> <span style="color: #F8F8F2; background-color: #272822;">L.maximum</span>
+</pre>
+</div>
+
 <pre class="example">
-λ&gt; L.fold (L.pretraverse age ((,) &lt;$&gt; L.minimum &lt;*&gt; L.maximum)) ms
+λ&gt; L.fold (L.pretraverse age minMax) ms
 (Just 7,Just 73)
 </pre>
 
 <p>
 Here we are projecting the <code>age</code> column out of each record, and
-computing the minimum and maximum <code>age</code> for all rows.
+computing the minimum and maximum <code>age</code> across all rows.
 </p>
 </div>
 </div>
@@ -478,7 +549,7 @@ Or multiple columns,
 
 <div class="org-src-container">
 
-<pre class="src src-haskell"><span style="color: #A6E22E;">miniUser</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">Users</span> <span style="color: #FD971F;">-&gt;</span> <span style="color: #66D9EF;">Rec</span> [<span style="color: #66D9EF;">Occupation</span>, <span style="color: #66D9EF;">Gender</span>, <span style="color: #66D9EF;">Age</span>]
+<pre class="src src-haskell"><span style="color: #A6E22E;">miniUser</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">User</span> <span style="color: #FD971F;">-&gt;</span> <span style="color: #66D9EF;">Rec</span> [<span style="color: #66D9EF;">Occupation</span>, <span style="color: #66D9EF;">Gender</span>, <span style="color: #66D9EF;">Age</span>]
 <span style="color: #A6E22E;">miniUser</span> <span style="color: #FD971F;">=</span> rcast
 </pre>
 </div>
@@ -520,6 +591,20 @@ we pick out the users whose occupation is "writer".
 {user id :-&gt; 50, age :-&gt; 21, gender :-&gt; "M", occupation :-&gt; "writer", zip code :-&gt; "52245"}
 {user id :-&gt; 122, age :-&gt; 32, gender :-&gt; "F", occupation :-&gt; "writer", zip code :-&gt; "22206"}
 </pre>
+
+<p>
+If you're not too keen on all the <code>pipes</code> syntax in that example, you
+could also write it using a helper function provided by <code>Frames</code>,
+</p>
+
+<pre class="example">
+λ&gt; pipePreview movieStream 6 writers
+</pre>
+
+<p>
+This is a handy way to try out various maps and filters you may want
+to eventually apply to a large data set.
+</p>
 </div>
 </div>
 </div>
@@ -532,7 +617,7 @@ A common disappointment of parsing general data sets is the
 reliance on text for data representation even <i>after</i> parsing. If
 you find that the default <code>Columns</code> spectrum of potential column
 types that <code>Frames</code> uses doesn't capture desired structure, you can
-go ahead and define your own universe of column types! The <code>Users</code>
+go ahead and define your own universe of column types! The <code>User</code>
 row types we've been playing with here is rather boring: it only
 uses <code>Int</code> and <code>Text</code> column types. But <code>Text</code> is far too vague a
 type for a column like <code>gender</code>.
@@ -564,9 +649,9 @@ define our own universe of column types.
 </div>
 
 <p>
-The full code for the custom type may be found in an <a href="#sec-4-1">appendix</a>. Note
-that it must be defined in a separate module to satisfy GHC's stage
-restrictions related to Template Haskell.
+Note that these definitions must be imported from a separate module
+to satisfy GHC's stage restrictions related to Template
+Haskell. The full code for the custom type may be found in an <a href="#sec-4-1">appendix</a>.
 </p>
 
 <p>
@@ -723,9 +808,9 @@ The overall structure is this:
 </p>
 
 <ul class="org-ul">
-<li>A <code>Rec</code> type called <code>Users</code> with all necessary columns
+<li>A <code>Rec</code> type called <code>User</code> with all necessary columns
 </li>
-<li>A <code>usersParser</code> value that overrides parsing defaults
+<li>A <code>userParser</code> value that overrides parsing defaults
 </li>
 <li>A type synonym for each column that pairs the column name with its
 type
@@ -740,110 +825,111 @@ write in your code need not include the column names or separator
 character.
 </p>
 
-<pre class="example">
-    tableTypes'
+<div class="org-src-container">
+
+<pre class="src src-haskell">    tableTypes'
       (rowGen
-         {rowTypeName = "Users",
-          columnNames = ["user id", "age", "gender", "occupation",
-                         "zip code"],
-          separator = "|"})
-      "data/ml-100k/u.user"
-  ======&gt;
-    /Users/acowley/Documents/Projects/Frames/demo/Tutorial.hs:(52,1)-(56,34)
-    type Users =
-        Rec ["user id" :-&gt; Int, "age" :-&gt; Int, "gender" :-&gt; Text, "occupation" :-&gt; Text, "zip code" :-&gt; Text]
+         {rowTypeName <span style="color: #FD971F;">=</span> <span style="color: #E6DB74;">"User"</span>,
+          columnNames <span style="color: #FD971F;">=</span> [<span style="color: #E6DB74;">"user id"</span>, <span style="color: #E6DB74;">"age"</span>, <span style="color: #E6DB74;">"gender"</span>, <span style="color: #E6DB74;">"occupation"</span>,
+                         <span style="color: #E6DB74;">"zip code"</span>],
+          separator <span style="color: #FD971F;">=</span> <span style="color: #E6DB74;">"|"</span>})
+      <span style="color: #E6DB74;">"data/ml-100k/u.user"</span>
+  <span style="color: #FD971F;">======&gt;</span>
+    <span style="color: #F92672;">type</span> <span style="color: #66D9EF;">User</span> <span style="color: #FD971F;">=</span>
+        <span style="color: #66D9EF;">Rec</span> [<span style="color: #E6DB74;">"user id"</span> <span style="color: #66D9EF;">:-&gt;</span> <span style="color: #66D9EF;">Int</span>, <span style="color: #E6DB74;">"age"</span> <span style="color: #66D9EF;">:-&gt;</span> <span style="color: #66D9EF;">Int</span>, <span style="color: #E6DB74;">"gender"</span> <span style="color: #66D9EF;">:-&gt;</span> <span style="color: #66D9EF;">Text</span>, <span style="color: #E6DB74;">"occupation"</span> <span style="color: #66D9EF;">:-&gt;</span> <span style="color: #66D9EF;">Text</span>, <span style="color: #E6DB74;">"zip code"</span> <span style="color: #66D9EF;">:-&gt;</span> <span style="color: #66D9EF;">Text</span>]
 
-    usersParser :: ParserOptions
-    usersParser
-      = ParserOptions
-          (Just
+    userParser <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">ParserOptions</span>
+    userParser
+      <span style="color: #FD971F;">=</span> <span style="color: #66D9EF;">ParserOptions</span>
+          (<span style="color: #66D9EF;">Just</span>
              (map
-                T.pack
-                ["user id", "age", "gender", "occupation", "zip code"]))
-          (T.pack "|")
+                <span style="color: #F8F8F2; background-color: #272822;">T.pack</span>
+                [<span style="color: #E6DB74;">"user id"</span>, <span style="color: #E6DB74;">"age"</span>, <span style="color: #E6DB74;">"gender"</span>, <span style="color: #E6DB74;">"occupation"</span>, <span style="color: #E6DB74;">"zip code"</span>]))
+          (<span style="color: #F8F8F2; background-color: #272822;">T.pack</span> <span style="color: #E6DB74;">"|"</span>)
 
-    type UserId = "user id" :-&gt; Int
+    <span style="color: #F92672;">type</span> <span style="color: #66D9EF;">UserId</span> <span style="color: #FD971F;">=</span> <span style="color: #E6DB74;">"user id"</span> <span style="color: #66D9EF;">:-&gt;</span> <span style="color: #66D9EF;">Int</span>
 
-    userId ::
-      forall f_ad5z rs_ad5A. (Functor f_ad5z,
-                              RElem UserId rs_ad5A (RIndex UserId rs_ad5A)) =&gt;
-      (Int -&gt; f_ad5z Int) -&gt; Rec rs_ad5A -&gt; f_ad5z (Rec rs_ad5A)
-    userId = rlens (Proxy :: Proxy UserId)
+    userId <span style="color: #FD971F;">::</span>
+      forall f_ad5z rs_ad5A<span style="color: #FD971F;">.</span> (<span style="color: #66D9EF;">Functor</span> f_ad5z,
+                              <span style="color: #66D9EF;">RElem</span> <span style="color: #66D9EF;">UserId</span> rs_ad5A (<span style="color: #66D9EF;">RIndex</span> <span style="color: #66D9EF;">UserId</span> rs_ad5A)) <span style="color: #FD971F;">=&gt;</span>
+      (<span style="color: #66D9EF;">Int</span> <span style="color: #FD971F;">-&gt;</span> f_ad5z <span style="color: #66D9EF;">Int</span>) <span style="color: #FD971F;">-&gt;</span> <span style="color: #66D9EF;">Rec</span> rs_ad5A <span style="color: #FD971F;">-&gt;</span> f_ad5z (<span style="color: #66D9EF;">Rec</span> rs_ad5A)
+    userId <span style="color: #FD971F;">=</span> rlens (<span style="color: #66D9EF;">Proxy</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">Proxy</span> <span style="color: #66D9EF;">UserId</span>)
 
-    userId' ::
-      forall g_ad5B f_ad5C rs_ad5D. (Functor f_ad5C,
-                                     Functor g_ad5B,
-                                     RElem UserId rs_ad5D (RIndex UserId rs_ad5D)) =&gt;
-      (g_ad5B Int -&gt; f_ad5C (g_ad5B Int))
-      -&gt; RecF g_ad5B rs_ad5D -&gt; f_ad5C (RecF g_ad5B rs_ad5D)
-    userId' = rlens' (Proxy :: Proxy UserId)
+    userId' <span style="color: #FD971F;">::</span>
+      forall g_ad5B f_ad5C rs_ad5D<span style="color: #FD971F;">.</span> (<span style="color: #66D9EF;">Functor</span> f_ad5C,
+                                     <span style="color: #66D9EF;">Functor</span> g_ad5B,
+                                     <span style="color: #66D9EF;">RElem</span> <span style="color: #66D9EF;">UserId</span> rs_ad5D (<span style="color: #66D9EF;">RIndex</span> <span style="color: #66D9EF;">UserId</span> rs_ad5D)) <span style="color: #FD971F;">=&gt;</span>
+      (g_ad5B <span style="color: #66D9EF;">Int</span> <span style="color: #FD971F;">-&gt;</span> f_ad5C (g_ad5B <span style="color: #66D9EF;">Int</span>))
+      <span style="color: #FD971F;">-&gt;</span> <span style="color: #66D9EF;">RecF</span> g_ad5B rs_ad5D <span style="color: #FD971F;">-&gt;</span> f_ad5C (<span style="color: #66D9EF;">RecF</span> g_ad5B rs_ad5D)
+    userId' <span style="color: #FD971F;">=</span> rlens' (<span style="color: #66D9EF;">Proxy</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">Proxy</span> <span style="color: #66D9EF;">UserId</span>)
 
-    type Age = "age" :-&gt; Int
+    <span style="color: #F92672;">type</span> <span style="color: #66D9EF;">Age</span> <span style="color: #FD971F;">=</span> <span style="color: #E6DB74;">"age"</span> <span style="color: #66D9EF;">:-&gt;</span> <span style="color: #66D9EF;">Int</span>
 
-    age ::
-      forall f_ad5E rs_ad5F. (Functor f_ad5E,
-                              RElem Age rs_ad5F (RIndex Age rs_ad5F)) =&gt;
-      (Int -&gt; f_ad5E Int) -&gt; Rec rs_ad5F -&gt; f_ad5E (Rec rs_ad5F)
-    age = rlens (Proxy :: Proxy Age)
+    age <span style="color: #FD971F;">::</span>
+      forall f_ad5E rs_ad5F<span style="color: #FD971F;">.</span> (<span style="color: #66D9EF;">Functor</span> f_ad5E,
+                              <span style="color: #66D9EF;">RElem</span> <span style="color: #66D9EF;">Age</span> rs_ad5F (<span style="color: #66D9EF;">RIndex</span> <span style="color: #66D9EF;">Age</span> rs_ad5F)) <span style="color: #FD971F;">=&gt;</span>
+      (<span style="color: #66D9EF;">Int</span> <span style="color: #FD971F;">-&gt;</span> f_ad5E <span style="color: #66D9EF;">Int</span>) <span style="color: #FD971F;">-&gt;</span> <span style="color: #66D9EF;">Rec</span> rs_ad5F <span style="color: #FD971F;">-&gt;</span> f_ad5E (<span style="color: #66D9EF;">Rec</span> rs_ad5F)
+    age <span style="color: #FD971F;">=</span> rlens (<span style="color: #66D9EF;">Proxy</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">Proxy</span> <span style="color: #66D9EF;">Age</span>)
 
-    age' ::
-      forall g_ad5G f_ad5H rs_ad5I. (Functor f_ad5H,
-                                     Functor g_ad5G,
-                                     RElem Age rs_ad5I (RIndex Age rs_ad5I)) =&gt;
-      (g_ad5G Int -&gt; f_ad5H (g_ad5G Int))
-      -&gt; RecF g_ad5G rs_ad5I -&gt; f_ad5H (RecF g_ad5G rs_ad5I)
-    age' = rlens' (Proxy :: Proxy Age)
+    age' <span style="color: #FD971F;">::</span>
+      forall g_ad5G f_ad5H rs_ad5I<span style="color: #FD971F;">.</span> (<span style="color: #66D9EF;">Functor</span> f_ad5H,
+                                     <span style="color: #66D9EF;">Functor</span> g_ad5G,
+                                     <span style="color: #66D9EF;">RElem</span> <span style="color: #66D9EF;">Age</span> rs_ad5I (<span style="color: #66D9EF;">RIndex</span> <span style="color: #66D9EF;">Age</span> rs_ad5I)) <span style="color: #FD971F;">=&gt;</span>
+      (g_ad5G <span style="color: #66D9EF;">Int</span> <span style="color: #FD971F;">-&gt;</span> f_ad5H (g_ad5G <span style="color: #66D9EF;">Int</span>))
+      <span style="color: #FD971F;">-&gt;</span> <span style="color: #66D9EF;">RecF</span> g_ad5G rs_ad5I <span style="color: #FD971F;">-&gt;</span> f_ad5H (<span style="color: #66D9EF;">RecF</span> g_ad5G rs_ad5I)
+    age' <span style="color: #FD971F;">=</span> rlens' (<span style="color: #66D9EF;">Proxy</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">Proxy</span> <span style="color: #66D9EF;">Age</span>)
 
-    type Gender = "gender" :-&gt; Text
+    <span style="color: #F92672;">type</span> <span style="color: #66D9EF;">Gender</span> <span style="color: #FD971F;">=</span> <span style="color: #E6DB74;">"gender"</span> <span style="color: #66D9EF;">:-&gt;</span> <span style="color: #66D9EF;">Text</span>
 
-    gender ::
-      forall f_ad5J rs_ad5K. (Functor f_ad5J,
-                              RElem Gender rs_ad5K (RIndex Gender rs_ad5K)) =&gt;
-      (Text -&gt; f_ad5J Text) -&gt; Rec rs_ad5K -&gt; f_ad5J (Rec rs_ad5K)
-    gender = rlens (Proxy :: Proxy Gender)
+    gender <span style="color: #FD971F;">::</span>
+      forall f_ad5J rs_ad5K<span style="color: #FD971F;">.</span> (<span style="color: #66D9EF;">Functor</span> f_ad5J,
+                              <span style="color: #66D9EF;">RElem</span> <span style="color: #66D9EF;">Gender</span> rs_ad5K (<span style="color: #66D9EF;">RIndex</span> <span style="color: #66D9EF;">Gender</span> rs_ad5K)) <span style="color: #FD971F;">=&gt;</span>
+      (<span style="color: #66D9EF;">Text</span> <span style="color: #FD971F;">-&gt;</span> f_ad5J <span style="color: #66D9EF;">Text</span>) <span style="color: #FD971F;">-&gt;</span> <span style="color: #66D9EF;">Rec</span> rs_ad5K <span style="color: #FD971F;">-&gt;</span> f_ad5J (<span style="color: #66D9EF;">Rec</span> rs_ad5K)
+    gender <span style="color: #FD971F;">=</span> rlens (<span style="color: #66D9EF;">Proxy</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">Proxy</span> <span style="color: #66D9EF;">Gender</span>)
 
-    gender' ::
-      forall g_ad5L f_ad5M rs_ad5N. (Functor f_ad5M,
-                                     Functor g_ad5L,
-                                     RElem Gender rs_ad5N (RIndex Gender rs_ad5N)) =&gt;
-      (g_ad5L Text -&gt; f_ad5M (g_ad5L Text))
-      -&gt; RecF g_ad5L rs_ad5N -&gt; f_ad5M (RecF g_ad5L rs_ad5N)
-    gender' = rlens' (Proxy :: Proxy Gender)
+    gender' <span style="color: #FD971F;">::</span>
+      forall g_ad5L f_ad5M rs_ad5N<span style="color: #FD971F;">.</span> (<span style="color: #66D9EF;">Functor</span> f_ad5M,
+                                     <span style="color: #66D9EF;">Functor</span> g_ad5L,
+                                     <span style="color: #66D9EF;">RElem</span> <span style="color: #66D9EF;">Gender</span> rs_ad5N (<span style="color: #66D9EF;">RIndex</span> <span style="color: #66D9EF;">Gender</span> rs_ad5N)) <span style="color: #FD971F;">=&gt;</span>
+      (g_ad5L <span style="color: #66D9EF;">Text</span> <span style="color: #FD971F;">-&gt;</span> f_ad5M (g_ad5L <span style="color: #66D9EF;">Text</span>))
+      <span style="color: #FD971F;">-&gt;</span> <span style="color: #66D9EF;">RecF</span> g_ad5L rs_ad5N <span style="color: #FD971F;">-&gt;</span> f_ad5M (<span style="color: #66D9EF;">RecF</span> g_ad5L rs_ad5N)
+    gender' <span style="color: #FD971F;">=</span> rlens' (<span style="color: #66D9EF;">Proxy</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">Proxy</span> <span style="color: #66D9EF;">Gender</span>)
 
-    type Occupation = "occupation" :-&gt; Text
+    <span style="color: #F92672;">type</span> <span style="color: #66D9EF;">Occupation</span> <span style="color: #FD971F;">=</span> <span style="color: #E6DB74;">"occupation"</span> <span style="color: #66D9EF;">:-&gt;</span> <span style="color: #66D9EF;">Text</span>
 
-    occupation ::
-      forall f_ad5O rs_ad5P. (Functor f_ad5O,
-                              RElem Occupation rs_ad5P (RIndex Occupation rs_ad5P)) =&gt;
-      (Text -&gt; f_ad5O Text) -&gt; Rec rs_ad5P -&gt; f_ad5O (Rec rs_ad5P)
+    occupation <span style="color: #FD971F;">::</span>
+      forall f_ad5O rs_ad5P<span style="color: #FD971F;">.</span> (<span style="color: #66D9EF;">Functor</span> f_ad5O,
+                              <span style="color: #66D9EF;">RElem</span> <span style="color: #66D9EF;">Occupation</span> rs_ad5P (<span style="color: #66D9EF;">RIndex</span> <span style="color: #66D9EF;">Occupation</span> rs_ad5P)) <span style="color: #FD971F;">=&gt;</span>
+      (<span style="color: #66D9EF;">Text</span> <span style="color: #FD971F;">-&gt;</span> f_ad5O <span style="color: #66D9EF;">Text</span>) <span style="color: #FD971F;">-&gt;</span> <span style="color: #66D9EF;">Rec</span> rs_ad5P <span style="color: #FD971F;">-&gt;</span> f_ad5O (<span style="color: #66D9EF;">Rec</span> rs_ad5P)
     occupation
-      = rlens (Proxy :: Proxy Occupation)
+      <span style="color: #FD971F;">=</span> rlens (<span style="color: #66D9EF;">Proxy</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">Proxy</span> <span style="color: #66D9EF;">Occupation</span>)
 
-    occupation' ::
-      forall g_ad5Q f_ad5R rs_ad5S. (Functor f_ad5R,
-                                     Functor g_ad5Q,
-                                     RElem Occupation rs_ad5S (RIndex Occupation rs_ad5S)) =&gt;
-      (g_ad5Q Text -&gt; f_ad5R (g_ad5Q Text))
-      -&gt; RecF g_ad5Q rs_ad5S -&gt; f_ad5R (RecF g_ad5Q rs_ad5S)
+    occupation' <span style="color: #FD971F;">::</span>
+      forall g_ad5Q f_ad5R rs_ad5S<span style="color: #FD971F;">.</span> (<span style="color: #66D9EF;">Functor</span> f_ad5R,
+                                     <span style="color: #66D9EF;">Functor</span> g_ad5Q,
+                                     <span style="color: #66D9EF;">RElem</span> <span style="color: #66D9EF;">Occupation</span> rs_ad5S (<span style="color: #66D9EF;">RIndex</span> <span style="color: #66D9EF;">Occupation</span> rs_ad5S)) <span style="color: #FD971F;">=&gt;</span>
+      (g_ad5Q <span style="color: #66D9EF;">Text</span> <span style="color: #FD971F;">-&gt;</span> f_ad5R (g_ad5Q <span style="color: #66D9EF;">Text</span>))
+      <span style="color: #FD971F;">-&gt;</span> <span style="color: #66D9EF;">RecF</span> g_ad5Q rs_ad5S <span style="color: #FD971F;">-&gt;</span> f_ad5R (<span style="color: #66D9EF;">RecF</span> g_ad5Q rs_ad5S)
     occupation'
-      = rlens' (Proxy :: Proxy Occupation)
+      <span style="color: #FD971F;">=</span> rlens' (<span style="color: #66D9EF;">Proxy</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">Proxy</span> <span style="color: #66D9EF;">Occupation</span>)
 
-    type ZipCode = "zip code" :-&gt; Text
+    <span style="color: #F92672;">type</span> <span style="color: #66D9EF;">ZipCode</span> <span style="color: #FD971F;">=</span> <span style="color: #E6DB74;">"zip code"</span> <span style="color: #66D9EF;">:-&gt;</span> <span style="color: #66D9EF;">Text</span>
 
-    zipCode ::
-      forall f_ad5T rs_ad5U. (Functor f_ad5T,
-                              RElem ZipCode rs_ad5U (RIndex ZipCode rs_ad5U)) =&gt;
-      (Text -&gt; f_ad5T Text) -&gt; Rec rs_ad5U -&gt; f_ad5T (Rec rs_ad5U)
-    zipCode = rlens (Proxy :: Proxy ZipCode)
+    zipCode <span style="color: #FD971F;">::</span>
+      forall f_ad5T rs_ad5U<span style="color: #FD971F;">.</span> (<span style="color: #66D9EF;">Functor</span> f_ad5T,
+                              <span style="color: #66D9EF;">RElem</span> <span style="color: #66D9EF;">ZipCode</span> rs_ad5U (<span style="color: #66D9EF;">RIndex</span> <span style="color: #66D9EF;">ZipCode</span> rs_ad5U)) <span style="color: #FD971F;">=&gt;</span>
+      (<span style="color: #66D9EF;">Text</span> <span style="color: #FD971F;">-&gt;</span> f_ad5T <span style="color: #66D9EF;">Text</span>) <span style="color: #FD971F;">-&gt;</span> <span style="color: #66D9EF;">Rec</span> rs_ad5U <span style="color: #FD971F;">-&gt;</span> f_ad5T (<span style="color: #66D9EF;">Rec</span> rs_ad5U)
+    zipCode <span style="color: #FD971F;">=</span> rlens (<span style="color: #66D9EF;">Proxy</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">Proxy</span> <span style="color: #66D9EF;">ZipCode</span>)
 
-    zipCode' ::
-      forall g_ad5V f_ad5W rs_ad5X. (Functor f_ad5W,
-                                     Functor g_ad5V,
-                                     RElem ZipCode rs_ad5X (RIndex ZipCode rs_ad5X)) =&gt;
-      (g_ad5V Text -&gt; f_ad5W (g_ad5V Text))
-      -&gt; RecF g_ad5V rs_ad5X -&gt; f_ad5W (RecF g_ad5V rs_ad5X)
-    zipCode' = rlens' (Proxy :: Proxy ZipCode)
+    zipCode' <span style="color: #FD971F;">::</span>
+      forall g_ad5V f_ad5W rs_ad5X<span style="color: #FD971F;">.</span> (<span style="color: #66D9EF;">Functor</span> f_ad5W,
+                                     <span style="color: #66D9EF;">Functor</span> g_ad5V,
+                                     <span style="color: #66D9EF;">RElem</span> <span style="color: #66D9EF;">ZipCode</span> rs_ad5X (<span style="color: #66D9EF;">RIndex</span> <span style="color: #66D9EF;">ZipCode</span> rs_ad5X)) <span style="color: #FD971F;">=&gt;</span>
+      (g_ad5V <span style="color: #66D9EF;">Text</span> <span style="color: #FD971F;">-&gt;</span> f_ad5W (g_ad5V <span style="color: #66D9EF;">Text</span>))
+      <span style="color: #FD971F;">-&gt;</span> <span style="color: #66D9EF;">RecF</span> g_ad5V rs_ad5X <span style="color: #FD971F;">-&gt;</span> f_ad5W (<span style="color: #66D9EF;">RecF</span> g_ad5V rs_ad5X)
+    zipCode' <span style="color: #FD971F;">=</span> rlens' (<span style="color: #66D9EF;">Proxy</span> <span style="color: #FD971F;">::</span> <span style="color: #66D9EF;">Proxy</span> <span style="color: #66D9EF;">ZipCode</span>)
 </pre>
+</div>
 </div>
 </div>
 
@@ -851,7 +937,7 @@ character.
 <h3 id="sec-4-3"><span class="section-number-3">4.3</span> Thanks</h3>
 <div class="outline-text-3" id="text-4-3">
 <p>
-Thanks to Greg Hale for reviewing an early draft of this document.
+Thanks to Greg Hale and Ben Gamari for reviewing early drafts of this document.
 </p>
 </div>
 </div>
