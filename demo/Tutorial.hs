@@ -133,10 +133,11 @@ loadMovies = inCoreAoS movieStream
 -- ~Frame~ -- or a stream of rows provided by a ~Producer~. The choice
 -- depends on if you want to perform multiple queries against your
 -- data, and, if so, whether you have enough RAM to hold the data. If
--- the answer to both of those questions is, /Yes!/, consider using a
--- ~Frame~ as in the ~loadMovies~ example. If the answer to either
--- question is, /Nope!/, you will be better off with a ~Producer~, as
--- in the ~movieStream~ example.
+-- the answer to both of those questions is,
+-- @@html:<i>@@"Yes!"@@html:</i>@@, consider using a ~Frame~ as in the
+-- ~loadMovies~ example. If the answer to either question is,
+-- @@html:<i>@@"Nope!"@@html:</i>@@, you will be better off with a
+-- ~Producer~, as in the ~movieStream~ example.
 
 -- ** Sanity Check
 
@@ -396,11 +397,12 @@ maleOccupations = P.filter ((== Male) . view u2gender)
 -- #+end_src
 
 -- ** Splice Dump
+
 -- The Template Haskell splices we use produce quite a lot of
--- code. The raw dumps of these splices can be hard to read, but I have
--- included some elisp code for cleaning up that output in the design
--- notes for =Frames=. Here is what we get from the ~tableTypesOpt~
--- splice shown above.
+-- code. The raw dumps of these splices can be hard to read, but I
+-- have included some elisp code for cleaning up that output in the
+-- design notes for =Frames=. Here is what we get from the
+-- @@html:<code>@@tableTypes'@@html:</code>@@ splice shown above.
 
 -- The overall structure is this:
 
