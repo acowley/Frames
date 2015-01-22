@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Frames Tutorial</title>
-<!-- 2015-01-21 Wed 19:17 -->
+<!-- 2015-01-21 Wed 19:24 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="generator" content="Org-mode" />
 <meta  name="author" content="Anthony Cowley" />
@@ -158,6 +158,8 @@
  pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
 <style type="text/css">
  pre.src {background-color: #272822; color: #F8F8F2;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2; overflow: scroll;} body { max-width: 600pt; margin: auto} </style>
 <style type="text/css">
  pre.src {background-color: #272822; color: #F8F8F2; overflow: scroll;} body { max-width: 600pt; margin: auto} </style>
 <script type="text/javascript">
@@ -439,9 +441,9 @@ rows with either a densely packed in-memory reporesentation &#x2013; a
 <code>Frame</code> &#x2013; or a stream of rows provided by a <code>Producer</code>. The choice
 depends on if you want to perform multiple queries against your
 data, and, if so, whether you have enough RAM to hold the data. If
-the answer to both of those questions is /"Yes!"/, consider using a
+the answer to both of those questions is, <i>Yes!</i>, consider using a
 <code>Frame</code> as in the <code>loadMovies</code> example. If the answer to either
-question is /"Nope!"/, you will be better off with a <code>Producer</code>, as
+question is, <i>Nope!</i>, you will be better off with a <code>Producer</code>, as
 in the <code>movieStream</code> example.
 </p>
 </div>
