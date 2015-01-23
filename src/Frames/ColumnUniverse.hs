@@ -28,16 +28,9 @@ import Data.Vinyl
 import Data.Vinyl.Functor
 import Frames.CoRec
 import Frames.ColumnTypeable
-import GHC.Prim (Constraint)
+import Frames.TypeLevel (LAll)
 import Data.Typeable (TypeRep)
 import Data.Maybe (fromMaybe)
-
--- * Promoted List Helpers
-
--- | A constraint on each element of a type-level list.
-type family LAll c ts :: Constraint where
-  LAll c '[] = ()
-  LAll c (t ': ts) = (c t, LAll c ts)
 
 -- * TypeRep Helpers
 
