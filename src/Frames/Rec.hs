@@ -14,7 +14,10 @@
              UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Frames.Rec where
-import Data.Vinyl.Functor (Identity(..))
+import Data.Proxy
+import Data.Vinyl (recordToList, rmap, reifyConstraint, Dict(..))
+import Data.Vinyl.TypeLevel (RecAll)
+import Data.Vinyl.Functor (Identity(..), Const(..), Compose(..), (:.))
 import Frames.Col
 import Frames.RecF
 
@@ -31,3 +34,12 @@ infixr 5 &:
 recMaybe :: RecF Maybe cs -> Maybe (Rec cs)
 recMaybe = rtraverse (fmap Identity)
 {-# INLINE recMaybe #-}
+
+-- | Show each field of a 'Rec' /without/ its column name.
+showFields :: (RecAll Identity (UnColumn ts) Show, ToVinyl ts)
+           => Rec ts -> [String]
+showFields = recordToList . rmap aux . reifyConstraint p . toVinyl
+  where p = Proxy :: Proxy Show
+        aux :: (Dict Show :. Identity) a -> Const String a
+        aux (Compose (Dict x)) = Const (show x)
+{-# INLINABLE showFields #-}

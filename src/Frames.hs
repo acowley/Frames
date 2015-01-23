@@ -26,7 +26,7 @@ import Frames.Exploration
 import Frames.Frame
 import Frames.InCore (inCore, inCoreSoA,
                       inCoreAoS, inCoreAoS', toAoS)
-import Frames.Rec (Rec, (&:), recMaybe)
+import Frames.Rec (Rec, (&:), recMaybe, showFields)
 import Frames.RecF
 import Frames.RecLens
 import Frames.TypeLevel

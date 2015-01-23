@@ -12,8 +12,9 @@
              ViewPatterns #-}
 module Frames.RecF (RecF, V.rappend, V.rtraverse, RDel, rdel,
                     frameCons, pattern (:&), pattern Nil,
+                    UnColumn, ToVinyl(..),
                     ShowRecF, showRecF, ColFun) where
-import Control.Applicative
+import Control.Applicative ((<$>))
 import Data.List (intercalate)
 import Data.Proxy
 import qualified Data.Vinyl as V
@@ -60,6 +61,22 @@ instance forall cs s c. (ColumnNames cs, KnownSymbol s)
 -- rs) = RecF f rs@.
 type family ColFun f x where
   ColFun f (RecF Identity rs) = RecF f rs
+
+-- | Strip the column information from each element of a list of
+-- types.
+type family UnColumn ts where
+  UnColumn '[] = '[]
+  UnColumn ((s :-> t) ': ts) = t ': UnColumn ts
+
+-- | Remove the column name phantom types from a record, leaving you
+-- with an unadorned Vinyl 'V.Rec'.
+class ToVinyl ts where
+  toVinyl :: Functor f => RecF f ts -> V.Rec f (UnColumn ts)
+
+instance ToVinyl '[] where toVinyl _ = V.RNil
+instance ToVinyl ts => ToVinyl (s :-> t ': ts) where
+  toVinyl (x V.:& xs) = fmap getCol x V.:& toVinyl xs
+
 
 -- | Delete a field from a record
 rdel :: forall f r rs i proxy. (RDel r rs i, RIndex r rs ~ i)
