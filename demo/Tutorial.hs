@@ -252,6 +252,30 @@ writers = P.filter ((== "writer") . view occupation)
 -- This is a handy way to try out various maps and filters you may want
 -- to eventually apply to a large data set.
 
+-- ** Column Subset Update
+
+-- We can also apply a function to a subset of columns of each row! Here,
+-- we want to apply a function with type ~Int -> Int~ to two columns
+-- whose values are of type ~Int~.
+
+intFieldDoubler :: Rec [UserId, Age] -> Rec [UserId, Age]
+intFieldDoubler = mapMono (* 2)
+
+-- Let's preview the effect of this function by applying it to the
+-- ~UserId~ and ~Age~ columns of the first three rows of our data set.
+
+-- #+BEGIN_EXAMPLE
+-- λ> pipePreview movieStream 3 (P.map (rsubset %~ intFieldDoubler))
+-- {user id :-> 2, age :-> 48, gender :-> "M", occupation :-> "technician", zip code :-> "85711"}
+-- {user id :-> 4, age :-> 106, gender :-> "F", occupation :-> "other", zip code :-> "94043"}
+-- {user id :-> 6, age :-> 46, gender :-> "M", occupation :-> "writer", zip code :-> "32067"}
+-- #+END_EXAMPLE
+
+-- This is a neat way of manipulating a few columns without having to
+-- worry about what other columns might exist. You might want to use this
+-- for normalizing the capitalization, or truncating the length of,
+-- various text fields, for example.
+
 -- * Better Types
 
 -- A common disappointment of parsing general data sets is the

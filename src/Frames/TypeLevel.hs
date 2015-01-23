@@ -12,3 +12,10 @@ type family RDelete r rs where
 type family LAll c ts :: Constraint where
   LAll c '[] = ()
   LAll c (t ': ts) = (c t, LAll c ts)
+
+-- | Constraint that every element of a promoted list is equal to a
+-- particular type. That is, the list of types is a single type
+-- repeated some number of times.
+type family AllAre a ts :: Constraint where
+  AllAre a '[] = ()
+  AllAre a (t ': ts) = (t ~ a, AllAre a ts)

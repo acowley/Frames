@@ -1,4 +1,5 @@
-{-# LANGUAGE DataKinds,
+{-# LANGUAGE ConstraintKinds,
+             DataKinds,
              FlexibleContexts,
              FlexibleInstances,
              GADTs,
@@ -12,7 +13,7 @@
              ViewPatterns #-}
 module Frames.RecF (RecF, V.rappend, V.rtraverse, RDel, rdel,
                     frameCons, pattern (:&), pattern Nil,
-                    UnColumn, ToVinyl(..),
+                    UnColumn, AsVinyl(..), mapMono, mapMethod,
                     ShowRecF, showRecF, ColFun) where
 import Control.Applicative ((<$>))
 import Data.List (intercalate)
@@ -70,14 +71,44 @@ type family UnColumn ts where
 
 -- | Remove the column name phantom types from a record, leaving you
 -- with an unadorned Vinyl 'V.Rec'.
-class ToVinyl ts where
+class AsVinyl ts where
   toVinyl :: Functor f => RecF f ts -> V.Rec f (UnColumn ts)
+  fromVinyl :: Functor f => V.Rec f (UnColumn ts) -> RecF f ts
 
-instance ToVinyl '[] where toVinyl _ = V.RNil
-instance ToVinyl ts => ToVinyl (s :-> t ': ts) where
+instance AsVinyl '[] where
+  toVinyl _ = V.RNil
+  fromVinyl _ = V.RNil
+
+instance AsVinyl ts => AsVinyl (s :-> t ': ts) where
   toVinyl (x V.:& xs) = fmap getCol x V.:& toVinyl xs
+  fromVinyl (x V.:& xs) = fmap Col x V.:& fromVinyl xs
+  fromVinyl _ = error "GHC coverage checker isn't great"
 
+-- | Map a function across a homogeneous, monomorphic 'V.Rec'.
+mapMonoV :: (Functor f, AllAre a ts) => (a -> a) -> V.Rec f ts -> V.Rec f ts
+mapMonoV _ V.RNil = V.RNil
+mapMonoV f (x V.:& xs) = fmap f x V.:& mapMonoV f xs
 
+-- | Map a function across a homogeneous, monomorphic 'RecF'.
+mapMono :: (AllAre a (UnColumn ts), Functor f, AsVinyl ts)
+        => (a -> a) -> RecF f ts -> RecF f ts
+mapMono f = fromVinyl . mapMonoV f . toVinyl
+
+-- | Map a typeclass method across a 'V.Rec' each of whose fields
+-- have instances of the typeclass.
+mapMethodV :: forall c f ts. (Functor f, LAll c ts)
+           => Proxy c -> (forall a. c a => a -> a) -> V.Rec f ts -> V.Rec f ts
+mapMethodV _ f = go
+  where go :: LAll c ts' => V.Rec f ts' -> V.Rec f ts'
+        go V.RNil = V.RNil
+        go (x V.:& xs) = fmap f x V.:& go xs
+
+-- | Map a typeclass method across a 'RecF' each of whose fields
+-- has an instance of the typeclass.
+mapMethod :: forall f c ts. (Functor f, LAll c (UnColumn ts), AsVinyl ts)
+          => Proxy c -> (forall a. c a => a -> a) -> RecF f ts -> RecF f ts
+mapMethod p f = fromVinyl . mapMethodV p f . toVinyl
+                                                                         
 -- | Delete a field from a record
 rdel :: forall f r rs i proxy. (RDel r rs i, RIndex r rs ~ i)
      => proxy r -> RecF f rs -> RecF f (RDelete r rs)

@@ -36,7 +36,7 @@ recMaybe = rtraverse (fmap Identity)
 {-# INLINE recMaybe #-}
 
 -- | Show each field of a 'Rec' /without/ its column name.
-showFields :: (RecAll Identity (UnColumn ts) Show, ToVinyl ts)
+showFields :: (RecAll Identity (UnColumn ts) Show, AsVinyl ts)
            => Rec ts -> [String]
 showFields = recordToList . rmap aux . reifyConstraint p . toVinyl
   where p = Proxy :: Proxy Show
