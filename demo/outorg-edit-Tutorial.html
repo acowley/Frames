@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Frames Tutorial</title>
-<!-- 2015-01-23 Fri 21:36 -->
+<!-- 2015-01-23 Fri 22:55 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="generator" content="Org-mode" />
 <meta  name="author" content="Anthony Cowley" />
@@ -88,6 +88,8 @@
     { background-color: #ffff00; color: #000000; font-weight: bold; }
   /*]]>*/-->
 </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2; overflow: scroll;} body { max-width: 600pt; margin: auto} </style>
 <style type="text/css">
  pre.src {background-color: #272822; color: #F8F8F2; overflow: scroll;} body { max-width: 600pt; margin: auto} </style>
 <script type="text/javascript">
@@ -718,14 +720,15 @@ code</b>. Just recompile against the new data set, and you're good to go.
 <h3 id="sec-4-1"><span class="section-number-3">4.1</span> User Types</h3>
 <div class="outline-text-3" id="text-4-1">
 <p>
-Here are the definitions needed to define the <code>MyColumns</code> type with its
-more descriptive <code>GenderT</code> type. We have to define these things in a
-separate module from our main work due to GHC's stage restrictions
-regarding Template Haskell. Specifically, <code>GenderT</code> and its instances
-are used at compile time to infer the record type needed to represent
-the data file. Notice the extension point here is not too rough: you
-prepend new, more refined, type compatibility checks to the head of
-<code>CommonColumns</code>, or you can build up your own list of expected types.
+Here are the definitions needed to define the <code>MyColumns</code> type with
+its more descriptive <code>ZipT</code> type. We have to define these things in
+a separate module from our main work due to GHC's stage
+restrictions regarding Template Haskell. Specifically, <code>ZipT</code> and
+its instances are used at compile time to infer the record type
+needed to represent the data file. Notice the extension point here
+is not too rough: you prepend new, more refined, type compatibility
+checks to the head of <code>CommonColumns</code>, or you can build up your own
+list of expected types.
 </p>
 
 <p>
