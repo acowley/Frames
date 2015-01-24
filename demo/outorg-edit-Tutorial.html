@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Frames Tutorial</title>
-<!-- 2015-01-23 Fri 15:34 -->
+<!-- 2015-01-23 Fri 21:36 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="generator" content="Org-mode" />
 <meta  name="author" content="Anthony Cowley" />
@@ -235,7 +235,7 @@ A few other imports will be used for highly customized parsing <a href="#sec-3">
 <div class="org-src-container">
 
 <pre class="src src-haskell"><span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Frames.CSV</span> (colQ)
-<span style="color: #F92672;">import</span> <span style="color: #66D9EF;">TutorialUsers</span>
+<span style="color: #F92672;">import</span> <span style="color: #66D9EF;">TutorialZipCode</span>
 </pre>
 </div>
 
@@ -589,31 +589,33 @@ types that <code>Frames</code> uses doesn't capture desired structure, you can
 go ahead and define your own universe of column types! The <code>User</code>
 row types we've been playing with here is rather boring: it only
 uses <code>Int</code> and <code>Text</code> column types. But <code>Text</code> is far too vague a
-type for a column like <code>gender</code>.
+type for a column like <code>zipCode</code>.
 </p>
 
-<pre class="example">
-λ&gt; L.purely P.fold L.nub (movieStream &gt;-&gt; P.map (view gender))
-["M", "F"]
-</pre>
-
 <p>
-Aha! The <code>gender</code> column is pretty simple, so let's go ahead and
-define our own universe of column types.
+All of the zip codes in this set are five characters, and most are
+standard numeric US zip codes. Let's go ahead and define our own
+universe of column types.
 </p>
 
 <div class="org-src-container">
 
-<pre class="src src-haskell"><span style="color: #F92672;">data</span> <span style="color: #66D9EF;">GenderT</span> <span style="color: #FD971F;">=</span> <span style="color: #66D9EF;">Male</span> <span style="color: #FD971F;">|</span> <span style="color: #66D9EF;">Female</span> <span style="color: #F92672;">deriving</span> (<span style="color: #66D9EF;">Eq</span>,<span style="color: #66D9EF;">Show</span>,<span style="color: #66D9EF;">Typeable</span>)
+<pre class="src src-haskell"><span style="color: #F92672;">data</span> <span style="color: #66D9EF;">ZipT</span> <span style="color: #FD971F;">=</span> <span style="color: #66D9EF;">ZipUS</span> <span style="color: #66D9EF;">Int</span> <span style="color: #66D9EF;">Int</span> <span style="color: #66D9EF;">Int</span> <span style="color: #66D9EF;">Int</span> <span style="color: #66D9EF;">Int</span>
+          <span style="color: #FD971F;">|</span> <span style="color: #66D9EF;">ZipWorld</span> <span style="color: #66D9EF;">Char</span> <span style="color: #66D9EF;">Char</span> <span style="color: #66D9EF;">Char</span> <span style="color: #66D9EF;">Char</span> <span style="color: #66D9EF;">Char</span>
+  <span style="color: #F92672;">deriving</span> (<span style="color: #66D9EF;">Eq</span>, <span style="color: #66D9EF;">Ord</span>, <span style="color: #66D9EF;">Show</span>, <span style="color: #66D9EF;">Typeable</span>)
 
-<span style="color: #F92672;">type</span> <span style="color: #F92672;">instance</span> <span style="color: #66D9EF;">VectorFor</span> <span style="color: #66D9EF;">GenderT</span> <span style="color: #FD971F;">=</span> <span style="color: #66D9EF;">V.Vector</span>
+<span style="color: #F92672;">type</span> <span style="color: #F92672;">instance</span> <span style="color: #66D9EF;">VectorFor</span> <span style="color: #66D9EF;">ZipT</span> <span style="color: #FD971F;">=</span> <span style="color: #66D9EF;">V.Vector</span>
 
-<span style="color: #F92672;">instance</span> <span style="color: #66D9EF;">Readable</span> <span style="color: #66D9EF;">GenderT</span> <span style="color: #F92672;">where</span>
-  fromText <span style="color: #E6DB74;">"M"</span> <span style="color: #FD971F;">=</span> return <span style="color: #66D9EF;">Male</span>
-  fromText <span style="color: #E6DB74;">"F"</span> <span style="color: #FD971F;">=</span> return <span style="color: #66D9EF;">Female</span>
-  fromText <span style="color: #F92672;">_</span> <span style="color: #FD971F;">=</span> mzero
+<span style="color: #F92672;">instance</span> <span style="color: #66D9EF;">Readable</span> <span style="color: #66D9EF;">ZipT</span>  <span style="color: #F92672;">where</span>
+  fromText t
+      <span style="color: #FD971F;">|</span> <span style="color: #F8F8F2; background-color: #272822;">T.length</span> t <span style="color: #FD971F;">==</span> 5 <span style="color: #FD971F;">=</span> <span style="color: #F92672;">let</span> cs<span style="color: #FD971F;">@</span>[v,w,x,y,z] <span style="color: #FD971F;">=</span> <span style="color: #F8F8F2; background-color: #272822;">T.unpack</span> t
+                              [a,b,c,d,e] <span style="color: #FD971F;">=</span> map <span style="color: #F8F8F2; background-color: #272822;">C.digitToInt</span> cs
+                          <span style="color: #F92672;">in</span> <span style="color: #F92672;">if</span> all <span style="color: #F8F8F2; background-color: #272822;">C.isDigit</span> cs
+                             <span style="color: #F92672;">then</span> return <span style="color: #FD971F;">$</span> <span style="color: #66D9EF;">ZipUS</span> a b c d e
+                             <span style="color: #F92672;">else</span> return <span style="color: #FD971F;">$</span> <span style="color: #66D9EF;">ZipWorld</span> v w x y z
+      <span style="color: #FD971F;">|</span> otherwise <span style="color: #FD971F;">=</span> mzero
 
-<span style="color: #F92672;">type</span> <span style="color: #66D9EF;">MyColumns</span> <span style="color: #FD971F;">=</span> <span style="color: #66D9EF;">GenderT</span> '<span style="color: #66D9EF;">:</span> <span style="color: #66D9EF;">CommonColumns</span>
+<span style="color: #F92672;">type</span> <span style="color: #66D9EF;">MyColumns</span> <span style="color: #FD971F;">=</span> <span style="color: #66D9EF;">ZipT</span> '<span style="color: #66D9EF;">:</span> <span style="color: #66D9EF;">CommonColumns</span>
 </pre>
 </div>
 
@@ -653,40 +655,43 @@ column.
 λ&gt; :i U2
 type U2 =
   Rec
-    '["user id" :-&gt; Int, "age" :-&gt; Int, "gender" :-&gt; GenderT,
-      "occupation" :-&gt; Text, "zip code" :-&gt; Text]
+    '["user id" :-&gt; Int, "age" :-&gt; Int, "gender" :-&gt; Text,
+      "occupation" :-&gt; Text, "zip code" :-&gt; ZipT]
 </pre>
 
 <p>
-Let's take the occupations of the first 10 male users:
+Let's take the occupations of the first 10 users from New England,
+New Jersey, and other places whose zip codes begin with a zero.
 </p>
 
 <div class="org-src-container">
 
-<pre class="src src-haskell"><span style="color: #A6E22E;">maleOccupations</span> <span style="color: #FD971F;">::</span> (<span style="color: #66D9EF;">U2gender</span> <span style="color: #FD971F;">&#8712;</span> rs, <span style="color: #66D9EF;">U2occupation</span> <span style="color: #FD971F;">&#8712;</span> rs, <span style="color: #66D9EF;">Monad</span> m)
-                <span style="color: #FD971F;">=&gt;</span> <span style="color: #66D9EF;">Pipe</span> (<span style="color: #66D9EF;">Rec</span> rs) <span style="color: #66D9EF;">Text</span> m r
-<span style="color: #A6E22E;">maleOccupations</span> <span style="color: #FD971F;">=</span> <span style="color: #F8F8F2; background-color: #272822;">P.filter</span> ((<span style="color: #FD971F;">==</span> <span style="color: #66D9EF;">Male</span>) <span style="color: #FD971F;">.</span> view u2gender)
-                  <span style="color: #FD971F;">&gt;-&gt;</span> <span style="color: #F8F8F2; background-color: #272822;">P.map</span> (view u2occupation)
+<pre class="src src-haskell"><span style="color: #A6E22E;">neOccupations</span> <span style="color: #FD971F;">::</span> (<span style="color: #66D9EF;">U2zipCode</span> <span style="color: #FD971F;">&#8712;</span> rs, <span style="color: #66D9EF;">U2occupation</span> <span style="color: #FD971F;">&#8712;</span> rs, <span style="color: #66D9EF;">Monad</span> m)
+              <span style="color: #FD971F;">=&gt;</span> <span style="color: #66D9EF;">Pipe</span> (<span style="color: #66D9EF;">Rec</span> rs) <span style="color: #66D9EF;">Text</span> m r
+<span style="color: #A6E22E;">neOccupations</span> <span style="color: #FD971F;">=</span> <span style="color: #F8F8F2; background-color: #272822;">P.filter</span> (isNewEngland <span style="color: #FD971F;">.</span> view u2zipCode)
+                <span style="color: #FD971F;">&gt;-&gt;</span> <span style="color: #F8F8F2; background-color: #272822;">P.map</span> (view u2occupation)
+  <span style="color: #F92672;">where</span> isNewEngland (<span style="color: #66D9EF;">ZipUS</span> 0 <span style="color: #F92672;">_</span> <span style="color: #F92672;">_</span> <span style="color: #F92672;">_</span> <span style="color: #F92672;">_</span>) <span style="color: #FD971F;">=</span> <span style="color: #66D9EF;">True</span>
+        isNewEngland <span style="color: #F92672;">_</span> <span style="color: #FD971F;">=</span> <span style="color: #66D9EF;">False</span>
 </pre>
 </div>
 
 <pre class="example">
-λ&gt; runEffect $ movieStream2 &gt;-&gt; maleOccupations &gt;-&gt; P.take 10 &gt;-&gt; P.print
-"technician"
-"writer"
-"technician"
-"executive"
-"administrator"
+λ&gt; runEffect $ movieStream2 &gt;-&gt; neOccupations &gt;-&gt; P.take 10 &gt;-&gt; P.print
 "administrator"
 "student"
-"lawyer"
+"other"
+"programmer"
+"librarian"
+"entertainment"
+"marketing"
+"programmer"
 "educator"
-"scientist"
+"healthcare"
 </pre>
 
 <p>
 So there we go! We've done both row and column subset queries with a
-strongly typed query (namely, <code>(== Male)</code>). Another situation in
+strongly typed query (namely, <code>isNewEngland</code>). Another situation in
 which one might want to define a custom universe of column types is
 when dealing with dates. This would let you both reject rows with
 badly formatted dates, for example, and efficiently query the data set
@@ -695,7 +700,7 @@ with richly-typed queries.
 
 <p>
 Even better, did you notice the types of <code>writers</code> and
-<code>maleOccupations</code>? They are polymorphic over the full row type!
+<code>neOccupations</code>? They are polymorphic over the full row type!
 That's what the <code>(Occupation ∈ rs)</code> constraint signifies: such a
 function will work for record types with any set of fields, <code>rs</code>, so
 long as <code>Occupation</code> is an element of that set. This means that if
@@ -732,30 +737,33 @@ off, and the sky's the limit.
 
 <div class="org-src-container">
 
-<pre class="src src-haskell"><span style="color: #75715E; font-style: italic;">{-# LANGUAGE DataKinds, DeriveDataTypeable, GeneralizedNewtypeDeriving,</span>
-<span style="color: #75715E; font-style: italic;">             MultiParamTypeClasses, OverloadedStrings, TemplateHaskell,</span>
-<span style="color: #75715E; font-style: italic;">             TypeFamilies, TypeOperators #-}</span>
-<span style="color: #F92672;">module</span> <span style="color: #66D9EF;">TutorialUsers</span> <span style="color: #F92672;">where</span>
+<pre class="src src-haskell"><span style="color: #75715E; font-style: italic;">{-# LANGUAGE DataKinds, DeriveDataTypeable, TypeFamilies, TypeOperators #-}</span>
+<span style="color: #F92672;">module</span> <span style="color: #66D9EF;">TutorialZipCode</span> <span style="color: #F92672;">where</span>
 <span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Control.Monad</span> (mzero)
+<span style="color: #F92672;">import</span> <span style="color: #F92672;">qualified</span> <span style="color: #66D9EF;">Data.Char</span> <span style="color: #F92672;">as</span> <span style="color: #66D9EF;">C</span>
 <span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Data.Readable</span> (<span style="color: #66D9EF;">Readable</span>(fromText))
+<span style="color: #F92672;">import</span> <span style="color: #F92672;">qualified</span> <span style="color: #66D9EF;">Data.Text</span> <span style="color: #F92672;">as</span> <span style="color: #66D9EF;">T</span>
 <span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Data.Typeable</span>
 <span style="color: #F92672;">import</span> <span style="color: #F92672;">qualified</span> <span style="color: #66D9EF;">Data.Vector</span> <span style="color: #F92672;">as</span> <span style="color: #66D9EF;">V</span>
 <span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Frames.InCore</span> (<span style="color: #66D9EF;">VectorFor</span>)
 <span style="color: #F92672;">import</span> <span style="color: #66D9EF;">Frames</span>
 
-<span style="color: #F92672;">data</span> <span style="color: #66D9EF;">GenderT</span> <span style="color: #FD971F;">=</span> <span style="color: #66D9EF;">Male</span> <span style="color: #FD971F;">|</span> <span style="color: #66D9EF;">Female</span> <span style="color: #F92672;">deriving</span> (<span style="color: #66D9EF;">Enum</span>,<span style="color: #66D9EF;">Eq</span>,<span style="color: #66D9EF;">Ord</span>,<span style="color: #66D9EF;">Show</span>,<span style="color: #66D9EF;">Typeable</span>)
+<span style="color: #F92672;">data</span> <span style="color: #66D9EF;">ZipT</span> <span style="color: #FD971F;">=</span> <span style="color: #66D9EF;">ZipUS</span> <span style="color: #66D9EF;">Int</span> <span style="color: #66D9EF;">Int</span> <span style="color: #66D9EF;">Int</span> <span style="color: #66D9EF;">Int</span> <span style="color: #66D9EF;">Int</span>
+          <span style="color: #FD971F;">|</span> <span style="color: #66D9EF;">ZipWorld</span> <span style="color: #66D9EF;">Char</span> <span style="color: #66D9EF;">Char</span> <span style="color: #66D9EF;">Char</span> <span style="color: #66D9EF;">Char</span> <span style="color: #66D9EF;">Char</span>
+  <span style="color: #F92672;">deriving</span> (<span style="color: #66D9EF;">Eq</span>, <span style="color: #66D9EF;">Ord</span>, <span style="color: #66D9EF;">Show</span>, <span style="color: #66D9EF;">Typeable</span>)
 
-<span style="color: #75715E;">-- </span><span style="color: #75715E; font-style: italic;">See @demo/TutorialUsers.hs@ in the repository for an example of how</span>
-<span style="color: #75715E;">-- </span><span style="color: #75715E; font-style: italic;">to define a packed representation for a custom column type. It uses</span>
-<span style="color: #75715E;">-- </span><span style="color: #75715E; font-style: italic;">the usual "Data.Vector.Generic" machinery.</span>
-<span style="color: #F92672;">type</span> <span style="color: #F92672;">instance</span> <span style="color: #66D9EF;">VectorFor</span> <span style="color: #66D9EF;">GenderT</span> <span style="color: #FD971F;">=</span> <span style="color: #66D9EF;">V.Vector</span>
+<span style="color: #F92672;">type</span> <span style="color: #F92672;">instance</span> <span style="color: #66D9EF;">VectorFor</span> <span style="color: #66D9EF;">ZipT</span> <span style="color: #FD971F;">=</span> <span style="color: #66D9EF;">V.Vector</span>
 
-<span style="color: #F92672;">instance</span> <span style="color: #66D9EF;">Readable</span> <span style="color: #66D9EF;">GenderT</span> <span style="color: #F92672;">where</span>
-  fromText <span style="color: #E6DB74;">"M"</span> <span style="color: #FD971F;">=</span> return <span style="color: #66D9EF;">Male</span>
-  fromText <span style="color: #E6DB74;">"F"</span> <span style="color: #FD971F;">=</span> return <span style="color: #66D9EF;">Female</span>
-  fromText <span style="color: #F92672;">_</span> <span style="color: #FD971F;">=</span> mzero
+<span style="color: #F92672;">instance</span> <span style="color: #66D9EF;">Readable</span> <span style="color: #66D9EF;">ZipT</span>  <span style="color: #F92672;">where</span>
+  fromText t
+      <span style="color: #FD971F;">|</span> <span style="color: #F8F8F2; background-color: #272822;">T.length</span> t <span style="color: #FD971F;">==</span> 5 <span style="color: #FD971F;">=</span> <span style="color: #F92672;">let</span> cs<span style="color: #FD971F;">@</span>[v,w,x,y,z] <span style="color: #FD971F;">=</span> <span style="color: #F8F8F2; background-color: #272822;">T.unpack</span> t
+                              [a,b,c,d,e] <span style="color: #FD971F;">=</span> map <span style="color: #F8F8F2; background-color: #272822;">C.digitToInt</span> cs
+                          <span style="color: #F92672;">in</span> <span style="color: #F92672;">if</span> all <span style="color: #F8F8F2; background-color: #272822;">C.isDigit</span> cs
+                             <span style="color: #F92672;">then</span> return <span style="color: #FD971F;">$</span> <span style="color: #66D9EF;">ZipUS</span> a b c d e
+                             <span style="color: #F92672;">else</span> return <span style="color: #FD971F;">$</span> <span style="color: #66D9EF;">ZipWorld</span> v w x y z
+      <span style="color: #FD971F;">|</span> otherwise <span style="color: #FD971F;">=</span> mzero
 
-<span style="color: #F92672;">type</span> <span style="color: #66D9EF;">MyColumns</span> <span style="color: #FD971F;">=</span> <span style="color: #66D9EF;">GenderT</span> '<span style="color: #66D9EF;">:</span> <span style="color: #66D9EF;">CommonColumns</span>
+<span style="color: #F92672;">type</span> <span style="color: #66D9EF;">MyColumns</span> <span style="color: #FD971F;">=</span> <span style="color: #66D9EF;">ZipT</span> '<span style="color: #66D9EF;">:</span> <span style="color: #66D9EF;">CommonColumns</span>
 </pre>
 </div>
 </div>
