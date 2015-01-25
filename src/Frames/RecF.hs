@@ -14,7 +14,8 @@
 module Frames.RecF (RecF, V.rappend, V.rtraverse, RDel, rdel,
                     frameCons, pattern (:&), pattern Nil,
                     UnColumn, AsVinyl(..), mapMono, mapMethod,
-                    ShowRecF, showRecF, ColFun) where
+                    ShowRecF, showRecF, ColFun, ColumnHeaders, 
+                    columnHeaders) where
 import Control.Applicative ((<$>))
 import Data.List (intercalate)
 import Data.Proxy
@@ -47,16 +48,16 @@ pattern x :& xs <- (frameUncons -> (x, xs))
 -- have to wait for GHC 7.10 to gain wide acceptance before depending
 -- upon its availability.
 
-class ColumnNames (cs::[*]) where
+class ColumnHeaders (cs::[*]) where
   -- | Return the column names for a record.
-  columnNames :: proxy (RecF f cs) -> [String]
+  columnHeaders :: proxy (RecF f cs) -> [String]
 
-instance ColumnNames '[] where
-  columnNames _ = []
+instance ColumnHeaders '[] where
+  columnHeaders _ = []
 
-instance forall cs s c. (ColumnNames cs, KnownSymbol s)
-    => ColumnNames (s :-> c ': cs) where
-  columnNames _ = symbolVal (Proxy::Proxy s) : columnNames (Proxy::Proxy (RecF f cs))
+instance forall cs s c. (ColumnHeaders cs, KnownSymbol s)
+    => ColumnHeaders (s :-> c ': cs) where
+  columnHeaders _ = symbolVal (Proxy::Proxy s) : columnHeaders (Proxy::Proxy (RecF f cs))
 
 -- | A type function to convert a 'Rec' to a 'RecF'. @ColFun f (Rec
 -- rs) = RecF f rs@.
