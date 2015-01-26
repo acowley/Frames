@@ -328,8 +328,7 @@ addTwoOccupation :: (CanDelete Occupation rs,
                      AllCols Num rs', AsVinyl rs')
                  => Rec rs -> Rec (Occupation ': RDelete Occupation rs)
 addTwoOccupation r = frameCons (rget' occupation' r)
-                   $ aux (rdel [pr|Occupation|] r)
-  where aux = mapMethod [pr|Num|] (+ 2)
+                   $ mapMethod [pr|Num|] (+ 2) (rdel [pr|Occupation|] r)
 
 -- #+BEGIN_EXAMPLE
 -- λ> addTwoOccupation (select [pr|UserId,Age,Occupation|] (frameRow ms 0))
