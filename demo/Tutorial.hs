@@ -1,5 +1,5 @@
 {-# LANGUAGE DataKinds, FlexibleContexts, OverloadedStrings,
-             TemplateHaskell, TypeOperators #-}
+             QuasiQuotes, TemplateHaskell, TypeOperators #-}
 
 -- This is a loose port of a
 -- [[http://ajkl.github.io/Dataframes/][dataframe tutorial]] Rosetta
@@ -31,6 +31,7 @@
 import Control.Applicative
 import qualified Control.Foldl as L
 import qualified Data.Foldable as F
+import Data.Proxy (Proxy(..))
 import Lens.Family
 import Frames
 import Frames.CSV (readTableOpt, rowGen, RowGen(..))
@@ -221,6 +222,25 @@ miniUser = rcast
 -- {occupation :-> "technician", gender :-> "M", age :-> 24}
 -- {occupation :-> "other", gender :-> "F", age :-> 33}
 -- {occupation :-> "executive", gender :-> "M", age :-> 42}
+-- #+END_EXAMPLE
+
+-- If you'd rather not define a function like ~miniUser~, you can fix
+-- the types in-line by using the ~select~ function.
+
+-- #+BEGIN_EXAMPLE
+-- λ> :set -XDataKinds
+-- λ> select (Proxy::Proxy [Occupation,Gender,Age]) $ frameRow ms 0
+-- {occupation :-> "technician", gender :-> "M", age :-> 24}
+-- #+END_EXAMPLE
+
+-- If you are frequently using this style of projection, you can also
+-- take advantage of another bit of Template Haskell shorthand for
+-- creating those ~Proxy~ values.
+
+-- #+BEGIN_EXAMPLE
+-- λ> :set -XDataKinds -XQuasiQuotes
+-- λ> select [pr|Occupation,Gender,Age|] $ frameRow ms 0
+-- {occupation :-> "technician", gender :-> "M", age :-> 24}
 -- #+END_EXAMPLE
 
 -- ** Query / Conditional Subset
@@ -449,109 +469,107 @@ neOccupations = P.filter (isNewEngland . view u2zipCode)
 -- write in your code need not include the column names or separator
 -- character.
 
--- -- #+BEGIN_SRC haskell
---     tableTypes'
---       (rowGen
---          {rowTypeName = "User",
---           columnNames = ["user id", "age", "gender", "occupation",
---                          "zip code"],
---           separator = "|"})
---       "data/ml-100k/u.user"
---   ======>
---     type User =
---         Rec ["user id" :-> Int, "age" :-> Int, "gender" :-> Text, "occupation" :-> Text, "zip code" :-> Text]
+-- -- #+begin_src haskell
+--   tableTypes'
+--     (rowGen
+--        {rowTypeName = "User",
+--         columnNames = ["user id", "age", "gender", "occupation",
+--                        "zip code"],
+--         separator = "|"})
+--     "data/ml-100k/u.user"
+-- ======>
+--   type User =
+--       Rec ["user id" :-> Int, "age" :-> Int, "gender" :-> Text, "occupation" :-> Text, "zip code" :-> Text]
 
---     userParser :: ParserOptions
---     userParser
---       = ParserOptions
---           (Just
---              (map
---                 T.pack
---                 ["user id", "age", "gender", "occupation", "zip code"]))
---           (T.pack "|")
+--   userParser :: ParserOptions
+--   userParser
+--     = ParserOptions
+--         (Just
+--            (map
+--               T.pack
+--               ["user id", "age", "gender", "occupation", "zip code"]))
+--         (T.pack "|")
 
---     type UserId = "user id" :-> Int
+--   type UserId = "user id" :-> Int
 
---     userId ::
---       forall f_ad5z rs_ad5A. (Functor f_ad5z,
---                               RElem UserId rs_ad5A (RIndex UserId rs_ad5A)) =>
---       (Int -> f_ad5z Int) -> Rec rs_ad5A -> f_ad5z (Rec rs_ad5A)
---     userId = rlens (Proxy :: Proxy UserId)
+--   userId ::
+--     forall f_adkB rs_adkC. (Functor f_adkB,
+--                             RElem UserId rs_adkC (RIndex UserId rs_adkC)) =>
+--     (Int -> f_adkB Int) -> Rec rs_adkC -> f_adkB (Rec rs_adkC)
+--   userId = rlens (Proxy :: Proxy UserId)
 
---     userId' ::
---       forall g_ad5B f_ad5C rs_ad5D. (Functor f_ad5C,
---                                      Functor g_ad5B,
---                                      RElem UserId rs_ad5D (RIndex UserId rs_ad5D)) =>
---       (g_ad5B Int -> f_ad5C (g_ad5B Int))
---       -> RecF g_ad5B rs_ad5D -> f_ad5C (RecF g_ad5B rs_ad5D)
---     userId' = rlens' (Proxy :: Proxy UserId)
+--   userId' ::
+--     forall g_adkD f_adkE rs_adkF. (Functor f_adkE,
+--                                    Functor g_adkD,
+--                                    RElem UserId rs_adkF (RIndex UserId rs_adkF)) =>
+--     (g_adkD UserId -> f_adkE (g_adkD UserId))
+--     -> RecF g_adkD rs_adkF -> f_adkE (RecF g_adkD rs_adkF)
+--   userId' = rlens' (Proxy :: Proxy UserId)
 
---     type Age = "age" :-> Int
+--   type Age = "age" :-> Int
 
---     age ::
---       forall f_ad5E rs_ad5F. (Functor f_ad5E,
---                               RElem Age rs_ad5F (RIndex Age rs_ad5F)) =>
---       (Int -> f_ad5E Int) -> Rec rs_ad5F -> f_ad5E (Rec rs_ad5F)
---     age = rlens (Proxy :: Proxy Age)
+--   age ::
+--     forall f_adkG rs_adkH. (Functor f_adkG,
+--                             RElem Age rs_adkH (RIndex Age rs_adkH)) =>
+--     (Int -> f_adkG Int) -> Rec rs_adkH -> f_adkG (Rec rs_adkH)
+--   age = rlens (Proxy :: Proxy Age)
 
---     age' ::
---       forall g_ad5G f_ad5H rs_ad5I. (Functor f_ad5H,
---                                      Functor g_ad5G,
---                                      RElem Age rs_ad5I (RIndex Age rs_ad5I)) =>
---       (g_ad5G Int -> f_ad5H (g_ad5G Int))
---       -> RecF g_ad5G rs_ad5I -> f_ad5H (RecF g_ad5G rs_ad5I)
---     age' = rlens' (Proxy :: Proxy Age)
+--   age' ::
+--     forall g_adkI f_adkJ rs_adkK. (Functor f_adkJ,
+--                                    Functor g_adkI,
+--                                    RElem Age rs_adkK (RIndex Age rs_adkK)) =>
+--     (g_adkI Age -> f_adkJ (g_adkI Age))
+--     -> RecF g_adkI rs_adkK -> f_adkJ (RecF g_adkI rs_adkK)
+--   age' = rlens' (Proxy :: Proxy Age)
 
---     type Gender = "gender" :-> Text
+--   type Gender = "gender" :-> Text
 
---     gender ::
---       forall f_ad5J rs_ad5K. (Functor f_ad5J,
---                               RElem Gender rs_ad5K (RIndex Gender rs_ad5K)) =>
---       (Text -> f_ad5J Text) -> Rec rs_ad5K -> f_ad5J (Rec rs_ad5K)
---     gender = rlens (Proxy :: Proxy Gender)
+--   gender ::
+--     forall f_adkL rs_adkM. (Functor f_adkL,
+--                             RElem Gender rs_adkM (RIndex Gender rs_adkM)) =>
+--     (Text -> f_adkL Text) -> Rec rs_adkM -> f_adkL (Rec rs_adkM)
+--   gender = rlens (Proxy :: Proxy Gender)
 
---     gender' ::
---       forall g_ad5L f_ad5M rs_ad5N. (Functor f_ad5M,
---                                      Functor g_ad5L,
---                                      RElem Gender rs_ad5N (RIndex Gender rs_ad5N)) =>
---       (g_ad5L Text -> f_ad5M (g_ad5L Text))
---       -> RecF g_ad5L rs_ad5N -> f_ad5M (RecF g_ad5L rs_ad5N)
---     gender' = rlens' (Proxy :: Proxy Gender)
+--   gender' ::
+--     forall g_adkN f_adkO rs_adkP. (Functor f_adkO,
+--                                    Functor g_adkN,
+--                                    RElem Gender rs_adkP (RIndex Gender rs_adkP)) =>
+--     (g_adkN Gender -> f_adkO (g_adkN Gender))
+--     -> RecF g_adkN rs_adkP -> f_adkO (RecF g_adkN rs_adkP)
+--   gender' = rlens' (Proxy :: Proxy Gender)
 
---     type Occupation = "occupation" :-> Text
+--   type Occupation = "occupation" :-> Text
 
---     occupation ::
---       forall f_ad5O rs_ad5P. (Functor f_ad5O,
---                               RElem Occupation rs_ad5P (RIndex Occupation rs_ad5P)) =>
---       (Text -> f_ad5O Text) -> Rec rs_ad5P -> f_ad5O (Rec rs_ad5P)
---     occupation
---       = rlens (Proxy :: Proxy Occupation)
+--   occupation ::
+--     forall f_adkQ rs_adkR. (Functor f_adkQ,
+--                             RElem Occupation rs_adkR (RIndex Occupation rs_adkR)) =>
+--     (Text -> f_adkQ Text) -> Rec rs_adkR -> f_adkQ (Rec rs_adkR)
+--   occupation = rlens (Proxy :: Proxy Occupation)
 
---     occupation' ::
---       forall g_ad5Q f_ad5R rs_ad5S. (Functor f_ad5R,
---                                      Functor g_ad5Q,
---                                      RElem Occupation rs_ad5S (RIndex Occupation rs_ad5S)) =>
---       (g_ad5Q Text -> f_ad5R (g_ad5Q Text))
---       -> RecF g_ad5Q rs_ad5S -> f_ad5R (RecF g_ad5Q rs_ad5S)
---     occupation'
---       = rlens' (Proxy :: Proxy Occupation)
+--   occupation' ::
+--     forall g_adkS f_adkT rs_adkU. (Functor f_adkT,
+--                                    Functor g_adkS,
+--                                    RElem Occupation rs_adkU (RIndex Occupation rs_adkU)) =>
+--     (g_adkS Occupation -> f_adkT (g_adkS Occupation))
+--     -> RecF g_adkS rs_adkU -> f_adkT (RecF g_adkS rs_adkU)
+--   occupation' = rlens' (Proxy :: Proxy Occupation)
 
---     type ZipCode = "zip code" :-> Text
+--   type ZipCode = "zip code" :-> Text
 
---     zipCode ::
---       forall f_ad5T rs_ad5U. (Functor f_ad5T,
---                               RElem ZipCode rs_ad5U (RIndex ZipCode rs_ad5U)) =>
---       (Text -> f_ad5T Text) -> Rec rs_ad5U -> f_ad5T (Rec rs_ad5U)
---     zipCode = rlens (Proxy :: Proxy ZipCode)
+--   zipCode ::
+--     forall f_adkV rs_adkW. (Functor f_adkV,
+--                             RElem ZipCode rs_adkW (RIndex ZipCode rs_adkW)) =>
+--     (Text -> f_adkV Text) -> Rec rs_adkW -> f_adkV (Rec rs_adkW)
+--   zipCode = rlens (Proxy :: Proxy ZipCode)
 
---     zipCode' ::
---       forall g_ad5V f_ad5W rs_ad5X. (Functor f_ad5W,
---                                      Functor g_ad5V,
---                                      RElem ZipCode rs_ad5X (RIndex ZipCode rs_ad5X)) =>
---       (g_ad5V Text -> f_ad5W (g_ad5V Text))
---       -> RecF g_ad5V rs_ad5X -> f_ad5W (RecF g_ad5V rs_ad5X)
---     zipCode' = rlens' (Proxy :: Proxy ZipCode)
--- #+END_SRC
+--   zipCode' ::
+--     forall g_adkX f_adkY rs_adkZ. (Functor f_adkY,
+--                                    Functor g_adkX,
+--                                    RElem ZipCode rs_adkZ (RIndex ZipCode rs_adkZ)) =>
+--     (g_adkX ZipCode -> f_adkY (g_adkX ZipCode))
+--     -> RecF g_adkX rs_adkZ -> f_adkY (RecF g_adkX rs_adkZ)
+--   zipCode' = rlens' (Proxy :: Proxy ZipCode)
+-- #+end_src
 
 -- ** Thanks
 -- Thanks to Greg Hale and Ben Gamari for reviewing early drafts of this document.

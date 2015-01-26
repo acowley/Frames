@@ -215,7 +215,7 @@ mkColPDec colTName colTy colPName = sequenceA [tySig, val, tySig', val']
                          |]
         tySig' = sigD nm' [t|(Functor f, Functor g,
                              RElem $(conT colTName) rs (RIndex $(conT colTName) rs))
-                          => (g $colTy -> f (g $colTy))
+                          => (g $(conT colTName) -> f (g $(conT colTName)))
                           -> RecF g rs
                           -> f (RecF g rs)
                           |]

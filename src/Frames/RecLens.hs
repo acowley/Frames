@@ -17,12 +17,12 @@ import Frames.Col ((:->)(..))
 import Frames.Rec (Rec)
 import Frames.RecF (RecF)
 
-rlens' :: (i ~ RIndex r rs, r ~ (s :-> a), V.RElem r rs i, Functor f, Functor g)
-       => sing (s :-> a)
-       -> (g a -> f (g a))
+rlens' :: (i ~ RIndex r rs, V.RElem r rs i, Functor f, Functor g)
+       => sing r
+       -> (g r -> f (g r))
        -> RecF g rs
        -> f (RecF g rs)
-rlens' s f = V.rlens s (fmap (fmap Col) . f . fmap getCol)
+rlens' = V.rlens
 {-# INLINE rlens' #-}
 
 -- | Getter for a record field
@@ -46,7 +46,8 @@ rput' l y = getIdentity . l (\_ -> Identity (fmap Col y))
 -- | Create a lens for accessing a field of a 'Rec'.
 rlens :: (Functor f, V.RElem (s :-> a) rs (RIndex (s :-> a) rs))
       => proxy (s :-> a) -> (a -> f a) -> Rec rs -> f (Rec rs)
-rlens k f = rlens' k (fmap Identity . getIdentity . fmap f)
+rlens k f = rlens' k (fmap Identity . getIdentity . fmap f')
+  where f' (Col x) = fmap Col (f x)
 {-# INLINE rlens #-}
 
 -- | Getter for a record field.
