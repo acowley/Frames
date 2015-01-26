@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Frames Tutorial</title>
-<!-- 2015-01-26 Mon 02:07 -->
+<!-- 2015-01-26 Mon 15:53 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="generator" content="Org-mode" />
 <meta  name="author" content="Anthony Cowley" />
@@ -98,6 +98,12 @@
  pre.src {background-color: #272822; color: #F8F8F2; overflow: scroll;} body { max-width: 600pt; margin: auto} </style>
 <style type="text/css">
  pre.src {background-color: #272822; color: #F8F8F2; overflow: scroll;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2; overflow: scroll;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2; overflow: scroll;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #272822; color: #F8F8F2; overflow: scroll;} body { max-width: 600pt; margin: auto} </style>
 <script type="text/javascript">
 /*
 @licstart  The following is the entire license notice for the
@@ -164,6 +170,7 @@ for the JavaScript code in this tag.
 <li><a href="#sec-2-2">2.2. Column Subset</a></li>
 <li><a href="#sec-2-3">2.3. Query / Conditional Subset</a></li>
 <li><a href="#sec-2-4">2.4. Column Subset Update</a></li>
+<li><a href="#sec-2-5">2.5. Mostly-Uniform Data</a></li>
 </ul>
 </li>
 <li><a href="#sec-3">3. Better Types</a></li>
@@ -179,8 +186,9 @@ for the JavaScript code in this tag.
 </div>
 <div class="org-src-container">
 
-<pre class="src src-haskell"><span style="color: #75715E; font-style: italic;">{-# LANGUAGE DataKinds, FlexibleContexts, OverloadedStrings,</span>
-<span style="color: #75715E; font-style: italic;">             QuasiQuotes, TemplateHaskell, TypeOperators #-}</span>
+<pre class="src src-haskell"><span style="color: #75715E; font-style: italic;">{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts, GADTs,</span>
+<span style="color: #75715E; font-style: italic;">             OverloadedStrings, PatternSynonyms, QuasiQuotes,</span>
+<span style="color: #75715E; font-style: italic;">             ScopedTypeVariables, TemplateHaskell, TypeOperators #-}</span>
 </pre>
 </div>
 
@@ -605,6 +613,138 @@ This is a neat way of manipulating a few columns without having to
 worry about what other columns might exist. You might want to use this
 for normalizing the capitalization, or truncating the length of,
 various text fields, for example.
+</p>
+</div>
+</div>
+
+<div id="outline-container-sec-2-5" class="outline-3">
+<h3 id="sec-2-5"><span class="section-number-3">2.5</span> Mostly-Uniform Data</h3>
+<div class="outline-text-3" id="text-2-5">
+<p>
+<i>(Warning: This section veers into types that are likely of more
+use to library authors than end users.)</i>
+</p>
+
+<p>
+Suppose we don't know much about our data, but we do know that it
+starts with an identifying column, and then some number of numeric
+columns. We can structurally peel off the first column, perform a
+constrained polymorphic operation on the other columns, then glue
+the first column back on to the result.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-haskell"><span style="color: #A6E22E;">addTwoRest</span> <span style="color: #FD971F;">::</span> (<span style="color: #66D9EF;">AllCols</span> <span style="color: #66D9EF;">Num</span> rs, <span style="color: #66D9EF;">AsVinyl</span> rs)
+           <span style="color: #FD971F;">=&gt;</span> <span style="color: #66D9EF;">Rec</span> (s <span style="color: #66D9EF;">:-&gt;</span> a '<span style="color: #66D9EF;">:</span> rs) <span style="color: #FD971F;">-&gt;</span> <span style="color: #66D9EF;">Rec</span> (s <span style="color: #66D9EF;">:-&gt;</span> a '<span style="color: #66D9EF;">:</span> rs)
+<span style="color: #A6E22E;">addTwoRest</span> (h <span style="color: #66D9EF;">:&amp;</span> t) <span style="color: #FD971F;">=</span> frameCons h (aux t)
+  <span style="color: #F92672;">where</span> aux <span style="color: #FD971F;">=</span> mapMethod [pr<span style="color: #FD971F;">|</span><span style="color: #66D9EF;">Num</span><span style="color: #FD971F;">|</span>] (<span style="color: #FD971F;">\</span>x <span style="color: #FD971F;">-&gt;</span> x <span style="color: #FD971F;">+</span> 2)
+</pre>
+</div>
+
+<pre class="example">
+λ&gt; addTwoRest (select [pr|Occupation, UserId, Age|] (frameRow ms 0))
+{occupation :-&gt; "technician", user id :-&gt; 3, age :-&gt; 26}
+</pre>
+
+<p>
+But what if we don't want to rely entirely on ordering of our rows?
+Here, we know there is an identifying column, <code>Occupation</code>, and we
+want to shuffle it around to the head of the record while mapping a
+constrained polymorphic operation over the other columns.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-haskell"><span style="color: #A6E22E;">addTwoOccupation</span> <span style="color: #FD971F;">::</span> (<span style="color: #66D9EF;">CanDelete</span> <span style="color: #66D9EF;">Occupation</span> rs,
+                     rs' <span style="color: #FD971F;">~</span> <span style="color: #66D9EF;">RDelete</span> <span style="color: #66D9EF;">Occupation</span> rs,
+                     <span style="color: #66D9EF;">AllCols</span> <span style="color: #66D9EF;">Num</span> rs', <span style="color: #66D9EF;">AsVinyl</span> rs')
+                 <span style="color: #FD971F;">=&gt;</span> <span style="color: #66D9EF;">Rec</span> rs <span style="color: #FD971F;">-&gt;</span> <span style="color: #66D9EF;">Rec</span> (<span style="color: #66D9EF;">Occupation</span> '<span style="color: #66D9EF;">:</span> <span style="color: #66D9EF;">RDelete</span> <span style="color: #66D9EF;">Occupation</span> rs)
+<span style="color: #A6E22E;">addTwoOccupation</span> r <span style="color: #FD971F;">=</span> frameCons (rget' occupation' r)
+                   <span style="color: #FD971F;">$</span> mapMethod [pr<span style="color: #FD971F;">|</span><span style="color: #66D9EF;">Num</span><span style="color: #FD971F;">|</span>] (<span style="color: #FD971F;">+</span> 2) (rdel [pr<span style="color: #FD971F;">|</span><span style="color: #66D9EF;">Occupation</span><span style="color: #FD971F;">|</span>] r)
+</pre>
+</div>
+
+<pre class="example">
+λ&gt; addTwoOccupation (select [pr|UserId,Age,Occupation|] (frameRow ms 0))
+{occupation :-&gt; "technician", user id :-&gt; 3, age :-&gt; 26}
+</pre>
+
+<p>
+It is a bit clumsy to delete and then add back a particular field,
+and the dependence on explicit structure is relying a bit more on
+coincidence than we might like. We could choose, instead, to work
+with row types that contain a distinguished column somewhere in
+their midst, but regarding precisely <i>where</i> it is, or <i>how many</i>
+other fields there are, we care not.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-haskell"><span style="color: #A6E22E;">addTwoOccupation'</span> <span style="color: #FD971F;">::</span> forall rs rs'<span style="color: #FD971F;">.</span>
+                     (<span style="color: #66D9EF;">CanDelete</span> <span style="color: #66D9EF;">Occupation</span> rs,
+                      rs' <span style="color: #FD971F;">~</span> <span style="color: #66D9EF;">RDelete</span> <span style="color: #66D9EF;">Occupation</span> rs,
+                      <span style="color: #66D9EF;">AllCols</span> <span style="color: #66D9EF;">Num</span> rs', <span style="color: #66D9EF;">AsVinyl</span> rs')
+                  <span style="color: #FD971F;">=&gt;</span> <span style="color: #66D9EF;">Rec</span> rs <span style="color: #FD971F;">-&gt;</span> <span style="color: #66D9EF;">Rec</span> rs
+<span style="color: #A6E22E;">addTwoOccupation'</span> <span style="color: #FD971F;">=</span> lenses [pr<span style="color: #FD971F;">|</span>rs'<span style="color: #FD971F;">|</span>] <span style="color: #FD971F;">%~</span> mapMethod [pr<span style="color: #FD971F;">|</span><span style="color: #66D9EF;">Num</span><span style="color: #FD971F;">|</span>] (<span style="color: #FD971F;">+</span> 2)
+</pre>
+</div>
+
+<pre class="example">
+λ&gt; addTwoOccupation' (select [pr|UserId,Age,Occupation|] (frameRow ms 0))
+{user id :-&gt; 3, age :-&gt; 26, occupation :-&gt; "technician"}
+</pre>
+
+<p>
+We can unpack this type a bit to understand what is happening. A
+<code>Frames</code> <code>Rec</code> is a record from the <code>Vinyl</code> library, except that
+each type has phantom column information. This metadata is
+available to the type checker, but is erased during compilation so
+that it does not impose any runtime overhead. What we are doing
+here is saying that we will operate on a <code>Frames</code> row type, <code>Rec
+rs</code>, that has an element <code>Occupation</code>, and that deleting this
+element works properly (i.e. the leftover fields are a proper
+subset of the original row type). We further state &#x2013; with the
+<code>AsVinyl</code> constraint &#x2013; that we want to work on the unadorned field
+values, temporarily discarding their header information, with the
+<code>mapMethod</code> function that will treat our richly-typed row as a less
+informative <code>Vinyl</code> record.
+</p>
+
+<p>
+We then peer through a lens onto the set of all unadorned fields other
+than <code>Occupation</code>, apply a function with a <code>Num</code> constraint to each of
+those fields, then pull back out of the lens reattaching the column
+header information on our way. All of that manipulation and
+bookkeeping is managed by the type checker.
+</p>
+
+<p>
+Lest we forget we are working in a typed setting, what happens if
+the constraint on our polymorphic operation can't be satisfied by
+one of the columns?
+</p>
+
+<pre class="example">
+λ&gt; addTwoOccupation (select [pr|Age,Occupation,Gender|] (frameRow ms 0))
+
+&lt;interactive&gt;:15:1-16:
+    No instance for (Num Text) arising from a use of ‘addTwoOccupation’
+    In the expression:
+      addTwoOccupation
+        (select
+           (Proxy :: Proxy '[Age, Occupation, Gender]) (frameRow ms 0))
+    In an equation for ‘it’:
+        it
+          = addTwoOccupation
+              (select
+                 (Proxy :: Proxy '[Age, Occupation, Gender]) (frameRow ms 0))
+</pre>
+
+<p>
+This error message isn't ideal in that it doesn't tell us which
+column failed to satisfy the constraint. Hopefully this can be
+improved in the future!
 </p>
 </div>
 </div>
