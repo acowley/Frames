@@ -299,8 +299,8 @@ intFieldDoubler = mapMono (* 2)
 
 -- ** Mostly-Uniform Data
 
--- /(Warning: This section veers into more complex types that are of
--- most use to library authors rather than end users.)/
+-- /(Warning: This section veers into types that are likely of more
+-- use to library authors than end users.)/
 
 -- Suppose we don't know much about our data, but we do know that it
 -- starts with an identifying column, and then some number of numeric
