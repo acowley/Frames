@@ -11,8 +11,8 @@
              TypeFamilies,
              TypeOperators,
              ViewPatterns #-}
-module Frames.RecF (RecF, V.rappend, V.rtraverse, RDel, rdel,
-                    frameCons, pattern (:&), pattern Nil,
+module Frames.RecF (RecF, V.rappend, V.rtraverse, rdel, CanDelete,
+                    frameCons, pattern (:&), pattern Nil, AllCols,
                     UnColumn, AsVinyl(..), mapMono, mapMethod,
                     ShowRecF, showRecF, ColFun, ColumnHeaders, 
                     columnHeaders) where
@@ -70,6 +70,9 @@ type family UnColumn ts where
   UnColumn '[] = '[]
   UnColumn ((s :-> t) ': ts) = t ': UnColumn ts
 
+-- | Enforce a constraint on the payload type of each column.
+type AllCols c ts = LAll c (UnColumn ts)
+
 -- | Remove the column name phantom types from a record, leaving you
 -- with an unadorned Vinyl 'V.Rec'.
 class AsVinyl ts where
@@ -109,26 +112,13 @@ mapMethodV _ f = go
 mapMethod :: forall f c ts. (Functor f, LAll c (UnColumn ts), AsVinyl ts)
           => Proxy c -> (forall a. c a => a -> a) -> RecF f ts -> RecF f ts
 mapMethod p f = fromVinyl . mapMethodV p f . toVinyl
-                                                                         
+
+-- | A constraint that a field can be deleted from a record.
+type CanDelete r rs = (V.RElem r rs (RIndex r rs), RDelete r rs V.⊆ rs)
+
 -- | Delete a field from a record
-rdel :: forall f r rs i proxy. (RDel r rs i, RIndex r rs ~ i)
-     => proxy r -> RecF f rs -> RecF f (RDelete r rs)
-rdel p = rdel' p (Proxy :: Proxy i)
-
--- | The ability to delete a field from a record depends upon the
--- original record having the chosen field.
-class RDel r (rs :: [*]) (i :: Nat) where
-  rdel' :: proxy r -> proxy' i -> V.Rec f rs -> V.Rec f (RDelete r rs)
-
-instance RDel r (r ': rs) Z where
-  rdel' _ _ (_ V.:& xs) = xs
-
-instance forall r s rs i.
-         (RIndex r (s ': rs) ~ S i,
-          RDel r rs i,
-          RDelete r (s ': rs) ~ (s ': RDelete r rs))
-  => RDel r (s ': rs) (S i) where
-  rdel' p _ (x V.:& xs) = x V.:& (rdel' p (Proxy::Proxy i) xs)
+rdel :: CanDelete r rs => proxy r -> RecF f rs -> RecF f (RDelete r rs)
+rdel _ = V.rcast
 
 -- | The ability to pretty print a 'RecF''s fields.
 class Functor f => ShowRecF f rs where

@@ -3,7 +3,8 @@
 -- files. The type of each row of data is inferred from data, which
 -- can then be streamed from disk, or worked with in memory.
 module Frames
-  ( module Data.Vinyl.Lens
+  ( module Data.Vinyl
+  , module Data.Vinyl.Lens
   , module Frames.Col
   , module Frames.ColumnUniverse
   , module Frames.CSV
@@ -17,6 +18,7 @@ module Frames
   , Text
   ) where
 import Data.Text (Text)
+import Data.Vinyl ((<+>))
 import Data.Vinyl.Lens hiding (rlens, rget, rput)
 import Frames.Col ((:->)(..))
 import Frames.ColumnUniverse

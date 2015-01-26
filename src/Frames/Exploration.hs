@@ -3,6 +3,7 @@
 -- | Functions useful for interactively exploring and experimenting
 -- with a data set.
 module Frames.Exploration (pipePreview, select, lenses, pr) where
+import Data.Char (isSpace)
 import Data.Proxy
 import qualified Data.Vinyl as V
 import Frames.Rec
@@ -10,13 +11,17 @@ import Language.Haskell.TH
 import Language.Haskell.TH.Quote
 import Pipes hiding (Proxy)
 import qualified Pipes.Prelude as P
-import Data.Char (isSpace)
+import Data.Char (isUpper)
+
+-- * Preview Results
 
 -- | @preview src n f@ prints out the first @n@ results of piping
 -- @src@ through @f@.
 pipePreview :: (MonadIO m, Show b)
             => Producer a m () -> Int -> Pipe a b m () -> m ()
 pipePreview src n f = runEffect $ src >-> f >-> P.take n >-> P.print
+
+-- * Column Selection
 
 -- | @select (Proxy::Proxy [A,B,C])@ extracts columns @A@, @B@, and
 -- @C@, from a larger record. Note, this is just a way of pinning down
@@ -31,6 +36,24 @@ lenses :: (fs V.⊆ rs, Functor f)
        => proxy fs -> (Rec fs -> f (Rec fs)) -> Rec rs -> f (Rec rs)
 lenses _ = V.rsubset
 
+-- * Proxy Syntax
+
+-- | A proxy value quasiquoter. @[pr|T|]@ will splice an expression
+-- @Proxy::Proxy T@, while @[pr|A,B,C|]@ will splice in a value of
+-- @Proxy :: Proxy [A,B,C]@.
+pr :: QuasiQuoter
+pr = QuasiQuoter mkProxy undefined undefined undefined
+  where mkProxy s = let ts = map strip $ splitOn ',' s
+                        cons = mapM (conT . mkName) ts
+                        mkList = foldr (AppT . AppT PromotedConsT) PromotedNilT
+                    in case ts of
+                         [h@(t:_)]
+                             | isUpper t -> [|Proxy::Proxy $(fmap head cons)|]
+                             | otherwise -> [|Proxy::Proxy $(varT $ mkName h)|]
+                         _ -> [|Proxy::Proxy $(fmap mkList cons)|]
+
+-- * Helpers
+
 -- | Split on a delimiter.
 splitOn :: Eq a => a -> [a] -> [[a]]
 splitOn d = go
@@ -43,15 +66,3 @@ splitOn d = go
 -- | Remove white space from both ends of a 'String'.
 strip :: String -> String
 strip = takeWhile (not . isSpace) . dropWhile isSpace
-
--- | A proxy value quasiquoter. @[pr|T|]@ will splice an expression
--- @Proxy::Proxy T@, while @[pr|A,B,C|]@ will splice in a value of
--- @Proxy :: Proxy [A,B,C]@.
-pr :: QuasiQuoter
-pr = QuasiQuoter mkProxy undefined undefined undefined
-  where mkProxy s = let ts = map strip $ splitOn ',' s
-                        cons = mapM (conT . mkName) ts
-                        mkList = foldr (AppT . AppT PromotedConsT) PromotedNilT
-                    in case ts of
-                         [_] -> [|Proxy::Proxy $(fmap head cons)|]
-                         _ -> [|Proxy::Proxy $(fmap mkList cons) |]

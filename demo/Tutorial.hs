@@ -1,5 +1,6 @@
-{-# LANGUAGE DataKinds, FlexibleContexts, OverloadedStrings,
-             QuasiQuotes, TemplateHaskell, TypeOperators #-}
+{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts, GADTs,
+             OverloadedStrings, PatternSynonyms, QuasiQuotes,
+             ScopedTypeVariables, TemplateHaskell, TypeOperators #-}
 
 -- This is a loose port of a
 -- [[http://ajkl.github.io/Dataframes/][dataframe tutorial]] Rosetta
@@ -295,6 +296,108 @@ intFieldDoubler = mapMono (* 2)
 -- worry about what other columns might exist. You might want to use this
 -- for normalizing the capitalization, or truncating the length of,
 -- various text fields, for example.
+
+-- ** Mostly-Uniform Data
+
+-- /(Warning: This section veers into more complex types that are of
+-- most use to library authors rather than end users.)/
+
+-- Suppose we don't know much about our data, but we do know that it
+-- starts with an identifying column, and then some number of numeric
+-- columns. We can structurally peel off the first column, perform a
+-- constrained polymorphic operation on the other columns, then glue
+-- the first column back on to the result.
+
+addTwoRest :: (AllCols Num rs, AsVinyl rs)
+           => Rec (s :-> a ': rs) -> Rec (s :-> a ': rs)
+addTwoRest (h :& t) = frameCons h (aux t)
+  where aux = mapMethod [pr|Num|] (\x -> x + 2)
+
+-- #+BEGIN_EXAMPLE
+-- λ> addTwoRest (select [pr|Occupation, UserId, Age|] (frameRow ms 0))
+-- {occupation :-> "technician", user id :-> 3, age :-> 26}
+-- #+END_EXAMPLE
+
+-- But what if we don't want to rely entirely on ordering of our rows?
+-- Here, we know there is an identifying column, ~Occupation~, and we
+-- want to shuffle it around to the head of the record while mapping a
+-- constrained polymorphic operation over the other columns.
+
+addTwoOccupation :: (CanDelete Occupation rs,
+                     rs' ~ RDelete Occupation rs,
+                     AllCols Num rs', AsVinyl rs')
+                 => Rec rs -> Rec (Occupation ': RDelete Occupation rs)
+addTwoOccupation r = frameCons (rget' occupation' r)
+                   $ aux (rdel [pr|Occupation|] r)
+  where aux = mapMethod [pr|Num|] (+ 2)
+
+-- #+BEGIN_EXAMPLE
+-- λ> addTwoOccupation (select [pr|UserId,Age,Occupation|] (frameRow ms 0))
+-- {occupation :-> "technician", user id :-> 3, age :-> 26}
+-- #+END_EXAMPLE
+
+-- It is a bit clumsy to delete and then add back a particular field,
+-- and the dependence on explicit structure is relying a bit more on
+-- coincidence than we might like. We could choose, instead, to work
+-- with row types that contain a distinguished column somewhere in
+-- their midst, but regarding precisely /where/ it is, or /how many/
+-- other fields there are, we care not.
+
+addTwoOccupation' :: forall rs rs'.
+                     (CanDelete Occupation rs,
+                      rs' ~ RDelete Occupation rs,
+                      AllCols Num rs', AsVinyl rs')
+                  => Rec rs -> Rec rs
+addTwoOccupation' = lenses [pr|rs'|] %~ mapMethod [pr|Num|] (+ 2)
+
+-- #+BEGIN_EXAMPLE
+-- λ> addTwoOccupation' (select [pr|UserId,Age,Occupation|] (frameRow ms 0))
+-- {user id :-> 3, age :-> 26, occupation :-> "technician"}
+-- #+END_EXAMPLE
+
+-- We can unpack this type a bit to understand what is happening. A
+-- ~Frames~ ~Rec~ is a record from the ~Vinyl~ library, except that
+-- each type has phantom column information. This metadata is
+-- available to the type checker, but is erased during compilation so
+-- that it does not impose any runtime overhead. What we are doing
+-- here is saying that we will operate on a ~Frames~ row type, ~Rec
+-- rs~, that has an element ~Occupation~, and that deleting this
+-- element works properly (i.e. the leftover fields are a proper
+-- subset of the original row type). We further state -- with the
+-- ~AsVinyl~ constraint -- that we want to work on the unadorned field
+-- values, temporarily discarding their header information, with the
+-- ~mapMethod~ function that will treat our richly-typed row as a less
+-- informative ~Vinyl~ record.
+
+-- We then peer through a lens onto the set of all unadorned fields other
+-- than ~Occupation~, apply a function with a ~Num~ constraint to each of
+-- those fields, then pull back out of the lens reattaching the column
+-- header information on our way. All of that manipulation and
+-- bookkeeping is managed by the type checker.
+
+-- Lest we forget we are working in a typed setting, what happens if
+-- the constraint on our polymorphic operation can't be satisfied by
+-- one of the columns?
+
+-- #+BEGIN_EXAMPLE
+-- λ> addTwoOccupation (select [pr|Age,Occupation,Gender|] (frameRow ms 0))
+
+-- <interactive>:15:1-16:
+--     No instance for (Num Text) arising from a use of ‘addTwoOccupation’
+--     In the expression:
+--       addTwoOccupation
+--         (select
+--            (Proxy :: Proxy '[Age, Occupation, Gender]) (frameRow ms 0))
+--     In an equation for ‘it’:
+--         it
+--           = addTwoOccupation
+--               (select
+--                  (Proxy :: Proxy '[Age, Occupation, Gender]) (frameRow ms 0))
+-- #+END_EXAMPLE
+
+-- This error message isn't ideal in that it doesn't tell us which
+-- column failed to satisfy the constraint. Hopefully this can be
+-- improved in the future!
 
 -- * Better Types
 
