@@ -4,7 +4,7 @@
 <html xmlns="http://www.w3.org/1999/xhtml" lang="en" xml:lang="en">
 <head>
 <title>Frames Tutorial</title>
-<!-- 2015-01-26 Mon 15:53 -->
+<!-- 2015-01-27 Tue 13:06 -->
 <meta  http-equiv="Content-Type" content="text/html;charset=utf-8" />
 <meta  name="generator" content="Org-mode" />
 <meta  name="author" content="Anthony Cowley" />
@@ -92,18 +92,6 @@
  pre.src {background-color: #272822; color: #F8F8F2; overflow: scroll;} body { max-width: 600pt; margin: auto} </style>
 <style type="text/css">
  pre.src {background-color: #272822; color: #F8F8F2; overflow: scroll;} body { max-width: 600pt; margin: auto} </style>
-<style type="text/css">
- pre.src {background-color: #272822; color: #F8F8F2; overflow: scroll;} body { max-width: 600pt; margin: auto} </style>
-<style type="text/css">
- pre.src {background-color: #272822; color: #F8F8F2; overflow: scroll;} body { max-width: 600pt; margin: auto} </style>
-<style type="text/css">
- pre.src {background-color: #272822; color: #F8F8F2; overflow: scroll;} body { max-width: 600pt; margin: auto} </style>
-<style type="text/css">
- pre.src {background-color: #272822; color: #F8F8F2; overflow: scroll;} body { max-width: 600pt; margin: auto} </style>
-<style type="text/css">
- pre.src {background-color: #272822; color: #F8F8F2; overflow: scroll;} body { max-width: 600pt; margin: auto} </style>
-<style type="text/css">
- pre.src {background-color: #272822; color: #F8F8F2; overflow: scroll;} body { max-width: 600pt; margin: auto} </style>
 <script type="text/javascript">
 /*
 @licstart  The following is the entire license notice for the
@@ -173,12 +161,13 @@ for the JavaScript code in this tag.
 <li><a href="#sec-2-5">2.5. Mostly-Uniform Data</a></li>
 </ul>
 </li>
-<li><a href="#sec-3">3. Better Types</a></li>
-<li><a href="#sec-4">4. Appendix</a>
+<li><a href="#sec-3">3. Escape Hatch</a></li>
+<li><a href="#sec-4">4. Better Types</a></li>
+<li><a href="#sec-5">5. Appendix</a>
 <ul>
-<li><a href="#sec-4-1">4.1. User Types</a></li>
-<li><a href="#sec-4-2">4.2. Splice Dump</a></li>
-<li><a href="#sec-4-3">4.3. Thanks</a></li>
+<li><a href="#sec-5-1">5.1. User Types</a></li>
+<li><a href="#sec-5-2">5.2. Splice Dump</a></li>
+<li><a href="#sec-5-3">5.3. Thanks</a></li>
 </ul>
 </li>
 </ul>
@@ -188,7 +177,8 @@ for the JavaScript code in this tag.
 
 <pre class="src src-haskell"><span style="color: #75715E; font-style: italic;">{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts, GADTs,</span>
 <span style="color: #75715E; font-style: italic;">             OverloadedStrings, PatternSynonyms, QuasiQuotes,</span>
-<span style="color: #75715E; font-style: italic;">             ScopedTypeVariables, TemplateHaskell, TypeOperators #-}</span>
+<span style="color: #75715E; font-style: italic;">             ScopedTypeVariables, TemplateHaskell, TypeOperators,</span>
+<span style="color: #75715E; font-style: italic;">             ViewPatterns #-}</span>
 </pre>
 </div>
 
@@ -246,7 +236,7 @@ smaller test program than this!
 </div>
 
 <p>
-A few other imports will be used for highly customized parsing <a href="#sec-3">later</a>.
+A few other imports will be used for highly customized parsing <a href="#sec-4">later</a>.
 </p>
 
 <div class="org-src-container">
@@ -296,7 +286,7 @@ This template haskell splice explicitly specifies the name for the
 inferred record type, column names, a separator string, and the
 data file from which to infer the record type (i.e. what type
 should be used to represent each column). The result of this splice
-is included in an <a href="#sec-4-2">appendix</a> below so you can flip
+is included in an <a href="#sec-5-2">appendix</a> below so you can flip
 between the generated code and how it is used.
 </p>
 
@@ -751,8 +741,31 @@ improved in the future!
 </div>
 
 <div id="outline-container-sec-3" class="outline-2">
-<h2 id="sec-3"><span class="section-number-2">3</span> Better Types</h2>
+<h2 id="sec-3"><span class="section-number-2">3</span> Escape Hatch</h2>
 <div class="outline-text-2" id="text-3">
+<p>
+When you're done with <code>Frames</code> and want to get back to more
+familiar monomorphic pastures, you can bundle your data up.
+</p>
+
+<div class="org-src-container">
+
+<pre class="src src-haskell"><span style="color: #A6E22E;">restInts</span> <span style="color: #FD971F;">::</span> (<span style="color: #66D9EF;">AllAre</span> <span style="color: #66D9EF;">Int</span> (<span style="color: #66D9EF;">UnColumn</span> rs), <span style="color: #66D9EF;">AsVinyl</span> rs)
+         <span style="color: #FD971F;">=&gt;</span> <span style="color: #66D9EF;">Rec</span> (s <span style="color: #66D9EF;">:-&gt;</span> <span style="color: #66D9EF;">Text</span> '<span style="color: #66D9EF;">:</span> rs) <span style="color: #FD971F;">-&gt;</span> (<span style="color: #66D9EF;">Text</span>, [<span style="color: #66D9EF;">Int</span>])
+<span style="color: #A6E22E;">restInts</span> (recUncons <span style="color: #FD971F;">-&gt;</span> (h, t)) <span style="color: #FD971F;">=</span> (h, recToList t)
+</pre>
+</div>
+
+<pre class="example">
+λ&gt; restInts (select [pr|Occupation,UserId,Age|] (frameRow ms 0))
+("technician",[1,24])
+</pre>
+</div>
+</div>
+
+<div id="outline-container-sec-4" class="outline-2">
+<h2 id="sec-4"><span class="section-number-2">4</span> Better Types</h2>
+<div class="outline-text-2" id="text-4">
 <p>
 A common disappointment of parsing general data sets is the
 reliance on text for data representation even <i>after</i> parsing. If
@@ -794,7 +807,7 @@ universe of column types.
 <p>
 Note that these definitions must be imported from a separate module
 to satisfy GHC's stage restrictions related to Template
-Haskell. The full code for the custom type may be found in an <a href="#sec-4-1">appendix</a>.
+Haskell. The full code for the custom type may be found in an <a href="#sec-5-1">appendix</a>.
 </p>
 
 <p>
@@ -883,12 +896,12 @@ code</b>. Just recompile against the new data set, and you're good to go.
 </div>
 </div>
 
-<div id="outline-container-sec-4" class="outline-2">
-<h2 id="sec-4"><span class="section-number-2">4</span> Appendix</h2>
-<div class="outline-text-2" id="text-4">
-</div><div id="outline-container-sec-4-1" class="outline-3">
-<h3 id="sec-4-1"><span class="section-number-3">4.1</span> User Types</h3>
-<div class="outline-text-3" id="text-4-1">
+<div id="outline-container-sec-5" class="outline-2">
+<h2 id="sec-5"><span class="section-number-2">5</span> Appendix</h2>
+<div class="outline-text-2" id="text-5">
+</div><div id="outline-container-sec-5-1" class="outline-3">
+<h3 id="sec-5-1"><span class="section-number-3">5.1</span> User Types</h3>
+<div class="outline-text-3" id="text-5-1">
 <p>
 Here are the definitions needed to define the <code>MyColumns</code> type with
 its more descriptive <code>ZipT</code> type. We have to define these things in
@@ -942,9 +955,9 @@ off, and the sky's the limit.
 </div>
 </div>
 
-<div id="outline-container-sec-4-2" class="outline-3">
-<h3 id="sec-4-2"><span class="section-number-3">4.2</span> Splice Dump</h3>
-<div class="outline-text-3" id="text-4-2">
+<div id="outline-container-sec-5-2" class="outline-3">
+<h3 id="sec-5-2"><span class="section-number-3">5.2</span> Splice Dump</h3>
+<div class="outline-text-3" id="text-5-2">
 <p>
 The Template Haskell splices we use produce quite a lot of
 code. The raw dumps of these splices can be hard to read, but I
@@ -1081,9 +1094,9 @@ character.
 </div>
 </div>
 
-<div id="outline-container-sec-4-3" class="outline-3">
-<h3 id="sec-4-3"><span class="section-number-3">4.3</span> Thanks</h3>
-<div class="outline-text-3" id="text-4-3">
+<div id="outline-container-sec-5-3" class="outline-3">
+<h3 id="sec-5-3"><span class="section-number-3">5.3</span> Thanks</h3>
+<div class="outline-text-3" id="text-5-3">
 <p>
 Thanks to Greg Hale and Ben Gamari for reviewing early drafts of this document.
 </p>
