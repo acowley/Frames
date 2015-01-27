@@ -1,17 +1,20 @@
-{-# LANGUAGE FlexibleContexts, TemplateHaskell, TypeOperators #-}
+{-# LANGUAGE ConstraintKinds, FlexibleContexts, GADTs, TemplateHaskell,
+             TypeOperators #-}
 
 -- | Functions useful for interactively exploring and experimenting
 -- with a data set.
-module Frames.Exploration (pipePreview, select, lenses, pr) where
-import Data.Char (isSpace)
+module Frames.Exploration (pipePreview, select, lenses, pr, recToList) where
+import Data.Char (isSpace, isUpper)
 import Data.Proxy
 import qualified Data.Vinyl as V
+import Data.Vinyl.Functor (Identity(..))
 import Frames.Rec
+import Frames.RecF (AsVinyl(toVinyl), UnColumn)
+import Frames.TypeLevel (AllAre)
 import Language.Haskell.TH
 import Language.Haskell.TH.Quote
 import Pipes hiding (Proxy)
 import qualified Pipes.Prelude as P
-import Data.Char (isUpper)
 
 -- * Preview Results
 
@@ -51,6 +54,14 @@ pr = QuasiQuoter mkProxy undefined undefined undefined
                              | isUpper t -> [|Proxy::Proxy $(fmap head cons)|]
                              | otherwise -> [|Proxy::Proxy $(varT $ mkName h)|]
                          _ -> [|Proxy::Proxy $(fmap mkList cons)|]
+
+-- * ToList
+
+recToList :: (AsVinyl rs, AllAre a (UnColumn rs)) => Rec rs -> [a]
+recToList = go . toVinyl
+  where go :: AllAre a rs => V.Rec Identity rs -> [a]
+        go V.RNil = []
+        go (Identity x V.:& xs) = x : go xs
 
 -- * Helpers
 

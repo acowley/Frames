@@ -1,5 +1,6 @@
 {-# LANGUAGE ConstraintKinds,
              DataKinds,
+             EmptyCase,
              FlexibleContexts,
              FlexibleInstances,
              FunctionalDependencies,
@@ -28,6 +29,11 @@ type Rec = RecF Identity
 (&:) :: a -> Rec rs -> Rec (s :-> a ': rs)
 x &: xs = frameCons (Identity x) xs
 infixr 5 &:
+
+-- | Separate the first element of a 'Rec' from the rest of the row.
+recUncons :: Rec (s :-> a ': rs) -> (a, Rec rs)
+recUncons (Identity x :& xs) = (x, xs)
+recUncons x = case x of
 
 -- | Undistribute 'Maybe' from a 'RecF' 'Maybe'. This is just a
 -- specific usage of 'rtraverse', but it is quite common.

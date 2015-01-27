@@ -1,6 +1,7 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts, GADTs,
              OverloadedStrings, PatternSynonyms, QuasiQuotes,
-             ScopedTypeVariables, TemplateHaskell, TypeOperators #-}
+             ScopedTypeVariables, TemplateHaskell, TypeOperators,
+             ViewPatterns #-}
 
 -- This is a loose port of a
 -- [[http://ajkl.github.io/Dataframes/][dataframe tutorial]] Rosetta
@@ -397,6 +398,20 @@ addTwoOccupation' = lenses [pr|rs'|] %~ mapMethod [pr|Num|] (+ 2)
 -- This error message isn't ideal in that it doesn't tell us which
 -- column failed to satisfy the constraint. Hopefully this can be
 -- improved in the future!
+
+-- ** Escape Hatch
+
+-- When you're done with ~Frames~ and want to get back to more
+-- familiar monomorphic pastures, you can bundle your data up.
+
+restInts :: (AllAre Int (UnColumn rs), AsVinyl rs)
+         => Rec (s :-> Text ': rs) -> (Text, [Int])
+restInts (recUncons -> (h, t)) = (h, recToList t)
+
+-- #+BEGIN_EXAMPLE
+-- λ> restInts (select [pr|Occupation,UserId,Age|] (frameRow ms 0))
+-- ("technician",[1,24])
+-- #+END_EXAMPLE
 
 -- * Better Types
 
