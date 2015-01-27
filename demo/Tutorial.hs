@@ -399,7 +399,7 @@ addTwoOccupation' = lenses [pr|rs'|] %~ mapMethod [pr|Num|] (+ 2)
 -- column failed to satisfy the constraint. Hopefully this can be
 -- improved in the future!
 
--- ** Escape Hatch
+-- * Escape Hatch
 
 -- When you're done with ~Frames~ and want to get back to more
 -- familiar monomorphic pastures, you can bundle your data up.
