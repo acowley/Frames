@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns,
              DataKinds,
+             EmptyCase,
              FlexibleInstances,
              ScopedTypeVariables,
              TupleSections,
@@ -72,22 +73,22 @@ instance RecVec '[] where
   {-# INLINE allocRec #-}
 
   freezeRec _ _ V.RNil = return V.RNil
-  freezeRec _ _ _ = error "Impossible"
+  freezeRec _ _ x = case x of
   {-# INLINE freezeRec #-}
 
   growRec _ V.RNil = return V.RNil
-  growRec _ _ = error "Impossible"
+  growRec _ x = case x of
   {-# INLINE growRec #-}
 
   indexRec _ _ _ = V.RNil
   {-# INLINE indexRec #-}
 
   writeRec _ _ V.RNil V.RNil = return ()
-  writeRec _ _ _ _ = error "Impossible"
+  writeRec _ _ x _ = case x of
   {-# INLINE writeRec #-}
 
   produceRec _ V.RNil = V.RNil
-  produceRec _ _ = error "Impossible"
+  produceRec _ x = case x of
   {-# INLINE produceRec #-}
 
 instance forall s a rs.
@@ -102,27 +103,27 @@ instance forall s a rs.
   freezeRec _ n (Identity (Col x) V.:& xs) =
     (&:) <$> (VG.unsafeFreeze $ VGM.unsafeSlice 0 n x)
          <*> freezeRec (Proxy::Proxy rs) n xs
-  freezeRec _ _ _ = error "Impossible"
+  freezeRec _ _ x = case x of
   {-# INLINE freezeRec #-}
 
   growRec _ (Identity (Col x) V.:& xs) = (&:) <$> VGM.grow x (VGM.length x)
                                               <*> growRec (Proxy :: Proxy rs) xs
-  growRec _ _ = error "Impossible"
+  growRec _ x = case x of
   {-# INLINE growRec #-}
 
   writeRec _ !i !(Identity (Col v) V.:& vs) (Identity (Col x) V.:& xs) =
     VGM.unsafeWrite v i x >> writeRec (Proxy::Proxy rs) i vs xs
-  writeRec _ _ _ _ = error "Impossible"
+  writeRec _ _ _ x = case x of
   {-# INLINE writeRec #-}
 
   indexRec _ !i !(Identity (Col x) V.:& xs) =
     x VG.! i &: indexRec (Proxy :: Proxy rs) i xs
-  indexRec _ _ _ = error "Impossible"
+  indexRec _ _ x = case x of
   {-# INLINE indexRec #-}
 
   produceRec _ (Identity (Col v) V.:& vs) = frameCons (v VG.!) $
                                             produceRec (Proxy::Proxy rs) vs
-  produceRec _ _ = error "Impossible"
+  produceRec _ x = case x of
   {-# INLINE produceRec #-}
 
 -- | Stream a finite sequence of rows into an efficient in-memory
