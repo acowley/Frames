@@ -71,7 +71,18 @@ defaultSep = ","
 -- | Helper to split a 'T.Text' on commas and strip leading and
 -- trailing whitespace from each resulting chunk.
 tokenizeRow :: Separator -> T.Text -> [T.Text]
-tokenizeRow sep = map T.strip . T.splitOn sep
+tokenizeRow sep = map (unquote . T.strip) . T.splitOn sep
+  where unquote txt
+          | quoted txt = case T.dropEnd 1 (T.drop 1 txt) of
+                           txt' | T.null txt' -> "Col"
+                                | numish txt' -> txt
+                                | otherwise -> txt'
+          | otherwise = txt
+        numish = T.all (`elem` "-+.0123456789")
+        quoted txt = case T.uncons txt of
+                       Just ('"', rst)
+                         | not (T.null rst) -> T.last rst == '"'
+                       _ -> False
 
 -- | Infer column types from a prefix (up to 1000 lines) of a CSV
 -- file.
