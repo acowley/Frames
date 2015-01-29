@@ -1,5 +1,5 @@
-{-# LANGUAGE DataKinds, FlexibleContexts, FlexibleInstances, GADTs,
-             KindSignatures, MultiParamTypeClasses, RankNTypes,
+{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts, FlexibleInstances,
+             GADTs, KindSignatures, MultiParamTypeClasses, RankNTypes,
              TypeOperators, UndecidableInstances #-}
 -- | Co-records: a flexible approach to sum types.
 module Frames.CoRec where
@@ -7,10 +7,25 @@ import Data.Vinyl
 import Data.Vinyl.Functor (Compose(..), (:.), Identity(..))
 import Data.Vinyl.TypeLevel (RIndex)
 
--- | Generalize algebraic sum type.
+-- | Generalize algebraic sum types.
 data CoRec :: (* -> *) -> [*] -> * where
   Col :: RElem a ts (RIndex a ts) => f a -> CoRec f ts
 
+-- | Helper to build a 'Show'-able 'CoRec'
+col :: (Show a, a ∈ ts) => a -> CoRec (Dict Show) ts
+col = Col . Dict
+
+instance Show (CoRec (Dict Show) ts) where
+  show (Col (Dict x)) = "Col "++show x
+
+-- | Remove a 'Dict' wrapper from a value.
+dictId :: Dict c a -> Identity a
+dictId (Dict x) = Identity x
+
+-- | Helper to build a @Dict Show@
+showDict :: Show a => a -> Dict Show a
+showDict = Dict
+  
 -- | We can inject a a 'CoRec' into a 'Rec' where every field of the
 -- 'Rec' is 'Nothing' except for the one whose type corresponds to the
 -- type of the given 'CoRec' variant.
