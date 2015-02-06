@@ -78,7 +78,7 @@ tokenizeRow sep = map (unquote . T.strip) . T.splitOn sep
                                 | numish txt' -> txt
                                 | otherwise -> txt'
           | otherwise = txt
-        numish = T.all (`elem` "-+.0123456789")
+        numish = T.all (`elem` ("-+.0123456789"::String))
         quoted txt = case T.uncons txt of
                        Just ('"', rst)
                          | not (T.null rst) -> T.last rst == '"'
