@@ -10,8 +10,7 @@ instance for each column type is a Fold.
 
 For example, suppose we have the following Frame: 
 
-| user id |  age | gender |  occupation | zip code | 
-----------------------------------------------------
+| user id |  age | gender |  occupation | zip code |
 |       1 |   24 |      M |  technician |    85711 | 
 |       2 |   53 |      F |  other      |    94043 | 
 |       3 |   23 |      M |  writer     |    32067 | 
@@ -20,7 +19,6 @@ For example, suppose we have the following Frame:
 The summary for a single column like ~occupation~ (a categorical variable) might look like this: 
 
 | category  | count 
--------------------- 
 | technician| 2 
 | other     | 1 
 | writer    | 1 
@@ -28,7 +26,6 @@ The summary for a single column like ~occupation~ (a categorical variable) might
 However, the summary for a column like ~age~ (an interval variable) could look like this: 
 
 | parameter     | value       | 
-------------------------------- 
 | min           | 24          | 
 | max           | 53          | 
 | mean          | 2.5         | 
@@ -38,7 +35,6 @@ However, the summary for a column like ~age~ (an interval variable) could look l
 The summary of a whole frame might just go through summaries for each column: 
 
 | entity     | attribute     | value       | 
-------------------------------------------:-  
 | user_id    | class         | Num         | 
 | user_id    | class         | Key         | 
 | user_id    | min           | 1           | 
