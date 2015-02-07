@@ -8,6 +8,55 @@ values for textual columns.
 We may be able to implement a similar utility with a type class whose
 instance for each column type is a Fold.
 
+For example, suppose we have the following Frame: 
+
+| user id |  age | gender |  occupation | zip code |
+|       1 |   24 |      M |  technician |    85711 | 
+|       2 |   53 |      F |  other      |    94043 | 
+|       3 |   23 |      M |  writer     |    32067 | 
+|       4 |   24 |      M |  techician  |    43537 | 
+
+The summary for a single column like ~occupation~ (a categorical variable) might look like this: 
+
+| category  | count 
+| technician| 2 
+| other     | 1 
+| writer    | 1 
+
+However, the summary for a column like ~age~ (an interval variable) could look like this: 
+
+| parameter     | value       | 
+| min           | 24          | 
+| max           | 53          | 
+| mean          | 2.5         | 
+| stddev        | 1.29        | 
+| median        | 2.5         | 
+ 
+The summary of a whole frame might just go through summaries for each column: 
+
+| entity     | attribute     | value       | 
+| user_id    | class         | Num         | 
+| user_id    | class         | Key         | 
+| user_id    | min           | 1           | 
+| user_id    | max           | 4           | 
+| user_id    | mean          | 2.5         | 
+| user_id    | stddev        | 1.29        | 
+| user_id    | median        | 2.5         | 
+| user_id    | unique        | 4           | 
+| age        | class         | Interval    |
+| age        | class         | Ratio       |
+| age        | min           | 24          | 
+| age        | max           | 53          | 
+| age        | mean          | 2.5         | 
+| age        | stddev        | 1.29        | 
+| age        | median        | 2.5         | 
+| gender     | class         | Categorical | 
+| gender     | numCategories | 2       | 
+| occupation | class         | Categorical | 
+| occupation | numCategories | 3           | 
+| zip code   | class         | Categorical | 
+| zip code   | numCategories | 4           | 
+
 ** TODO Simplify the elisp to pretty print the splice dump
 Can't we handle /any/ infix operator? If the identifier in the
 function position of an application is parenthesized and begins with a
