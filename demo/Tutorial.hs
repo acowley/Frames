@@ -467,7 +467,7 @@ tableTypes' rowGen { rowTypeName = "U2"
 movieStream2 :: Producer U2 IO ()
 movieStream2 = readTableOpt u2Parser "data/ml-100k/u.user"
 
--- This new record type, =U2=, has a more interesting =gender=
+-- This new record type, =U2=, has a more interesting =zip code=
 -- column.
 
 -- #+BEGIN_EXAMPLE
