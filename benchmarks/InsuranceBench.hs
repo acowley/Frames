@@ -11,7 +11,7 @@ import qualified Pipes.Prelude as P
 
 tableTypes "Ins" "data/FL2.csv"
 
-type TinyIns = Rec [PolicyID, PointLatitude, PointLongitude]
+type TinyIns = Record [PolicyID, PointLatitude, PointLongitude]
 
 tblP :: P.Producer Ins IO ()
 tblP = readTable "data/FL2.csv"
