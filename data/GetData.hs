@@ -4,9 +4,15 @@ import qualified Data.ByteString.Lazy.Char8 as B
 import Data.Maybe (fromJust)
 import Network.HTTP.Client
 
+getPrestige :: IO ()
+getPrestige = withManager defaultManagerSettings $ \m ->
+              httpLbs req m >>=
+                B.writeFile "data/prestige.csv" . responseBody
+  where Just req = parseUrl "http://vincentarelbundock.github.io/Rdatasets/csv/car/Prestige.csv"
+
 getFLinsurance :: IO ()
 getFLinsurance = withManager defaultManagerSettings $ \m -> 
-                 httpLbs req m  >>=
+                 httpLbs req m >>=
                    B.writeFile "data/FL2.csv"
                  . B.map fixup . fromEntry . fromJust
                  . findEntryByPath "FL_insurance_sample.csv"
@@ -29,5 +35,6 @@ getAdultIncome = withManager defaultManagerSettings $ \m ->
                    \native-country\n"
 
 main :: IO ()
-main = do getFLinsurance
+main = do getPrestige
+          getFLinsurance
           getAdultIncome

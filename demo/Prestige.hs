@@ -8,10 +8,11 @@ import Frames
 import Graphics.Rendering.Chart.Backend.Diagrams (defaultEnv, runBackendR)
 import Graphics.Rendering.Chart.Easy
 
-tableTypes "Row" "/tmp/prestige.csv"
+-- Data set from http://vincentarelbundock.github.io/Rdatasets/datasets.html
+tableTypes "Row" "data/prestige.csv"
 
 loadRows :: IO (Frame Row)
-loadRows = inCoreAoS $ readTable "/tmp/prestige.csv"
+loadRows = inCoreAoS $ readTable "data/prestige.csv"
 
 mkPlot :: IO ()
 mkPlot = do pts <- toList . fmap (view education &&& view income) <$> loadRows
