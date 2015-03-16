@@ -56,12 +56,13 @@ type family Vectors rs where
 -- | Tooling to allocate, grow, write to, freeze, and index into
 -- records of vectors.
 class RecVec rs where
-  allocRec :: proxy rs -> IO (Rec (VectorMs rs))
-  freezeRec :: proxy rs -> Int -> Rec (VectorMs rs) -> IO (Rec (Vectors rs))
-  growRec :: proxy rs -> Rec (VectorMs rs) -> IO (Rec (VectorMs rs))
-  writeRec :: proxy rs -> Int -> Rec (VectorMs rs) -> Rec rs -> IO ()
-  indexRec :: proxy rs -> Int -> Rec (Vectors rs) -> Rec rs
-  produceRec :: proxy rs -> Rec (Vectors rs) -> RecF ((->) Int) rs
+  allocRec   :: proxy rs -> IO (Record (VectorMs rs))
+  freezeRec  :: proxy rs -> Int -> Record (VectorMs rs)
+             -> IO (Record (Vectors rs))
+  growRec    :: proxy rs -> Record (VectorMs rs) -> IO (Record (VectorMs rs))
+  writeRec   :: proxy rs -> Int -> Record (VectorMs rs) -> Record rs -> IO ()
+  indexRec   :: proxy rs -> Int -> Record (Vectors rs) -> Record rs
+  produceRec :: proxy rs -> Record (Vectors rs) -> V.Rec ((->) Int) rs
 
 -- The use of the type families Vectors and VectorMs interferes with
 -- GHC's pattern match exhaustiveness checker, so we write down dummy
@@ -135,7 +136,7 @@ instance forall s a rs.
 -- which provides an easier-to-use function that indexes into the
 -- table in a row-major fashion.
 inCoreSoA :: forall m rs. (MonadIO m, RecVec rs)
-          => P.Producer (Rec rs) m () -> m (Int, RecF ((->) Int) rs)
+          => P.Producer (Record rs) m () -> m (Int, V.Rec ((->) Int) rs)
 inCoreSoA xs =
   do mvs <- liftIO $ allocRec (Proxy :: Proxy rs)
      let feed (!i, !sz, !mvs') row
@@ -156,20 +157,20 @@ inCoreSoA xs =
 -- representation. Returns a 'Frame' that provides a function to index
 -- into the table.
 inCoreAoS :: (Functor m, MonadIO m, RecVec rs)
-          => P.Producer (Rec rs) m () -> m (FrameRec rs)
+          => P.Producer (Record rs) m () -> m (FrameRec rs)
 inCoreAoS = fmap (uncurry toAoS) . inCoreSoA
 
 -- | Like 'inCoreAoS', but applies the provided function to the record
 -- of columns before building the 'Frame'.
 inCoreAoS' :: (Functor m, MonadIO m, RecVec rs)
-           => (RecF ((->) Int) rs -> RecF ((->) Int) ss)
-           -> P.Producer (Rec rs) m () -> m (FrameRec ss)
+           => (V.Rec ((->) Int) rs -> V.Rec ((->) Int) ss)
+           -> P.Producer (Record rs) m () -> m (FrameRec ss)
 inCoreAoS' f = fmap (uncurry toAoS . aux) . inCoreSoA
   where aux (x,y) = (x, f y)
 
 -- | Convert a structure-of-arrays to an array-of-structures. This can
 -- simplify usage of an in-memory representation.
-toAoS :: Int -> RecF ((->) Int) rs -> FrameRec rs
+toAoS :: Int -> V.Rec ((->) Int) rs -> FrameRec rs
 toAoS n = Frame n . rtraverse (fmap Identity)
 {-# INLINE toAoS #-}
 
@@ -179,7 +180,7 @@ toAoS n = Frame n . rtraverse (fmap Identity)
 -- resulting generator a matter of indexing into a densely packed
 -- representation.
 inCore :: forall m n rs. (Functor m, MonadIO m, RecVec rs, Monad n)
-       => P.Producer (Rec rs) m () -> m (P.Producer (Rec rs) n ())
+       => P.Producer (Record rs) m () -> m (P.Producer (Record rs) n ())
 inCore xs =
   do mvs <- liftIO $ allocRec (Proxy :: Proxy rs)
      let feed (!i,!sz,!mvs') row

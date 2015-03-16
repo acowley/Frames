@@ -5,15 +5,15 @@ import Control.Applicative
 import Data.Foldable
 import Data.Monoid
 import Data.Vinyl.TypeLevel
-import Frames.Rec (Rec)
+import Frames.Rec (Record)
 import Frames.RecF (rappend)
 
 -- | A 'Frame' is a finite collection of rows indexed by 'Int'.
 data Frame r = Frame { frameLength :: !Int
                      , frameRow    :: Int -> r }
 
--- | A 'Frame' whose rows are 'Rec' values.
-type FrameRec rs = Frame (Rec rs)
+-- | A 'Frame' whose rows are 'Record' values.
+type FrameRec rs = Frame (Record rs)
 
 instance Functor Frame where
   fmap f (Frame len g) = Frame len (f . g)

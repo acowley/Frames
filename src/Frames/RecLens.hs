@@ -14,30 +14,29 @@ import qualified Data.Vinyl as V
 import Data.Vinyl.Functor (Identity(..))
 import Data.Vinyl.TypeLevel
 import Frames.Col ((:->)(..))
-import Frames.Rec (Rec)
-import Frames.RecF (RecF)
+import Frames.Rec (Record)
 
 rlens' :: (i ~ RIndex r rs, V.RElem r rs i, Functor f, Functor g)
        => sing r
        -> (g r -> f (g r))
-       -> RecF g rs
-       -> f (RecF g rs)
+       -> V.Rec g rs
+       -> f (V.Rec g rs)
 rlens' = V.rlens
 {-# INLINE rlens' #-}
 
 -- | Getter for a record field
 rget' :: Functor g
       => (forall f. Functor f
-          => (g (s :-> a) -> f (g (s :-> a))) -> RecF g rs -> f (RecF g rs))
-      -> RecF g rs -> g a
+          => (g (s :-> a) -> f (g (s :-> a))) -> V.Rec g rs -> f (V.Rec g rs))
+      -> V.Rec g rs -> g a
 rget' l = fmap getCol . getConst . l Const
 {-# INLINE rget' #-}
 
 -- | Setter for a record field.
 rput' :: Functor g
       => (forall f. Functor f
-          => (g (s :-> a) -> f (g (s :-> a))) -> RecF g rs -> f (RecF g rs))
-      -> g a -> RecF g rs -> RecF g rs
+          => (g (s :-> a) -> f (g (s :-> a))) -> V.Rec g rs -> f (V.Rec g rs))
+      -> g a -> V.Rec g rs -> V.Rec g rs
 rput' l y = getIdentity . l (\_ -> Identity (fmap Col y))
 {-# INLINE rput' #-}
 
@@ -45,19 +44,19 @@ rput' l y = getIdentity . l (\_ -> Identity (fmap Col y))
 
 -- | Create a lens for accessing a field of a 'Rec'.
 rlens :: (Functor f, V.RElem (s :-> a) rs (RIndex (s :-> a) rs))
-      => proxy (s :-> a) -> (a -> f a) -> Rec rs -> f (Rec rs)
+      => proxy (s :-> a) -> (a -> f a) -> Record rs -> f (Record rs)
 rlens k f = rlens' k (fmap Identity . getIdentity . fmap f')
   where f' (Col x) = fmap Col (f x)
 {-# INLINE rlens #-}
 
 -- | Getter for a record field.
-rget :: (forall f. Functor f => (a -> f a) -> Rec rs -> f (Rec rs))
-     -> Rec rs -> a
+rget :: (forall f. Functor f => (a -> f a) -> Record rs -> f (Record rs))
+     -> Record rs -> a
 rget l = getConst . l Const
 {-# INLINE rget #-}
 
 -- | Setter for a record field.
-rput :: (forall f. Functor f => (a -> f a) -> Rec rs -> f (Rec rs))
-     -> a -> Rec rs -> Rec rs
+rput :: (forall f. Functor f => (a -> f a) -> Record rs -> f (Record rs))
+     -> a -> Record rs -> Record rs
 rput l y = getIdentity . l (\_ -> Identity y)
 {-# INLINE rput #-}

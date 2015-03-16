@@ -88,7 +88,7 @@ tableTypes'  rowGen { rowTypeName = "User"
 -- #+BEGIN_EXAMPLE
 -- λ> :i User
 -- type User =
---   Rec
+--   Record
 --     '["user id" :-> Int, "age" :-> Int, "gender" :-> Text,
 --       "occupation" :-> Text, "zip code" :-> Text]
 -- #+END_EXAMPLE
@@ -213,7 +213,7 @@ minMax = (,) <$> L.minimum <*> L.maximum
 
 -- Or multiple columns,
 
-miniUser :: User -> Rec [Occupation, Gender, Age]
+miniUser :: User -> Record [Occupation, Gender, Age]
 miniUser = rcast
 
 -- #+BEGIN_EXAMPLE
@@ -251,7 +251,7 @@ miniUser = rcast
 -- [[http://hackage.haskell.org/package/pipes][pipes]] package. Here
 -- we pick out the users whose occupation is "writer".
 
-writers :: (Occupation ∈ rs, Monad m) => Pipe (Rec rs) (Rec rs) m r
+writers :: (Occupation ∈ rs, Monad m) => Pipe (Record rs) (Record rs) m r
 writers = P.filter ((== "writer") . view occupation)
 
 -- #+BEGIN_EXAMPLE
@@ -280,7 +280,7 @@ writers = P.filter ((== "writer") . view occupation)
 -- we want to apply a function with type ~Int -> Int~ to two columns
 -- whose values are of type ~Int~.
 
-intFieldDoubler :: Rec [UserId, Age] -> Rec [UserId, Age]
+intFieldDoubler :: Record [UserId, Age] -> Record [UserId, Age]
 intFieldDoubler = mapMono (* 2)
 
 -- Let's preview the effect of this function by applying it to the
@@ -310,7 +310,7 @@ intFieldDoubler = mapMono (* 2)
 -- the first column back on to the result.
 
 addTwoRest :: (AllCols Num rs, AsVinyl rs)
-           => Rec (s :-> a ': rs) -> Rec (s :-> a ': rs)
+           => Record (s :-> a ': rs) -> Record (s :-> a ': rs)
 addTwoRest (h :& t) = frameCons h (aux t)
   where aux = mapMethod [pr|Num|] (\x -> x + 2)
 
@@ -327,7 +327,7 @@ addTwoRest (h :& t) = frameCons h (aux t)
 addTwoOccupation :: (CanDelete Occupation rs,
                      rs' ~ RDelete Occupation rs,
                      AllCols Num rs', AsVinyl rs')
-                 => Rec rs -> Rec (Occupation ': RDelete Occupation rs)
+                 => Record rs -> Record (Occupation ': RDelete Occupation rs)
 addTwoOccupation r = frameCons (rget' occupation' r)
                    $ mapMethod [pr|Num|] (+ 2) (rdel [pr|Occupation|] r)
 
@@ -347,7 +347,7 @@ addTwoOccupation' :: forall rs rs'.
                      (CanDelete Occupation rs,
                       rs' ~ RDelete Occupation rs,
                       AllCols Num rs', AsVinyl rs')
-                  => Rec rs -> Rec rs
+                  => Record rs -> Record rs
 addTwoOccupation' = lenses [pr|rs'|] %~ mapMethod [pr|Num|] (+ 2)
 
 -- #+BEGIN_EXAMPLE
@@ -356,11 +356,11 @@ addTwoOccupation' = lenses [pr|rs'|] %~ mapMethod [pr|Num|] (+ 2)
 -- #+END_EXAMPLE
 
 -- We can unpack this type a bit to understand what is happening. A
--- ~Frames~ ~Rec~ is a record from the ~Vinyl~ library, except that
+-- ~Frames~ ~Record~ is a record from the ~Vinyl~ library, except that
 -- each type has phantom column information. This metadata is
 -- available to the type checker, but is erased during compilation so
 -- that it does not impose any runtime overhead. What we are doing
--- here is saying that we will operate on a ~Frames~ row type, ~Rec
+-- here is saying that we will operate on a ~Frames~ row type, ~Record
 -- rs~, that has an element ~Occupation~, and that deleting this
 -- element works properly (i.e. the leftover fields are a proper
 -- subset of the original row type). We further state -- with the
@@ -405,7 +405,7 @@ addTwoOccupation' = lenses [pr|rs'|] %~ mapMethod [pr|Num|] (+ 2)
 -- familiar monomorphic pastures, you can bundle your data up.
 
 restInts :: (AllAre Int (UnColumn rs), AsVinyl rs)
-         => Rec (s :-> Text ': rs) -> (Text, [Int])
+         => Record (s :-> Text ': rs) -> (Text, [Int])
 restInts (recUncons -> (h, t)) = (h, recToList t)
 
 -- #+BEGIN_EXAMPLE
@@ -473,7 +473,7 @@ movieStream2 = readTableOpt u2Parser "data/ml-100k/u.user"
 -- #+BEGIN_EXAMPLE
 -- λ> :i U2
 -- type U2 =
---   Rec
+--   Record
 --     '["user id" :-> Int, "age" :-> Int, "gender" :-> Text,
 --       "occupation" :-> Text, "zip code" :-> ZipT]
 -- #+END_EXAMPLE
@@ -482,7 +482,7 @@ movieStream2 = readTableOpt u2Parser "data/ml-100k/u.user"
 -- New Jersey, and other places whose zip codes begin with a zero.
 
 neOccupations :: (U2zipCode ∈ rs, U2occupation ∈ rs, Monad m)
-              => Pipe (Rec rs) Text m r
+              => Pipe (Record rs) Text m r
 neOccupations = P.filter (isNewEngland . view u2zipCode)
                 >-> P.map (view u2occupation)
   where isNewEngland (ZipUS 0 _ _ _ _) = True
@@ -576,7 +576,7 @@ neOccupations = P.filter (isNewEngland . view u2zipCode)
 
 -- The overall structure is this:
 
--- - A ~Rec~ type called ~User~ with all necessary columns
+-- - A ~Record~ type called ~User~ with all necessary columns
 -- - A ~userParser~ value that overrides parsing defaults
 -- - A type synonym for each column that pairs the column name with its
 --   type
@@ -596,7 +596,7 @@ neOccupations = P.filter (isNewEngland . view u2zipCode)
 --     "data/ml-100k/u.user"
 -- ======>
 --   type User =
---       Rec ["user id" :-> Int, "age" :-> Int, "gender" :-> Text, "occupation" :-> Text, "zip code" :-> Text]
+--       Record ["user id" :-> Int, "age" :-> Int, "gender" :-> Text, "occupation" :-> Text, "zip code" :-> Text]
 
 --   userParser :: ParserOptions
 --   userParser
@@ -612,7 +612,7 @@ neOccupations = P.filter (isNewEngland . view u2zipCode)
 --   userId ::
 --     forall f_adkB rs_adkC. (Functor f_adkB,
 --                             RElem UserId rs_adkC (RIndex UserId rs_adkC)) =>
---     (Int -> f_adkB Int) -> Rec rs_adkC -> f_adkB (Rec rs_adkC)
+--     (Int -> f_adkB Int) -> Record rs_adkC -> f_adkB (Record rs_adkC)
 --   userId = rlens (Proxy :: Proxy UserId)
 
 --   userId' ::
@@ -620,7 +620,7 @@ neOccupations = P.filter (isNewEngland . view u2zipCode)
 --                                    Functor g_adkD,
 --                                    RElem UserId rs_adkF (RIndex UserId rs_adkF)) =>
 --     (g_adkD UserId -> f_adkE (g_adkD UserId))
---     -> RecF g_adkD rs_adkF -> f_adkE (RecF g_adkD rs_adkF)
+--     -> Rec g_adkD rs_adkF -> f_adkE (Rec g_adkD rs_adkF)
 --   userId' = rlens' (Proxy :: Proxy UserId)
 
 --   type Age = "age" :-> Int
@@ -628,7 +628,7 @@ neOccupations = P.filter (isNewEngland . view u2zipCode)
 --   age ::
 --     forall f_adkG rs_adkH. (Functor f_adkG,
 --                             RElem Age rs_adkH (RIndex Age rs_adkH)) =>
---     (Int -> f_adkG Int) -> Rec rs_adkH -> f_adkG (Rec rs_adkH)
+--     (Int -> f_adkG Int) -> Record rs_adkH -> f_adkG (Record rs_adkH)
 --   age = rlens (Proxy :: Proxy Age)
 
 --   age' ::
@@ -636,7 +636,7 @@ neOccupations = P.filter (isNewEngland . view u2zipCode)
 --                                    Functor g_adkI,
 --                                    RElem Age rs_adkK (RIndex Age rs_adkK)) =>
 --     (g_adkI Age -> f_adkJ (g_adkI Age))
---     -> RecF g_adkI rs_adkK -> f_adkJ (RecF g_adkI rs_adkK)
+--     -> Rec g_adkI rs_adkK -> f_adkJ (Rec g_adkI rs_adkK)
 --   age' = rlens' (Proxy :: Proxy Age)
 
 --   type Gender = "gender" :-> Text
@@ -644,7 +644,7 @@ neOccupations = P.filter (isNewEngland . view u2zipCode)
 --   gender ::
 --     forall f_adkL rs_adkM. (Functor f_adkL,
 --                             RElem Gender rs_adkM (RIndex Gender rs_adkM)) =>
---     (Text -> f_adkL Text) -> Rec rs_adkM -> f_adkL (Rec rs_adkM)
+--     (Text -> f_adkL Text) -> Record rs_adkM -> f_adkL (Record rs_adkM)
 --   gender = rlens (Proxy :: Proxy Gender)
 
 --   gender' ::
@@ -652,7 +652,7 @@ neOccupations = P.filter (isNewEngland . view u2zipCode)
 --                                    Functor g_adkN,
 --                                    RElem Gender rs_adkP (RIndex Gender rs_adkP)) =>
 --     (g_adkN Gender -> f_adkO (g_adkN Gender))
---     -> RecF g_adkN rs_adkP -> f_adkO (RecF g_adkN rs_adkP)
+--     -> Rec g_adkN rs_adkP -> f_adkO (Rec g_adkN rs_adkP)
 --   gender' = rlens' (Proxy :: Proxy Gender)
 
 --   type Occupation = "occupation" :-> Text
@@ -660,7 +660,7 @@ neOccupations = P.filter (isNewEngland . view u2zipCode)
 --   occupation ::
 --     forall f_adkQ rs_adkR. (Functor f_adkQ,
 --                             RElem Occupation rs_adkR (RIndex Occupation rs_adkR)) =>
---     (Text -> f_adkQ Text) -> Rec rs_adkR -> f_adkQ (Rec rs_adkR)
+--     (Text -> f_adkQ Text) -> Record rs_adkR -> f_adkQ (Record rs_adkR)
 --   occupation = rlens (Proxy :: Proxy Occupation)
 
 --   occupation' ::
@@ -668,7 +668,7 @@ neOccupations = P.filter (isNewEngland . view u2zipCode)
 --                                    Functor g_adkS,
 --                                    RElem Occupation rs_adkU (RIndex Occupation rs_adkU)) =>
 --     (g_adkS Occupation -> f_adkT (g_adkS Occupation))
---     -> RecF g_adkS rs_adkU -> f_adkT (RecF g_adkS rs_adkU)
+--     -> Rec g_adkS rs_adkU -> f_adkT (Rec g_adkS rs_adkU)
 --   occupation' = rlens' (Proxy :: Proxy Occupation)
 
 --   type ZipCode = "zip code" :-> Text
@@ -676,7 +676,7 @@ neOccupations = P.filter (isNewEngland . view u2zipCode)
 --   zipCode ::
 --     forall f_adkV rs_adkW. (Functor f_adkV,
 --                             RElem ZipCode rs_adkW (RIndex ZipCode rs_adkW)) =>
---     (Text -> f_adkV Text) -> Rec rs_adkW -> f_adkV (Rec rs_adkW)
+--     (Text -> f_adkV Text) -> Record rs_adkW -> f_adkV (Record rs_adkW)
 --   zipCode = rlens (Proxy :: Proxy ZipCode)
 
 --   zipCode' ::
@@ -684,7 +684,7 @@ neOccupations = P.filter (isNewEngland . view u2zipCode)
 --                                    Functor g_adkX,
 --                                    RElem ZipCode rs_adkZ (RIndex ZipCode rs_adkZ)) =>
 --     (g_adkX ZipCode -> f_adkY (g_adkX ZipCode))
---     -> RecF g_adkX rs_adkZ -> f_adkY (RecF g_adkX rs_adkZ)
+--     -> Rec g_adkX rs_adkZ -> f_adkY (Rec g_adkX rs_adkZ)
 --   zipCode' = rlens' (Proxy :: Proxy ZipCode)
 -- #+end_src
 

@@ -29,14 +29,14 @@ pipePreview src n f = runEffect $ src >-> f >-> P.take n >-> P.print
 -- | @select (Proxy::Proxy [A,B,C])@ extracts columns @A@, @B@, and
 -- @C@, from a larger record. Note, this is just a way of pinning down
 -- the type of a usage of 'V.rcast'.
-select :: (fs V.⊆ rs) => proxy fs -> Rec rs -> Rec fs
+select :: (fs V.⊆ rs) => proxy fs -> Record rs -> Record fs
 select _ = V.rcast
 
 -- | @lenses (Proxy::Proxy [A,B,C])@ provides a lens onto columns @A@,
 -- @B@, and @C@. This is just a way of pinning down the type of
 -- 'V.rsubset'.
 lenses :: (fs V.⊆ rs, Functor f)
-       => proxy fs -> (Rec fs -> f (Rec fs)) -> Rec rs -> f (Rec rs)
+       => proxy fs -> (Record fs -> f (Record fs)) -> Record rs -> f (Record rs)
 lenses _ = V.rsubset
 
 -- * Proxy Syntax
@@ -57,7 +57,7 @@ pr = QuasiQuoter mkProxy undefined undefined undefined
 
 -- * ToList
 
-recToList :: (AsVinyl rs, AllAre a (UnColumn rs)) => Rec rs -> [a]
+recToList :: (AsVinyl rs, AllAre a (UnColumn rs)) => Record rs -> [a]
 recToList = go . toVinyl
   where go :: AllAre a rs => V.Rec Identity rs -> [a]
         go V.RNil = []

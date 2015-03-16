@@ -16,7 +16,7 @@ listTlist = L.toList
 tbl :: IO [Row]
 tbl = listTlist $ readTable' "data/data1.csv"
 
-ageDoubler :: (Age ∈ rs) => Rec rs -> Rec rs
+ageDoubler :: (Age ∈ rs) => Record rs -> Record rs
 ageDoubler = age *~ 2
 
 tbl2 :: IO [Row]
@@ -59,7 +59,7 @@ insuranceTbl = readTable "data/FL2.csv"
 insMaybe :: P.Producer (ColFun Maybe Ins) IO ()
 insMaybe = readTableMaybe "data/FL2.csv"
 
-type TinyIns = Rec [PolicyID, PointLatitude, PointLongitude]
+type TinyIns = Record [PolicyID, PointLatitude, PointLongitude]
 
 main :: IO ()
 main = do itbl <- inCore $ P.for insuranceTbl (P.yield . rcast)

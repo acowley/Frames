@@ -36,7 +36,7 @@ mkPlot title xs = do plot (fillBetween title pts)
             $ V.fromList (map fromIntegral xs)
 
 -- | Plot LDL cholesterol and Triglyceride levels.
-mkPlots :: [Rec [LBXTR, LBDLDL]] -> EC (Layout Double Double) ()
+mkPlots :: [Record [LBXTR, LBDLDL]] -> EC (Layout Double Double) ()
 mkPlots xs = do layout_title .= "Distributions"
                 layout_x_axis . laxis_title .= "mg/dL"
                 layout_all_font_styles . font_size *= 2

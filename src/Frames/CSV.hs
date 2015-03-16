@@ -28,7 +28,7 @@ import Data.Readable (Readable(fromText))
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Traversable (sequenceA)
-import Data.Vinyl (RElem)
+import Data.Vinyl (RElem, Rec)
 import Data.Vinyl.TypeLevel (RIndex)
 import Frames.Col
 import Frames.ColumnTypeable
@@ -112,7 +112,7 @@ readColHeaders opts f =  withFile f ReadMode $ \h ->
 -- | Parsing each component of a 'RecF' from a list of text chunks,
 -- one chunk per record component.
 class ReadRec (rs :: [*]) where
-  readRec :: [T.Text] -> RecF Maybe rs
+  readRec :: [T.Text] -> Rec Maybe rs
 
 instance ReadRec '[] where
   readRec _ = Nil
@@ -122,12 +122,12 @@ instance (Readable t, ReadRec ts) => ReadRec (s :-> t ': ts) where
   readRec (h:t) = frameCons (fromText h) (readRec t)
 
 -- | Read a 'RecF' from one line of CSV.
-readRow :: ReadRec rs => Separator -> T.Text -> RecF Maybe rs
+readRow :: ReadRec rs => Separator -> T.Text -> Rec Maybe rs
 readRow = (readRec .) . tokenizeRow
 
 -- | Produce rows where any given entry can fail to parse.
 readTableMaybeOpt :: (MonadIO m, ReadRec rs)
-                  => ParserOptions -> FilePath -> P.Producer (RecF Maybe rs) m ()
+                  => ParserOptions -> FilePath -> P.Producer (Rec Maybe rs) m ()
 readTableMaybeOpt opts csvFile =
   do h <- liftIO $ do
             h <- openFile csvFile ReadMode
@@ -142,7 +142,7 @@ readTableMaybeOpt opts csvFile =
 
 -- | Produce rows where any given entry can fail to parse.
 readTableMaybe :: (MonadIO m, ReadRec rs)
-               => FilePath -> P.Producer (RecF Maybe rs) m ()
+               => FilePath -> P.Producer (Rec Maybe rs) m ()
 readTableMaybe = readTableMaybeOpt defaultParser
 {-# INLINE readTableMaybe #-}
 
@@ -150,7 +150,7 @@ readTableMaybe = readTableMaybeOpt defaultParser
 -- successfully parsed. This is typically slower than 'readTableOpt'.
 readTableOpt' :: forall m rs.
                  (MonadPlus m, MonadIO m, ReadRec rs)
-              => ParserOptions -> FilePath -> m (Rec rs)
+              => ParserOptions -> FilePath -> m (Record rs)
 readTableOpt' opts csvFile =
   do h <- liftIO $ do
             h <- openFile csvFile ReadMode
@@ -167,7 +167,7 @@ readTableOpt' opts csvFile =
 -- | Returns a `MonadPlus` producer of rows for which each column was
 -- successfully parsed. This is typically slower than 'readTable'.
 readTable' :: forall m rs. (MonadPlus m, MonadIO m, ReadRec rs)
-           => FilePath -> m (Rec rs)
+           => FilePath -> m (Record rs)
 readTable' = readTableOpt' defaultParser
 {-# INLINE readTable' #-}
 
@@ -175,7 +175,7 @@ readTable' = readTableOpt' defaultParser
 -- parsed.
 readTableOpt :: forall m rs.
                 (MonadIO m, ReadRec rs)
-             => ParserOptions -> FilePath -> P.Producer (Rec rs) m ()
+             => ParserOptions -> FilePath -> P.Producer (Record rs) m ()
 readTableOpt opts csvFile = readTableMaybeOpt opts csvFile P.>-> go
   where go = P.await >>= maybe go (\x -> P.yield x >> go) . recMaybe
 {-# INLINE readTableOpt #-}
@@ -183,7 +183,7 @@ readTableOpt opts csvFile = readTableMaybeOpt opts csvFile P.>-> go
 -- | Returns a producer of rows for which each column was successfully
 -- parsed.
 readTable :: forall m rs. (MonadIO m, ReadRec rs)
-          => FilePath -> P.Producer (Rec rs) m ()
+          => FilePath -> P.Producer (Record rs) m ()
 readTable = readTableOpt defaultParser
 {-# INLINE readTable #-}
 
@@ -191,7 +191,7 @@ readTable = readTableOpt defaultParser
 
 -- | Generate a column type.
 recDec :: ColumnTypeable a => [(T.Text, a)] -> Q Type
-recDec = appT [t|Rec|] . go
+recDec = appT [t|Record|] . go
   where go [] = return PromotedNilT
         go ((n,t):cs) =
           [t|($(litT $ strTyLit (T.unpack n)) :-> $(colType t)) ': $(go cs) |]
@@ -221,14 +221,14 @@ mkColPDec colTName colTy colPName = sequenceA [tySig, val, tySig', val']
         tySig = sigD nm [t|(Functor f,
                             RElem $(conT colTName) rs (RIndex $(conT colTName) rs))
                          => ($colTy -> f $colTy)
-                         -> Rec rs
-                         -> f (Rec rs)
+                         -> Record rs
+                         -> f (Record rs)
                          |]
         tySig' = sigD nm' [t|(Functor f, Functor g,
                              RElem $(conT colTName) rs (RIndex $(conT colTName) rs))
                           => (g $(conT colTName) -> f (g $(conT colTName)))
-                          -> RecF g rs
-                          -> f (RecF g rs)
+                          -> Rec g rs
+                          -> f (Rec g rs)
                           |]
         val = valD (varP nm)
                    (normalB [e|rlens (Proxy :: Proxy $(conT colTName))|])
@@ -285,7 +285,7 @@ rowGen :: RowGen Columns
 rowGen = RowGen [] "" defaultSep "Row" Proxy
 
 -- | Generate a type for each row of a table. This will be something
--- like @Rec ["x" :-> a, "y" :-> b, "z" :-> c]@.
+-- like @Record ["x" :-> a, "y" :-> b, "z" :-> c]@.
 tableType :: String -> FilePath -> DecsQ
 tableType n = tableType' rowGen { rowTypeName = n }
 
@@ -300,7 +300,7 @@ tableTypes n = tableTypes' rowGen { rowTypeName = n }
 -- * Customized Data Set Parsing
 
 -- | Generate a type for a row a table. This will be something like
--- @Rec ["x" :-> a, "y" :-> b, "z" :-> c]@.  Column type synonyms are
+-- @Record ["x" :-> a, "y" :-> b, "z" :-> c]@.  Column type synonyms are
 -- /not/ generated (see 'tableTypes'').
 tableType' :: forall a. (ColumnTypeable a, Monoid a)
            => RowGen a -> FilePath -> DecsQ

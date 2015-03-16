@@ -22,7 +22,7 @@ fishers = adultData >-> P.filter isFisher >-> P.filter makesMoney
   where isFisher = ((>0) . T.count "fishing" . T.toCaseFold . view occupation)
         makesMoney = (> 0) . view capitalGain
 
-fisherIncomeData :: Producer (Rec [Age, CapitalGain]) IO ()
+fisherIncomeData :: Producer (Record [Age, CapitalGain]) IO ()
 fisherIncomeData = fishers >-> P.map rcast
 
 mkPlot :: IO ()
