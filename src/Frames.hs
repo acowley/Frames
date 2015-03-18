@@ -7,10 +7,12 @@ module Frames
   , module Data.Vinyl.Lens
   , module Frames.Col
   , module Frames.ColumnUniverse
+  , module Frames.CoRec
   , module Frames.CSV
   , module Frames.Exploration
   , module Frames.Frame
   , module Frames.InCore
+  , module Frames.Melt
   , module Frames.Rec
   , module Frames.RecF
   , module Frames.RecLens
@@ -22,12 +24,14 @@ import Data.Vinyl ((<+>))
 import Data.Vinyl.Lens hiding (rlens, rget, rput)
 import Frames.Col ((:->)(..))
 import Frames.ColumnUniverse
+import Frames.CoRec (Field, onField, onCoRec)
 import Frames.CSV (readTable, readTableMaybe, readTable', 
                    tableType, tableTypes, tableType', tableTypes')
 import Frames.Exploration
 import Frames.Frame
 import Frames.InCore (inCore, inCoreSoA,
                       inCoreAoS, inCoreAoS', toAoS)
+import Frames.Melt (melt)
 import Frames.Rec (Record, (&:), recUncons, recMaybe, showFields)
 import Frames.RecF
 import Frames.RecLens

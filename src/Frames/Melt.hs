@@ -9,7 +9,6 @@ import Data.Vinyl.TypeLevel
 import Frames.Col
 import Frames.CoRec (CoRec)
 import qualified Frames.CoRec as C
-import Frames.Exploration
 import Frames.Rec
 import Frames.RecF (ColumnHeaders(..), frameCons)
 import Frames.TypeLevel
@@ -47,25 +46,14 @@ instance (r ∈ ts, RowToColumn ts rs) => RowToColumn ts (r ': rs) where
 rowToColumn :: RowToColumn ts ts => Rec f ts -> [CoRec f ts]
 rowToColumn = rowToColumnAux Proxy
 
-melt :: forall vs ss ts.
-        (vs ⊆ ts, ss ⊆ ts, Disjoint ss ts ~ True, ts ≅ (vs ++ ss),
-         ColumnHeaders vs, RowToColumn vs vs)
-     => Record ts
-     -> [Record ("variable" :-> String ': "value" :-> CoRec Identity vs ': ss)]
-melt r = zipWith (\name val -> frameCons (Identity name) $
-                               frameCons (Identity val) ids)
-                 (columnHeaders (Just vals)) (rowToColumn vals)
+meltAux :: forall vs ss ts.
+           (vs ⊆ ts, ss ⊆ ts, Disjoint ss ts ~ True, ts ≅ (vs ++ ss),
+           ColumnHeaders vs, RowToColumn vs vs)
+        => Record ts
+        -> [Record ("value" :-> CoRec Identity vs ': ss)]
+meltAux r = map (\val -> frameCons (Identity val) ids) (rowToColumn vals)
   where ids = rcast r :: Record ss
         vals = rcast r :: Record vs
-
-type Age = "age" :-> Int
-type Weight = "weight" :-> Double
-type Name = "name" :-> String
-
-testRec :: Record ["name" :-> String, "age" :-> Int, "weight" :-> Double]
-testRec = frameCons (Identity "bob")
-        $ frameCons (Identity 23)
-        $ frameCons (Identity 75.2) RNil
 
 type family RDeleteAll ss ts where
   RDeleteAll '[] ts = ts
@@ -88,6 +76,16 @@ retroSnoc (x :& xs) = go xs
         go RNil = x :& RNil
         go (y :& ys) = y :& go ys
 
+-- | Like @melt@ in the @reshape2@ package for the @R@ language. It
+-- stacks multiple columns into a single column over multiple
+-- rows. Takes a specification of the id columns that remain
+-- unchanged. The remaining columns will be stacked.
+--
+-- Suppose we have a record, @r :: Record [Name,Age,Weight]@. If we
+-- apply @melt [pr1|Name|] r@, we get two values with type @Record
+-- [Name, "value" :-> CoRec Identity [Age,Weight]]@. The first will
+-- contain @Age@ in the @value@ column, and the second will contain
+-- @Weight@ in the @value@ column.
 melt :: (vs ⊆ ts, ss ⊆ ts, vs ~ RDeleteAll ss ts,
          Disjoint ss ts ~ True, ts ≅ (vs ++ ss),
          ColumnHeaders vs, RowToColumn vs vs)

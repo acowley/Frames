@@ -38,6 +38,7 @@ library
                        Frames.Exploration
                        Frames.Frame
                        Frames.InCore
+                       Frames.Melt
                        Frames.Rec
                        Frames.RecF
                        Frames.RecLens

@@ -61,7 +61,6 @@ The summary of a whole frame might just go through summaries for each column:
 Can't we handle /any/ infix operator? If the identifier in the
 function position of an application is parenthesized and begins with a
 colon, it's an operator.
-
 * Stage Restrictions
 One area where GHC's stage restrictions on Template Haskell bite us is
 in stating how to parse a particular file. The problem is that we
