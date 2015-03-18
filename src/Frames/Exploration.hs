@@ -3,7 +3,8 @@
 
 -- | Functions useful for interactively exploring and experimenting
 -- with a data set.
-module Frames.Exploration (pipePreview, select, lenses, pr, recToList) where
+module Frames.Exploration (pipePreview, select, lenses, recToList,
+                           pr, pr1) where
 import Data.Char (isSpace, isUpper)
 import Data.Proxy
 import qualified Data.Vinyl as V
@@ -54,6 +55,21 @@ pr = QuasiQuoter mkProxy undefined undefined undefined
                              | isUpper t -> [|Proxy::Proxy $(fmap head cons)|]
                              | otherwise -> [|Proxy::Proxy $(varT $ mkName h)|]
                          _ -> [|Proxy::Proxy $(fmap mkList cons)|]
+
+-- | Like 'pr', but takes a single type, which is used to produce a
+-- 'Proxy' for a single-element list containing only that type. This
+-- is useful for passing a single type to a function that wants a list
+-- of types.
+pr1 :: QuasiQuoter
+pr1 = QuasiQuoter mkProxy undefined undefined undefined
+  where mkProxy s = let sing x = AppT (AppT PromotedConsT x) PromotedNilT
+                    in case s of
+                         t:_
+                           | isUpper t ->
+                             [|Proxy::Proxy $(fmap sing (conT (mkName s)))|]
+                           | otherwise ->
+                             [|Proxy::Proxy $(fmap sing (varT $ mkName s))|]
+                         _ -> error "Empty string passed to pr1"
 
 -- * ToList
 
