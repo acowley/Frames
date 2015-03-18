@@ -19,3 +19,16 @@ type family LAll c ts :: Constraint where
 type family AllAre a ts :: Constraint where
   AllAre a '[] = ()
   AllAre a (t ': ts) = (t ~ a, AllAre a ts)
+
+-- | Compound constraint that a type has an instance for each of a
+-- list of type classes.
+type family HasInstances a cs :: Constraint where
+  HasInstances a '[] = ()
+  HasInstances a (c ': cs) = (c a, HasInstances a cs)
+
+-- | Compound constraint that all types have instances for each of a
+-- list of type clasesses. @AllHave classes types@.
+type family AllHave cs as :: Constraint where
+  AllHave cs '[] = ()
+  AllHave cs (a ': as) = (HasInstances a cs, AllHave cs as)
+  

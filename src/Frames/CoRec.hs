@@ -8,11 +8,15 @@ import Data.Vinyl
 import Data.Vinyl.Functor (Compose(..), (:.), Identity(..))
 import Data.Vinyl.TypeLevel (RIndex)
 import Frames.RecF (reifyDict)
-import Frames.TypeLevel (LAll)
+import Frames.TypeLevel (LAll, HasInstances, AllHave)
+import GHC.Prim (Constraint)
 
 -- | Generalize algebraic sum types.
 data CoRec :: (* -> *) -> [*] -> * where
   Col :: RElem a ts (RIndex a ts) => f a -> CoRec f ts
+
+-- | A Field of a 'Record' is a 'CoRec Identity'.
+type Field = CoRec Identity
 
 -- | Helper to build a 'Show'-able 'CoRec'
 col :: (Show a, a ∈ ts) => a -> CoRec (Dict Show) ts
@@ -21,18 +25,16 @@ col = Col . Dict
 instance Show (CoRec (Dict Show) ts) where
   show (Col (Dict x)) = "Col "++show x
 
--- Functions whose codomain is 'String'.
-newtype Shower a = Shower { runShower :: a -> String }
-
--- | Build a record of @show@ functions.
-shower :: (LAll Show ts, RecApplicative ts) => Rec Shower ts
-shower = reifyDict (Proxy::Proxy Show) (Shower show)
+-- | A function type constructor that takes its arguments in the
+-- reverse order.
+newtype Op b a = Op { runOp :: a -> b }
 
 instance forall ts. (LAll Show ts, RecApplicative ts)
   => Show (CoRec Identity ts) where
   show (Col (Identity x)) = "(Col "++show' x++")"
-    where show' = runShower $
-                  rget (Proxy::Proxy a) (shower :: Rec Shower ts)
+    where shower :: Rec (Op String) ts
+          shower = reifyDict (Proxy::Proxy Show) (Op show)
+          show' = runOp (rget Proxy shower)
 
 -- | Remove a 'Dict' wrapper from a value.
 dictId :: Dict c a -> Identity a
@@ -103,3 +105,36 @@ lastField v@(x :& _) = corecTraverse getCompose $ foldRec aux (Col x) v
             -> CoRec (Maybe :. f) (t ': ts)
         aux _ c@(Col (Compose (Just _))) = c
         aux c _ = c
+
+-- | Apply a type class method on a 'CoRec'. The first argument is a
+-- 'Proxy' value for a /list/ of 'Constraint' constructors. For
+-- example, @onCoRec [pr|Num,Ord|] (> 20) r@. If only one constraint
+-- is needed, use the @pr1@ quasiquoter.
+onCoRec :: forall (cs :: [* -> Constraint]) f ts b.
+           (AllHave cs ts, Functor f, RecApplicative ts)
+        => Proxy cs
+        -> (forall a. HasInstances a cs => a -> b)
+        -> CoRec f ts -> f b
+onCoRec p f (Col x) = fmap meth x
+  where meth = runOp $
+               rget Proxy (reifyDicts p (Op f) :: Rec (Op b) ts)
+
+-- | Apply a type class method on a 'Field'. The first argument is a
+-- 'Proxy' value for a /list/ of 'Constraint' constructors. For
+-- example, @onCoRec [pr|Num,Ord|] (> 20) r@. If only one constraint
+-- is needed, use the @pr1@ quasiquoter.
+onField :: forall cs ts b.
+           (AllHave cs ts, RecApplicative ts)
+        => Proxy cs
+        -> (forall a. HasInstances a cs => a -> b)
+        -> Field ts -> b
+onField p f x = getIdentity (onCoRec p f x)
+
+-- | Build a record whose elements are derived solely from a
+-- list of constraint constructors satisfied by each.
+reifyDicts :: forall cs f proxy ts. (AllHave cs ts, RecApplicative ts)
+           => proxy cs -> (forall a. HasInstances a cs => f a) -> Rec f ts
+reifyDicts _ f = go (rpure Nothing)
+  where go :: AllHave cs ts' => Rec Maybe ts' -> Rec f ts'
+        go RNil = RNil
+        go (_ :& xs) = f :& go xs
