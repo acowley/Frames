@@ -1,11 +1,14 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts, FlexibleInstances,
              GADTs, KindSignatures, MultiParamTypeClasses, RankNTypes,
-             TypeOperators, UndecidableInstances #-}
+             ScopedTypeVariables, TypeOperators, UndecidableInstances #-}
 -- | Co-records: a flexible approach to sum types.
 module Frames.CoRec where
+import Data.Proxy
 import Data.Vinyl
 import Data.Vinyl.Functor (Compose(..), (:.), Identity(..))
 import Data.Vinyl.TypeLevel (RIndex)
+import Frames.RecF (reifyDict)
+import Frames.TypeLevel (LAll)
 
 -- | Generalize algebraic sum types.
 data CoRec :: (* -> *) -> [*] -> * where
@@ -17,6 +20,19 @@ col = Col . Dict
 
 instance Show (CoRec (Dict Show) ts) where
   show (Col (Dict x)) = "Col "++show x
+
+-- Functions whose codomain is 'String'.
+newtype Shower a = Shower { runShower :: a -> String }
+
+-- | Build a record of @show@ functions.
+shower :: (LAll Show ts, RecApplicative ts) => Rec Shower ts
+shower = reifyDict (Proxy::Proxy Show) (Shower show)
+
+instance forall ts. (LAll Show ts, RecApplicative ts)
+  => Show (CoRec Identity ts) where
+  show (Col (Identity x)) = "(Col "++show' x++")"
+    where show' = runShower $
+                  rget (Proxy::Proxy a) (shower :: Rec Shower ts)
 
 -- | Remove a 'Dict' wrapper from a value.
 dictId :: Dict c a -> Identity a
@@ -66,7 +82,7 @@ foldRec1 f (x :& xs) = foldRec f (Col x) xs
 
 -- | Similar to 'Data.Monoid.First': find the first field that is not
 -- 'Nothing'.
-firstField :: forall ts f. FoldRec ts ts
+firstField :: FoldRec ts ts
            => Rec (Maybe :. f) ts -> Maybe (CoRec f ts)
 firstField RNil = Nothing
 firstField v@(x :& _) = corecTraverse getCompose $ foldRec aux (Col x) v
@@ -78,7 +94,7 @@ firstField v@(x :& _) = corecTraverse getCompose $ foldRec aux (Col x) v
 
 -- | Similar to 'Data.Monoid.Last': find the last field that is not
 -- 'Nothing'.
-lastField :: forall ts f. FoldRec ts ts
+lastField :: FoldRec ts ts
           => Rec (Maybe :. f) ts -> Maybe (CoRec f ts)
 lastField RNil = Nothing
 lastField v@(x :& _) = corecTraverse getCompose $ foldRec aux (Col x) v
