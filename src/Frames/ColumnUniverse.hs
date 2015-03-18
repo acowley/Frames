@@ -28,6 +28,7 @@ import Data.Vinyl
 import Data.Vinyl.Functor
 import Frames.CoRec
 import Frames.ColumnTypeable
+import Frames.RecF (reifyDict)
 import Frames.TypeLevel (LAll)
 import Data.Typeable (TypeRep)
 import Data.Maybe (fromMaybe)
@@ -59,15 +60,6 @@ inferReadable' :: Readable a => (((->) T.Text) :. (Maybe :. Proxy)) a
 inferReadable' = Compose (Compose . inferReadable)
 
 -- * Record Helpers
-
--- | Build a record whose elements are derived solely from a
--- constraint satisfied by each.
-reifyDict :: forall proxy c ts f. (LAll c ts, RecApplicative ts)
-          => proxy c -> (forall a. c a => f a) -> Rec f ts
-reifyDict _ f = go (rpure Nothing)
-  where go :: LAll c ts' => Rec Maybe ts' -> Rec f ts'
-        go RNil = RNil
-        go (_ :& xs) = f :& go xs
 
 tryParseAll :: forall ts. (RecApplicative ts, LAll Readable ts)
             => T.Text -> Rec (Maybe :. Proxy) ts

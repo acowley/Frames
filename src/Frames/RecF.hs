@@ -15,12 +15,12 @@ module Frames.RecF (V.rappend, V.rtraverse, rdel, CanDelete,
                     frameCons, pattern (:&), pattern Nil, AllCols,
                     UnColumn, AsVinyl(..), mapMono, mapMethod,
                     ShowRec, showRec, ColFun, ColumnHeaders, 
-                    columnHeaders) where
+                    columnHeaders, reifyDict) where
 import Control.Applicative ((<$>))
 import Data.List (intercalate)
 import Data.Proxy
 import qualified Data.Vinyl as V
-import Data.Vinyl (Rec)
+import Data.Vinyl (Rec(RNil), RecApplicative(rpure))
 import Data.Vinyl.Functor (Identity)
 import Data.Vinyl.TypeLevel
 import Frames.Col
@@ -131,3 +131,12 @@ instance forall s f a rs. (KnownSymbol s, Show (f (Col' s a)), ShowRec f rs)
 -- | Pretty printing of 'Rec' values.
 showRec :: ShowRec f rs => Rec f rs -> String
 showRec r = "{" ++ intercalate ", " (showRec' r) ++ "}"
+
+-- | Build a record whose elements are derived solely from a
+-- constraint satisfied by each.
+reifyDict :: forall c f proxy ts. (LAll c ts, RecApplicative ts)
+          => proxy c -> (forall a. c a => f a) -> Rec f ts
+reifyDict _ f = go (rpure Nothing)
+  where go :: LAll c ts' => Rec Maybe ts' -> Rec f ts'
+        go RNil = RNil
+        go (_ V.:& xs) = f V.:& go xs
