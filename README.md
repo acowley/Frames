@@ -24,6 +24,7 @@ executables associated with each demo.
 ```
 $ cabal sandbox init
 $ cabal install --dependencies-only -f demos
+$ cabal configure -f demos
 $ cabal run getdata
 $ cabal run plot
 ```
