@@ -55,7 +55,7 @@ instance forall cs s c. (ColumnHeaders cs, KnownSymbol s)
     => ColumnHeaders (s :-> c ': cs) where
   columnHeaders _ = symbolVal (Proxy::Proxy s) : columnHeaders (Proxy::Proxy (Rec f cs))
 
--- | A type function to convert a 'Rec' to a 'Rec'. @ColFun f (Rec
+-- | A type function to convert a 'Record' to a 'Rec'. @ColFun f (Rec
 -- rs) = Rec f rs@.
 type family ColFun f x where
   ColFun f (Rec Identity rs) = Rec f rs

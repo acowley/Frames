@@ -25,12 +25,12 @@ import Frames.RecF
 -- | A record with unadorned values.
 type Record = Rec Identity
 
--- | A @cons@ function for building 'Rec' values.
+-- | A @cons@ function for building 'Record' values.
 (&:) :: a -> Record rs -> Record (s :-> a ': rs)
 x &: xs = frameCons (Identity x) xs
 infixr 5 &:
 
--- | Separate the first element of a 'Rec' from the rest of the row.
+-- | Separate the first element of a 'Record' from the rest of the row.
 recUncons :: Record (s :-> a ': rs) -> (a, Record rs)
 recUncons (Identity x :& xs) = (x, xs)
 recUncons x = case x of
@@ -41,7 +41,7 @@ recMaybe :: Rec Maybe cs -> Maybe (Record cs)
 recMaybe = rtraverse (fmap Identity)
 {-# INLINE recMaybe #-}
 
--- | Show each field of a 'Rec' /without/ its column name.
+-- | Show each field of a 'Record' /without/ its column name.
 showFields :: (RecAll Identity (UnColumn ts) Show, AsVinyl ts)
            => Record ts -> [String]
 showFields = recordToList . rmap aux . reifyConstraint p . toVinyl
