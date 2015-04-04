@@ -7,7 +7,7 @@
              ScopedTypeVariables,
              TypeFamilies,
              TypeOperators #-}
--- | Lens utilities for working with records.
+-- | Lens utilities for working with 'Record's.
 module Frames.RecLens where
 import Control.Applicative
 import qualified Data.Vinyl as V
@@ -24,7 +24,7 @@ rlens' :: (i ~ RIndex r rs, V.RElem r rs i, Functor f, Functor g)
 rlens' = V.rlens
 {-# INLINE rlens' #-}
 
--- | Getter for a record field
+-- | Getter for a 'V.Rec' field
 rget' :: Functor g
       => (forall f. Functor f
           => (g (s :-> a) -> f (g (s :-> a))) -> V.Rec g rs -> f (V.Rec g rs))
@@ -32,7 +32,7 @@ rget' :: Functor g
 rget' l = fmap getCol . getConst . l Const
 {-# INLINE rget' #-}
 
--- | Setter for a record field.
+-- | Setter for a 'V.Rec' field.
 rput' :: Functor g
       => (forall f. Functor f
           => (g (s :-> a) -> f (g (s :-> a))) -> V.Rec g rs -> f (V.Rec g rs))
@@ -42,20 +42,20 @@ rput' l y = getIdentity . l (\_ -> Identity (fmap Col y))
 
 -- * Plain records
 
--- | Create a lens for accessing a field of a 'Rec'.
+-- | Create a lens for accessing a field of a 'Record'.
 rlens :: (Functor f, V.RElem (s :-> a) rs (RIndex (s :-> a) rs))
       => proxy (s :-> a) -> (a -> f a) -> Record rs -> f (Record rs)
 rlens k f = rlens' k (fmap Identity . getIdentity . fmap f')
   where f' (Col x) = fmap Col (f x)
 {-# INLINE rlens #-}
 
--- | Getter for a record field.
+-- | Getter for a 'Record' field.
 rget :: (forall f. Functor f => (a -> f a) -> Record rs -> f (Record rs))
      -> Record rs -> a
 rget l = getConst . l Const
 {-# INLINE rget #-}
 
--- | Setter for a record field.
+-- | Setter for a 'Record' field.
 rput :: (forall f. Functor f => (a -> f a) -> Record rs -> f (Record rs))
      -> a -> Record rs -> Record rs
 rput l y = getIdentity . l (\_ -> Identity y)
