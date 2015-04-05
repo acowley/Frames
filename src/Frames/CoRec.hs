@@ -1,6 +1,15 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts, FlexibleInstances,
-             GADTs, KindSignatures, MultiParamTypeClasses, RankNTypes,
-             ScopedTypeVariables, TypeOperators, UndecidableInstances #-}
+{-# LANGUAGE BangPatterns,
+             ConstraintKinds,
+             DataKinds,
+             FlexibleContexts,
+             FlexibleInstances,
+             GADTs,
+             KindSignatures,
+             MultiParamTypeClasses,
+             RankNTypes,
+             ScopedTypeVariables,
+             TypeOperators,
+             UndecidableInstances #-}
 -- | Co-records: a flexible approach to sum types.
 module Frames.CoRec where
 import Data.Proxy
@@ -13,7 +22,7 @@ import GHC.Prim (Constraint)
 
 -- | Generalize algebraic sum types.
 data CoRec :: (* -> *) -> [*] -> * where
-  Col :: RElem a ts (RIndex a ts) => f a -> CoRec f ts
+  Col :: RElem a ts (RIndex a ts) => !(f a) -> CoRec f ts
 
 -- | A Field of a 'Record' is a 'CoRec Identity'.
 type Field = CoRec Identity
