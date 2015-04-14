@@ -213,7 +213,7 @@ minMax = (,) <$> L.minimum <*> L.maximum
 
 -- Or multiple columns,
 
-miniUser :: User -> Record [Occupation, Gender, Age]
+miniUser :: User -> Record '[Occupation, Gender, Age]
 miniUser = rcast
 
 -- #+BEGIN_EXAMPLE
@@ -231,7 +231,7 @@ miniUser = rcast
 
 -- #+BEGIN_EXAMPLE
 -- λ> :set -XDataKinds
--- λ> select (Proxy::Proxy [Occupation,Gender,Age]) $ frameRow ms 0
+-- λ> select (Proxy::Proxy '[Occupation,Gender,Age]) $ frameRow ms 0
 -- {occupation :-> "technician", gender :-> "M", age :-> 24}
 -- #+END_EXAMPLE
 
@@ -280,7 +280,7 @@ writers = P.filter ((== "writer") . view occupation)
 -- we want to apply a function with type ~Int -> Int~ to two columns
 -- whose values are of type ~Int~.
 
-intFieldDoubler :: Record [UserId, Age] -> Record [UserId, Age]
+intFieldDoubler :: Record '[UserId, Age] -> Record '[UserId, Age]
 intFieldDoubler = mapMono (* 2)
 
 -- Let's preview the effect of this function by applying it to the
