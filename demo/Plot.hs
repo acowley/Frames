@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds, FlexibleContexts, TemplateHaskell #-}
 import qualified Data.Vector.Unboxed as V
 import Diagrams.Backend.Rasterific
-import Diagrams.TwoD.Size (sizeSpec2D)
+import Diagrams (SizeSpec, V2, dims2D, width, height)
 import Frames
 import Graphics.Rendering.Chart.Backend.Diagrams (defaultEnv, runBackendR)
 import Graphics.Rendering.Chart.Easy
@@ -50,4 +50,5 @@ main = do env <- defaultEnv bitmapAlignmentFns 640 480
           let chart2diagram = fst . runBackendR env . toRenderable . execEC
           ldlData <- P.toListM $ triglyData P.>-> P.map rcast
           let d = chart2diagram $ mkPlots ldlData
-          renderRasterific "plot.png" (sizeSpec2D d) 100 d
+              sz = dims2D (width d) (height d) :: SizeSpec V2 Double
+          renderRasterific "plot.png" sz d
