@@ -272,13 +272,13 @@ mkColPDec colTName colTy colPName = sequenceA [tySig, val, tySig', val']
   where nm = mkName $ T.unpack colPName
         nm' = mkName $ T.unpack colPName <> "'"
         -- tySig = sigD nm [t|Proxy $(conT colTName)|]
-        tySig = sigD nm [t|(Functor f,
+        tySig = sigD nm [t|forall f rs. (Functor f,
                             RElem $(conT colTName) rs (RIndex $(conT colTName) rs))
                          => ($colTy -> f $colTy)
                          -> Record rs
                          -> f (Record rs)
                          |]
-        tySig' = sigD nm' [t|(Functor f, Functor g,
+        tySig' = sigD nm' [t|forall f g rs. (Functor f, Functor g,
                              RElem $(conT colTName) rs (RIndex $(conT colTName) rs))
                           => (g $(conT colTName) -> f (g $(conT colTName)))
                           -> Rec g rs
