@@ -1,7 +1,7 @@
 {-# LANGUAGE BangPatterns, DataKinds, FlexibleContexts, OverloadedStrings,
              TemplateHaskell #-}
 import Diagrams.Backend.Rasterific
-import Diagrams.TwoD.Size (sizeSpec2D)
+import Diagrams (dims2D, width, height)
 import Frames
 import Graphics.Rendering.Chart.Backend.Diagrams (defaultEnv, runBackendR)
 import Graphics.Rendering.Chart.Easy
@@ -34,7 +34,8 @@ mkPlot = do env <- defaultEnv bitmapAlignmentFns 640 480
                       layout_x_axis . laxis_title .= "Age (Years)"
                       layout_y_axis . laxis_title .= "Capital Gain ($)"
                       plot (points "" (map (view age &&& view capitalGain) xs))
-            renderRasterific "plot2.png" (sizeSpec2D d) 100 d
+                sz = dims2D (width d) (height d)
+            renderRasterific "plot2.png" sz d
 
 -- Manually fused folds
 main :: IO ()
