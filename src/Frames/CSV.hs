@@ -253,10 +253,14 @@ recDec = appT [t|Record|] . go
 -- | Massage a column name from a CSV file into a valid Haskell type
 -- identifier.
 sanitizeTypeName :: T.Text -> T.Text
-sanitizeTypeName = fixupStart . T.concat . T.split (not . valid) . toTitle'
+sanitizeTypeName = unreserved . fixupStart
+                 . T.concat . T.split (not . valid) . toTitle'
   where valid c = isAlphaNum c || c == '\'' || c == '_'
         toTitle' = foldMap (onHead toUpper) . T.split (not . isAlphaNum)
-        onHead f = maybe mempty (uncurry T.cons) . fmap (first f) . T.uncons
+        onHead f = maybe mempty (uncurry T.cons) . fmap (first f) . T.uncons 
+        unreserved t
+          | t `elem` ["Type"] = "Col" <> t
+          | otherwise = t
         fixupStart t = case T.uncons t of
                          Nothing -> "Col"
                          Just (c,_) | isAlpha c -> t
