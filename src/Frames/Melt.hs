@@ -14,20 +14,20 @@ import Frames.RecF (ColumnHeaders(..), frameCons)
 import Frames.TypeLevel
 
 type family Elem t ts :: Bool where
-  Elem t '[] = False
-  Elem t (t ': ts) = True
+  Elem t '[] = 'False
+  Elem t (t ': ts) = 'True
   Elem t (s ': ts) = Elem t ts
 
 type family Or (a :: Bool) (b :: Bool) :: Bool where
-  Or True b = True
+  Or 'True b = 'True
   Or a b = b
 
 type family Not a :: Bool where
-  Not True = False
-  Not False = True
+  Not 'True = 'False
+  Not 'False = 'True
 
 type family Disjoint ss ts :: Bool where
-  Disjoint '[] ts = True
+  Disjoint '[] ts = 'True
   Disjoint (s ': ss) ts = Or (Not (Elem s ts)) (Disjoint ss ts)
 
 type ElemOf ts r = RElem r ts (RIndex r ts)
@@ -47,7 +47,7 @@ rowToColumn :: RowToColumn ts ts => Rec f ts -> [CoRec f ts]
 rowToColumn = rowToColumnAux Proxy
 
 meltAux :: forall vs ss ts.
-           (vs ⊆ ts, ss ⊆ ts, Disjoint ss ts ~ True, ts ≅ (vs ++ ss),
+           (vs ⊆ ts, ss ⊆ ts, Disjoint ss ts ~ 'True, ts ≅ (vs ++ ss),
            ColumnHeaders vs, RowToColumn vs vs)
         => Record ts
         -> [Record ("value" :-> CoRec Identity vs ': ss)]
@@ -62,7 +62,7 @@ type family RDeleteAll ss ts where
 -- | This is 'melt', but the variables are at the front of the record,
 -- which reads a bit odd.
 melt' :: forall proxy vs ts ss. (vs ⊆ ts, ss ⊆ ts, vs ~ RDeleteAll ss ts,
-         Disjoint ss ts ~ True, ts ≅ (vs ++ ss),
+         Disjoint ss ts ~ 'True, ts ≅ (vs ++ ss),
          ColumnHeaders vs, RowToColumn vs vs)
       => proxy ss
       -> Record ts
@@ -87,7 +87,7 @@ retroSnoc (x :& xs) = go xs
 -- contain @Age@ in the @value@ column, and the second will contain
 -- @Weight@ in the @value@ column.
 melt :: (vs ⊆ ts, ss ⊆ ts, vs ~ RDeleteAll ss ts,
-         Disjoint ss ts ~ True, ts ≅ (vs ++ ss),
+         Disjoint ss ts ~ 'True, ts ≅ (vs ++ ss),
          ColumnHeaders vs, RowToColumn vs vs)
      => proxy ss
      -> Record ts
