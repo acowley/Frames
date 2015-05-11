@@ -46,51 +46,108 @@ import Control.Monad (void)
 
 type Separator = T.Text
 
+type QuoteChar = Char
+
+data QuotingMode
+    -- | No quoting enabled. The separator may not appear in values
+  = NoQuoting
+    -- | Quoted values with the given quoting character. Quotes are escaped by doubling them.
+    -- Mostly RFC4180 compliant, except doesn't support newlines in values
+  | RFC4180Quoting QuoteChar
+  deriving (Eq, Show)
+
 data ParserOptions = ParserOptions { headerOverride :: Maybe [T.Text]
-                                   , columnSeparator :: Separator }
-  deriving (Eq, Ord, Show)
+                                   , columnSeparator :: Separator
+                                   , quotingMode :: QuotingMode }
+  deriving (Eq, Show)
+
+instance Lift QuotingMode where
+  lift NoQuoting = [|NoQuoting|]
+  lift (RFC4180Quoting char) = [|RFC4180Quoting $(litE . charL $ char)|]
 
 instance Lift ParserOptions where
-  lift (ParserOptions Nothing sep) = [|ParserOptions Nothing $sep'|]
+  lift (ParserOptions Nothing sep quoting) = [|ParserOptions Nothing $sep' $quoting'|]
     where sep' = [|T.pack $(stringE $ T.unpack sep)|]
-  lift (ParserOptions (Just hs) sep) = [|ParserOptions (Just $hs') $sep'|]
+          quoting' = lift quoting
+  lift (ParserOptions (Just hs) sep quoting) = [|ParserOptions (Just $hs') $sep' $quoting'|]
     where sep' = [|T.pack $(stringE $ T.unpack sep)|]
           hs' = [|map T.pack $(listE $  map (stringE . T.unpack) hs)|]
+          quoting' = lift quoting
 
 -- | Default 'ParseOptions' get column names from a header line, and
 -- use commas to separate columns.
 defaultParser :: ParserOptions
-defaultParser = ParserOptions Nothing (T.pack defaultSep)
+defaultParser = ParserOptions Nothing defaultSep (RFC4180Quoting '\"')
 
 -- | Default separator string.
-defaultSep :: String
-defaultSep = ","
+defaultSep :: Separator
+defaultSep = T.pack ","
 
 -- * Parsing
 
 -- | Helper to split a 'T.Text' on commas and strip leading and
 -- trailing whitespace from each resulting chunk.
-tokenizeRow :: Separator -> T.Text -> [T.Text]
-tokenizeRow sep = map (unquote . T.strip) . T.splitOn sep
-  where unquote txt
-          | quoted txt = case T.dropEnd 1 (T.drop 1 txt) of
-                           txt' | T.null txt' -> "Col"
-                                | numish txt' -> txt
-                                | otherwise -> txt'
-          | otherwise = txt
-        numish = T.all (`elem` ("-+.0123456789"::String))
-        quoted txt = case T.uncons txt of
-                       Just ('"', rst)
-                         | not (T.null rst) -> T.last rst == '"'
-                       _ -> False
+tokenizeRow :: ParserOptions -> T.Text -> [T.Text]
+tokenizeRow options =
+    handleQuoting . T.splitOn sep
+  where sep = columnSeparator options
+        quoting = quotingMode options
+        handleQuoting = case quoting of
+          NoQuoting -> id
+          RFC4180Quoting quote -> reassembleRFC4180QuotedParts sep quote
+
+-- | Post processing applied to a list of tokens split by the
+-- separator which should have quoted sections reassembeld
+reassembleRFC4180QuotedParts :: Separator -> QuoteChar -> [T.Text] -> [T.Text]
+reassembleRFC4180QuotedParts sep quoteChar = finish . foldr f ([], Nothing)
+  where f :: T.Text -> ([T.Text], Maybe T.Text) -> ([T.Text], Maybe T.Text)
+        f part (rest, Just accum)
+          | prefixQuoted part = let token = unescape (T.drop 1 part) <> sep <> accum
+                                in (token : rest, Nothing)
+          | otherwise         = (rest, Just (unescape part <> sep <> accum))
+        f part (rest, Nothing)
+          | prefixQuoted part &&
+            suffixQuoted part = ((unescape . T.drop 1 . T.dropEnd 1 $ part) : rest, Nothing)
+          | suffixQuoted part = (rest, Just (unescape . T.dropEnd 1 $ part))
+          | otherwise         = (part : rest, Nothing)
+
+        prefixQuoted t =
+          quoteText `T.isPrefixOf` t &&
+          (T.length t - (T.length . T.dropWhile (== quoteChar) $ t)) `mod` 2 == 1
+        suffixQuoted t =
+          quoteText `T.isSuffixOf` t &&
+          (T.length t - (T.length . T.dropWhileEnd (== quoteChar) $ t)) `mod` 2 == 1
+
+        quoteText = T.singleton quoteChar
+
+        unescape :: T.Text -> T.Text
+        unescape = T.replace (quoteText <> quoteText) quoteText
+
+        finish :: ([T.Text], Maybe T.Text) -> [T.Text]
+        finish (rest, Just dangling) = dangling : rest -- FIXME? just assumes the close quote if it's missing
+        finish (rest, Nothing      ) =            rest
+
+--tokenizeRow :: Separator -> T.Text -> [T.Text]
+--tokenizeRow sep = map (unquote . T.strip) . T.splitOn sep
+--  where unquote txt
+--          | quoted txt = case T.dropEnd 1 (T.drop 1 txt) of
+--                           txt' | T.null txt' -> "Col"
+--                                | numish txt' -> txt
+--                                | otherwise -> txt'
+--          | otherwise = txt
+--        numish = T.all (`elem` ("-+.0123456789"::String))
+--        quoted txt = case T.uncons txt of
+--                       Just ('"', rst)
+--                         | not (T.null rst) -> T.last rst == '"'
+--                       _ -> False
 
 -- | Infer column types from a prefix (up to 1000 lines) of a CSV
 -- file.
 prefixInference :: (ColumnTypeable a, Monoid a)
-                => T.Text -> Handle -> IO [a]
-prefixInference sep h = T.hGetLine h >>= go prefixSize . inferCols
+                => ParserOptions -> Handle -> IO [a]
+prefixInference opts h = T.hGetLine h >>= go prefixSize . inferCols
   where prefixSize = 1000 :: Int
-        inferCols = map inferType . tokenizeRow sep
+        inferCols = map inferType . tokenizeRow opts
         go 0 ts = return ts
         go !n ts =
           hIsEOF h >>= \case
@@ -101,11 +158,10 @@ prefixInference sep h = T.hGetLine h >>= go prefixSize . inferCols
 readColHeaders :: (ColumnTypeable a, Monoid a)
                => ParserOptions -> FilePath -> IO [(T.Text, a)]
 readColHeaders opts f =  withFile f ReadMode $ \h ->
-                         zip <$> maybe (tokenizeRow sep <$> T.hGetLine h)
+                         zip <$> maybe (tokenizeRow opts <$> T.hGetLine h)
                                        pure
                                        (headerOverride opts)
-                             <*> prefixInference sep h
-  where sep = columnSeparator opts
+                             <*> prefixInference opts h
 
 -- * Loading Data
 
@@ -122,7 +178,7 @@ instance (Readable t, ReadRec ts) => ReadRec (s :-> t ': ts) where
   readRec (h:t) = frameCons (fromText h) (readRec t)
 
 -- | Read a 'RecF' from one line of CSV.
-readRow :: ReadRec rs => Separator -> T.Text -> Rec Maybe rs
+readRow :: ReadRec rs => ParserOptions -> T.Text -> Rec Maybe rs
 readRow = (readRec .) . tokenizeRow
 
 -- | Produce rows where any given entry can fail to parse.
@@ -133,10 +189,9 @@ readTableMaybeOpt opts csvFile =
             h <- openFile csvFile ReadMode
             when (isNothing $ headerOverride opts) (void $ T.hGetLine h)
             return h
-     let sep = columnSeparator opts
-         go = liftIO (hIsEOF h) >>= \case
+     let go = liftIO (hIsEOF h) >>= \case
               True -> return ()
-              False -> liftIO (readRow sep <$> T.hGetLine h) >>= P.yield >> go
+              False -> liftIO (readRow opts <$> T.hGetLine h) >>= P.yield >> go
      go
 {-# INLINE readTableMaybeOpt #-}
 
@@ -156,10 +211,9 @@ readTableOpt' opts csvFile =
             h <- openFile csvFile ReadMode
             when (isNothing $ headerOverride opts) (void $ T.hGetLine h)
             return h
-     let sep = columnSeparator opts
-         go = liftIO (hIsEOF h) >>= \case
+     let go = liftIO (hIsEOF h) >>= \case
               True -> mzero
-              False -> let r = recMaybe . readRow sep <$> T.hGetLine h
+              False -> let r = recMaybe . readRow opts <$> T.hGetLine h
                        in liftIO r >>= maybe go (flip mplus go . return)
      go
 {-# INLINE readTableOpt' #-}
@@ -202,7 +256,7 @@ sanitizeTypeName :: T.Text -> T.Text
 sanitizeTypeName = fixupStart . T.concat . T.split (not . valid) . toTitle'
   where valid c = isAlphaNum c || c == '\'' || c == '_'
         toTitle' = foldMap (onHead toUpper) . T.split (not . isAlphaNum)
-        onHead f = maybe mempty (uncurry T.cons) . fmap (first f) . T.uncons 
+        onHead f = maybe mempty (uncurry T.cons) . fmap (first f) . T.uncons
         fixupStart t = case T.uncons t of
                          Nothing -> "Col"
                          Just (c,_) | isAlpha c -> t
@@ -243,7 +297,7 @@ colDec :: ColumnTypeable a => T.Text -> T.Text -> a -> DecsQ
 colDec prefix colName colTy = (:) <$> mkColTDec colTypeQ colTName'
                                   <*> mkColPDec colTName' colTyQ colPName
   where colTName = sanitizeTypeName (prefix <> colName)
-        colPName = fromMaybe "colDec impossible" $ 
+        colPName = fromMaybe "colDec impossible" $
                    fmap (\(c,t) -> T.cons (toLower c) t) (T.uncons colTName)
         colTName' = mkName $ T.unpack colTName
         colTyQ = colType colTy
@@ -259,7 +313,7 @@ data RowGen a = RowGen { columnNames    :: [String]
                        , tablePrefix    :: String
                        -- ^ A common prefix to use for every generated
                        -- declaration.
-                       , separator      :: String
+                       , separator      :: Separator
                        -- ^ The string that separates the columns on a
                        -- row.
                        , rowTypeName    :: String
@@ -310,7 +364,7 @@ tableType' (RowGen {..}) csvFile =
   where recDec' = recDec :: [(T.Text, a)] -> Q Type
         colNames' | null columnNames = Nothing
                   | otherwise = Just (map T.pack columnNames)
-        opts = ParserOptions colNames' (T.pack separator)
+        opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
 
 -- | Like 'tableType'', but additionally generates a type synonym for
 -- each column, and a proxy value of that type. If the CSV file has
@@ -334,4 +388,4 @@ tableTypes' (RowGen {..}) csvFile =
   where recDec' = recDec :: [(T.Text, a)] -> Q Type
         colNames' | null columnNames = Nothing
                   | otherwise = Just (map T.pack columnNames)
-        opts = ParserOptions colNames' (T.pack separator)
+        opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
