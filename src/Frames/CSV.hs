@@ -109,7 +109,7 @@ reassembleRFC4180QuotedParts sep quoteChar = finish . foldr f ([], Nothing)
           | prefixQuoted part &&
             suffixQuoted part = ((unescape . T.drop 1 . T.dropEnd 1 $ part) : rest, Nothing)
           | suffixQuoted part = (rest, Just (unescape . T.dropEnd 1 $ part))
-          | otherwise         = (part : rest, Nothing)
+          | otherwise         = (T.strip part : rest, Nothing)
 
         prefixQuoted t =
           quoteText `T.isPrefixOf` t &&
