@@ -307,6 +307,19 @@ colDec prefix colName colTy = (:) <$> mkColTDec colTypeQ colTName'
         colTyQ = colType colTy
         colTypeQ = [t|$(litT . strTyLit $ T.unpack colName) :-> $colTyQ|]
 
+-- | Splice for manually declaring a column of a given type. For
+-- example, @declareColumn "x2" ''Double@ will declare a type synonym
+-- @type X2 = "x2" :-> Double@ and a lens @x2@.
+declareColumn :: T.Text -> Name -> DecsQ
+declareColumn colName colTy = (:) <$> mkColTDec colTypeQ colTName'
+                                  <*> mkColPDec colTName' colTyQ colPName
+  where colTName = sanitizeTypeName colName
+        colPName = fromMaybe "colDec impossible" $
+                   fmap (\(c,t) -> T.cons (toLower c) t) (T.uncons colTName)
+        colTName' = mkName $ T.unpack colTName
+        colTyQ = return (ConT colTy)
+        colTypeQ = [t|$(litT . strTyLit $ T.unpack colName) :-> $colTyQ|]
+
 -- * Default CSV Parsing
 
 -- | Control how row and named column types are generated.
