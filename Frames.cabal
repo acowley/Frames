@@ -49,6 +49,7 @@ library
                        OverloadedStrings
   build-depends:       base >=4.7 && <4.9,
                        ghc-prim >=0.3 && <0.5,
+                       primitive >= 0.6 && < 0.7,
                        text >= 1.1.1.0,
                        template-haskell,
                        transformers,

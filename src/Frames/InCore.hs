@@ -10,7 +10,8 @@
 -- | Efficient in-memory (in-core) storage of tabular data.
 module Frames.InCore where
 import Control.Applicative
-import Control.Monad.IO.Class (MonadIO(..))
+import Control.Monad.Primitive
+import Control.Monad.ST (runST)
 import Data.Proxy
 import Data.Text (Text)
 import qualified Data.Vector as VB
@@ -31,7 +32,9 @@ import qualified Pipes.Prelude as P
 type family VectorFor t :: * -> *
 type instance VectorFor Bool = VU.Vector
 type instance VectorFor Int = VU.Vector
+type instance VectorFor Float = VU.Vector
 type instance VectorFor Double = VU.Vector
+type instance VectorFor String = VB.Vector
 type instance VectorFor Text = VB.Vector
 
 -- | The mutable version of 'VectorFor' a particular type.
@@ -44,9 +47,10 @@ initialCapacity :: Int
 initialCapacity = 128
 
 -- | Mutable vector types for each column in a row.
-type family VectorMs rs where
-  VectorMs '[] = '[]
-  VectorMs (s :-> a ': rs) = s :-> VectorMFor a RealWorld a ': VectorMs rs
+type family VectorMs m rs where
+  VectorMs m '[] = '[]
+  VectorMs m (s :-> a ': rs) =
+    s :-> VectorMFor a (PrimState m) a ': VectorMs m rs
 
 -- | Immutable vector types for each column in a row.
 type family Vectors rs where
@@ -56,11 +60,13 @@ type family Vectors rs where
 -- | Tooling to allocate, grow, write to, freeze, and index into
 -- records of vectors.
 class RecVec rs where
-  allocRec   :: proxy rs -> IO (Record (VectorMs rs))
-  freezeRec  :: proxy rs -> Int -> Record (VectorMs rs)
-             -> IO (Record (Vectors rs))
-  growRec    :: proxy rs -> Record (VectorMs rs) -> IO (Record (VectorMs rs))
-  writeRec   :: proxy rs -> Int -> Record (VectorMs rs) -> Record rs -> IO ()
+  allocRec   :: PrimMonad m => proxy rs -> m (Record (VectorMs m rs))
+  freezeRec  :: PrimMonad m => proxy rs -> Int -> Record (VectorMs m rs)
+             -> m (Record (Vectors rs))
+  growRec    :: PrimMonad m
+             => proxy rs -> Record (VectorMs m rs) -> m (Record (VectorMs m rs))
+  writeRec   :: PrimMonad m
+             => proxy rs -> Int -> Record (VectorMs m rs) -> Record rs -> m ()
   indexRec   :: proxy rs -> Int -> Record (Vectors rs) -> Record rs
   produceRec :: proxy rs -> Record (Vectors rs) -> V.Rec ((->) Int) rs
 
@@ -135,17 +141,17 @@ instance forall s a rs.
 -- indexing functions. See 'toAoS' to convert the result to a 'Frame'
 -- which provides an easier-to-use function that indexes into the
 -- table in a row-major fashion.
-inCoreSoA :: forall m rs. (MonadIO m, RecVec rs)
+inCoreSoA :: forall m rs. (PrimMonad m, RecVec rs)
           => P.Producer (Record rs) m () -> m (Int, V.Rec ((->) Int) rs)
 inCoreSoA xs =
-  do mvs <- liftIO $ allocRec (Proxy :: Proxy rs)
+  do mvs <- allocRec (Proxy :: Proxy rs)
      let feed (!i, !sz, !mvs') row
-           | i == sz = liftIO (growRec (Proxy::Proxy rs) mvs')
+           | i == sz = growRec (Proxy::Proxy rs) mvs'
                        >>= flip feed row . (i, sz*2,)
-           | otherwise = do liftIO $ writeRec (Proxy::Proxy rs) i mvs' row
+           | otherwise = do writeRec (Proxy::Proxy rs) i mvs' row
                             return (i+1, sz, mvs')
          fin (n,_,mvs') =
-           do vs <- liftIO $ freezeRec (Proxy::Proxy rs) n mvs'
+           do vs <- freezeRec (Proxy::Proxy rs) n mvs'
               return . (n,) $ produceRec (Proxy::Proxy rs) vs
      P.foldM feed (return (0,initialCapacity,mvs)) fin xs
 {-# INLINE inCoreSoA #-}
@@ -156,13 +162,13 @@ inCoreSoA xs =
 -- resulting generators a matter of indexing into a densely packed
 -- representation. Returns a 'Frame' that provides a function to index
 -- into the table.
-inCoreAoS :: (Functor m, MonadIO m, RecVec rs)
+inCoreAoS :: (Functor m, PrimMonad m, RecVec rs)
           => P.Producer (Record rs) m () -> m (FrameRec rs)
 inCoreAoS = fmap (uncurry toAoS) . inCoreSoA
 
 -- | Like 'inCoreAoS', but applies the provided function to the record
 -- of columns before building the 'Frame'.
-inCoreAoS' :: (Functor m, MonadIO m, RecVec rs)
+inCoreAoS' :: (Functor m, PrimMonad m, RecVec rs)
            => (V.Rec ((->) Int) rs -> V.Rec ((->) Int) ss)
            -> P.Producer (Record rs) m () -> m (FrameRec ss)
 inCoreAoS' f = fmap (uncurry toAoS . aux) . inCoreSoA
@@ -179,20 +185,26 @@ toAoS n = Frame n . rtraverse (fmap Identity)
 -- table will be stored optimally based on its type, making use of the
 -- resulting generator a matter of indexing into a densely packed
 -- representation.
-inCore :: forall m n rs. (Functor m, MonadIO m, RecVec rs, Monad n)
+inCore :: forall m n rs. (Functor m, PrimMonad m, RecVec rs, Monad n)
        => P.Producer (Record rs) m () -> m (P.Producer (Record rs) n ())
 inCore xs =
-  do mvs <- liftIO $ allocRec (Proxy :: Proxy rs)
+  do mvs <- allocRec (Proxy :: Proxy rs)
      let feed (!i,!sz,!mvs') row
-              | i == sz = liftIO (growRec (Proxy::Proxy rs) mvs')
+              | i == sz = growRec (Proxy::Proxy rs) mvs'
                           >>= flip feed row . (i, sz*2,)
-              | otherwise = do liftIO $ writeRec (Proxy::Proxy rs) i mvs' row
+              | otherwise = do writeRec (Proxy::Proxy rs) i mvs' row
                                return (i+1, sz, mvs')
          fin (n,_,mvs') =
-           do vs <- liftIO $ freezeRec (Proxy::Proxy rs) n mvs'
+           do vs <- freezeRec (Proxy::Proxy rs) n mvs'
               let spool !i
                     | i == n = pure ()
                     | otherwise = P.yield (indexRec Proxy i vs) >> spool (i+1)
               return $ spool 0
      P.foldM feed (return (0,initialCapacity,mvs)) fin xs
 {-# INLINE inCore #-}
+
+-- | Build a 'Frame' from a collection of 'Record's using efficient
+-- column-based storage.
+toFrame :: (Foldable f, RecVec rs) => f (Record rs) -> Frame (Record rs)
+toFrame xs = runST $ inCoreAoS (P.each xs)
+{-# INLINE toFrame #-}

@@ -29,7 +29,7 @@ import Frames.CSV (readTable, readTableMaybe, readTable',
                    tableType, tableTypes, tableType', tableTypes')
 import Frames.Exploration
 import Frames.Frame
-import Frames.InCore (inCore, inCoreSoA,
+import Frames.InCore (toFrame, inCore, inCoreSoA,
                       inCoreAoS, inCoreAoS', toAoS)
 import Frames.Melt (melt, meltRow)
 import Frames.Rec (Record, (&:), recUncons, recMaybe, showFields)
