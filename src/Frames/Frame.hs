@@ -4,6 +4,7 @@ module Frames.Frame where
 import Control.Applicative
 import Data.Foldable
 import Data.Monoid
+import qualified Data.Vector as V
 import Data.Vinyl.TypeLevel
 import Frames.Rec (Record)
 import Frames.RecF (rappend)
@@ -17,6 +18,13 @@ type FrameRec rs = Frame (Record rs)
 
 instance Functor Frame where
   fmap f (Frame len g) = Frame len (f . g)
+
+-- | Build a 'Frame' from any 'Foldable'. This simply uses a boxed
+-- 'V.Vector' to hold each row. If you have a collection of 'Record's,
+-- consider using 'Frames.InCore.toFrame'.
+boxedFrame :: Foldable f => f r -> Frame r
+boxedFrame xs = Frame n (V.fromList (toList xs) V.!)
+  where n = length xs
 
 -- | The 'Monoid' instance for 'Frame' provides a mechanism for
 -- vertical concatenation of 'Frame's. That is, @f1 <> f2@ will return
