@@ -31,7 +31,7 @@ import Frames.Exploration
 import Frames.Frame
 import Frames.InCore (inCore, inCoreSoA,
                       inCoreAoS, inCoreAoS', toAoS)
-import Frames.Melt (melt)
+import Frames.Melt (melt, meltRow)
 import Frames.Rec (Record, (&:), recUncons, recMaybe, showFields)
 import Frames.RecF
 import Frames.RecLens

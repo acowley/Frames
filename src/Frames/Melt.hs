@@ -1,6 +1,7 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts, FlexibleInstances,
-             MultiParamTypeClasses, ScopedTypeVariables,
-             TypeFamilies, TypeOperators, UndecidableInstances #-}
+             KindSignatures, MultiParamTypeClasses, PolyKinds,
+             ScopedTypeVariables, TypeFamilies, TypeOperators,
+             UndecidableInstances #-}
 module Frames.Melt where
 import Data.Proxy
 import Data.Vinyl
@@ -9,6 +10,7 @@ import Data.Vinyl.TypeLevel
 import Frames.Col
 import Frames.CoRec (CoRec)
 import qualified Frames.CoRec as C
+import Frames.Frame (Frame(..), FrameRec)
 import Frames.Rec
 import Frames.RecF (ColumnHeaders(..), frameCons)
 import Frames.TypeLevel
@@ -61,13 +63,13 @@ type family RDeleteAll ss ts where
 
 -- | This is 'melt', but the variables are at the front of the record,
 -- which reads a bit odd.
-melt' :: forall proxy vs ts ss. (vs ⊆ ts, ss ⊆ ts, vs ~ RDeleteAll ss ts,
-         Disjoint ss ts ~ 'True, ts ≅ (vs ++ ss),
-         ColumnHeaders vs, RowToColumn vs vs)
-      => proxy ss
-      -> Record ts
-      -> [Record ("value" :-> CoRec Identity vs ': ss)]
-melt' _ = meltAux
+meltRow' :: forall proxy vs ts ss. (vs ⊆ ts, ss ⊆ ts, vs ~ RDeleteAll ss ts,
+            Disjoint ss ts ~ 'True, ts ≅ (vs ++ ss),
+            ColumnHeaders vs, RowToColumn vs vs)
+         => proxy ss
+         -> Record ts
+         -> [Record ("value" :-> CoRec Identity vs ': ss)]
+meltRow' _ = meltAux
 
 -- | Turn a cons into a snoc after the fact.
 retroSnoc :: forall t ts. Record (t ': ts) -> Record (ts ++ '[t])
@@ -86,10 +88,30 @@ retroSnoc (x :& xs) = go xs
 -- [Name, "value" :-> CoRec Identity [Age,Weight]]@. The first will
 -- contain @Age@ in the @value@ column, and the second will contain
 -- @Weight@ in the @value@ column.
-melt :: (vs ⊆ ts, ss ⊆ ts, vs ~ RDeleteAll ss ts,
-         Disjoint ss ts ~ 'True, ts ≅ (vs ++ ss),
+meltRow :: (vs ⊆ ts, ss ⊆ ts, vs ~ RDeleteAll ss ts,
+            Disjoint ss ts ~ 'True, ts ≅ (vs ++ ss),
+            ColumnHeaders vs, RowToColumn vs vs)
+        => proxy ss
+        -> Record ts
+        -> [Record (ss ++ '["value" :-> CoRec Identity vs])]
+meltRow = (map retroSnoc .) . meltRow'
+
+class HasLength (ts :: [k]) where
+  hasLength :: proxy ts -> Int
+
+instance HasLength '[] where hasLength _ = 0
+instance forall t ts. HasLength ts => HasLength (t ': ts) where
+  hasLength _ = 1 + hasLength (Proxy :: Proxy ts)
+
+-- | Applies 'meltRow' to each row of a 'FrameRec'.
+melt :: forall vs ts ss proxy.
+        (vs ⊆ ts, ss ⊆ ts, vs ~ RDeleteAll ss ts, HasLength vs,
+         Disjoint ss ts ~ 'True, ts ≅ (vs ++ ss), 
          ColumnHeaders vs, RowToColumn vs vs)
      => proxy ss
-     -> Record ts
-     -> [Record (ss ++ '["value" :-> CoRec Identity vs])]
-melt = (map retroSnoc .) . melt'
+     -> FrameRec ts
+     -> FrameRec (ss ++ '["value" :-> CoRec Identity vs])
+melt p (Frame n v) = Frame (n*numVs) go
+  where numVs = hasLength (Proxy :: Proxy vs)
+        go i = let (j,k) = i `quotRem` numVs
+               in meltRow p (v j) !! k
