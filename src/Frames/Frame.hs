@@ -23,8 +23,8 @@ instance Functor Frame where
 -- 'V.Vector' to hold each row. If you have a collection of 'Record's,
 -- consider using 'Frames.InCore.toFrame'.
 boxedFrame :: Foldable f => f r -> Frame r
-boxedFrame xs = Frame n (V.fromList (toList xs) V.!)
-  where n = length xs
+boxedFrame xs = Frame (V.length v) (v V.!)
+  where v = V.fromList (toList xs)
 
 -- | The 'Monoid' instance for 'Frame' provides a mechanism for
 -- vertical concatenation of 'Frame's. That is, @f1 <> f2@ will return
