@@ -60,10 +60,12 @@ type family Vectors rs where
 -- | Tooling to allocate, grow, write to, freeze, and index into
 -- records of vectors.
 class RecVec rs where
-  allocRec   :: PrimMonad m => proxy rs -> m (Record (VectorMs m rs))
-  freezeRec  :: PrimMonad m => proxy rs -> Int -> Record (VectorMs m rs)
+  allocRec   :: (Applicative m, PrimMonad m)
+             => proxy rs -> m (Record (VectorMs m rs))
+  freezeRec  :: (Applicative m, PrimMonad m)
+             => proxy rs -> Int -> Record (VectorMs m rs)
              -> m (Record (Vectors rs))
-  growRec    :: PrimMonad m
+  growRec    :: (Applicative m, PrimMonad m)
              => proxy rs -> Record (VectorMs m rs) -> m (Record (VectorMs m rs))
   writeRec   :: PrimMonad m
              => proxy rs -> Int -> Record (VectorMs m rs) -> Record rs -> m ()
@@ -141,7 +143,7 @@ instance forall s a rs.
 -- indexing functions. See 'toAoS' to convert the result to a 'Frame'
 -- which provides an easier-to-use function that indexes into the
 -- table in a row-major fashion.
-inCoreSoA :: forall m rs. (PrimMonad m, RecVec rs)
+inCoreSoA :: forall m rs. (Applicative m, PrimMonad m, RecVec rs)
           => P.Producer (Record rs) m () -> m (Int, V.Rec ((->) Int) rs)
 inCoreSoA xs =
   do mvs <- allocRec (Proxy :: Proxy rs)
@@ -162,13 +164,13 @@ inCoreSoA xs =
 -- resulting generators a matter of indexing into a densely packed
 -- representation. Returns a 'Frame' that provides a function to index
 -- into the table.
-inCoreAoS :: (Functor m, PrimMonad m, RecVec rs)
+inCoreAoS :: (Applicative m, PrimMonad m, RecVec rs)
           => P.Producer (Record rs) m () -> m (FrameRec rs)
 inCoreAoS = fmap (uncurry toAoS) . inCoreSoA
 
 -- | Like 'inCoreAoS', but applies the provided function to the record
 -- of columns before building the 'Frame'.
-inCoreAoS' :: (Functor m, PrimMonad m, RecVec rs)
+inCoreAoS' :: (Applicative m, PrimMonad m, RecVec rs)
            => (V.Rec ((->) Int) rs -> V.Rec ((->) Int) ss)
            -> P.Producer (Record rs) m () -> m (FrameRec ss)
 inCoreAoS' f = fmap (uncurry toAoS . aux) . inCoreSoA
@@ -185,7 +187,7 @@ toAoS n = Frame n . rtraverse (fmap Identity)
 -- table will be stored optimally based on its type, making use of the
 -- resulting generator a matter of indexing into a densely packed
 -- representation.
-inCore :: forall m n rs. (Functor m, PrimMonad m, RecVec rs, Monad n)
+inCore :: forall m n rs. (Applicative m, PrimMonad m, RecVec rs, Monad n)
        => P.Producer (Record rs) m () -> m (P.Producer (Record rs) n ())
 inCore xs =
   do mvs <- allocRec (Proxy :: Proxy rs)
