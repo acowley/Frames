@@ -205,6 +205,6 @@ inCore xs =
 
 -- | Build a 'Frame' from a collection of 'Record's using efficient
 -- column-based storage.
-toFrame :: (Foldable f, RecVec rs) => f (Record rs) -> Frame (Record rs)
+toFrame :: (P.Foldable f, RecVec rs) => f (Record rs) -> Frame (Record rs)
 toFrame xs = runST $ inCoreAoS (P.each xs)
 {-# INLINE toFrame #-}
