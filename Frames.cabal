@@ -128,6 +128,15 @@ executable benchdemo
   default-language: Haskell2010
   ghc-options:      -fllvm -O2
 
+executable missing
+  if !flag(demos)
+    buildable: False
+  main-is: MissingData.hs
+  if flag(demos)
+    build-depends: base, Frames, vinyl
+  hs-source-dirs: demo
+  default-language: Haskell2010
+
 -- Benchmark showing tradeoffs of differing processing needs
 benchmark insurance
   type:             exitcode-stdio-1.0
