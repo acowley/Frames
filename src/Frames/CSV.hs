@@ -24,7 +24,6 @@ import Data.Foldable (foldMap)
 import Data.Maybe (fromMaybe)
 import Data.Monoid ((<>), Monoid(..))
 import Data.Proxy
-import Data.Readable (Readable(fromText))
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Traversable (sequenceA)
@@ -173,9 +172,9 @@ class ReadRec (rs :: [*]) where
 instance ReadRec '[] where
   readRec _ = Nil
 
-instance (Readable t, ReadRec ts) => ReadRec (s :-> t ': ts) where
+instance (Parseable t, ReadRec ts) => ReadRec (s :-> t ': ts) where
   readRec [] = frameCons Nothing (readRec [])
-  readRec (h:t) = frameCons (fromText h) (readRec t)
+  readRec (h:t) = frameCons (parse' h) (readRec t)
 
 -- | Read a 'RecF' from one line of CSV.
 readRow :: ReadRec rs => ParserOptions -> T.Text -> Rec Maybe rs
