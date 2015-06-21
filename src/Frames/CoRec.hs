@@ -12,6 +12,7 @@
              UndecidableInstances #-}
 -- | Co-records: a flexible approach to sum types.
 module Frames.CoRec where
+import Data.Maybe(fromJust)
 import Data.Proxy
 import Data.Vinyl
 import Data.Vinyl.Functor (Compose(..), (:.), Identity(..))
@@ -147,3 +148,51 @@ reifyDicts _ f = go (rpure Nothing)
   where go :: AllHave cs ts' => Rec Maybe ts' -> Rec f ts'
         go RNil = RNil
         go (_ :& xs) = f :& go xs
+
+
+
+-- * Extracting values from a CoRec/Pattern matching on a CoRec
+
+-- | Given a proxy of type t and a 'CoRec Identity' that might be a t, try to
+-- convert the CoRec to a t.
+asA             :: (t ∈ ts, RecApplicative ts) => proxy t -> CoRec Identity ts -> Maybe t
+asA p c@(Col _) = rget p $ corecToRec' c
+
+
+-- | Pattern match on a CoRec by specifying handlers for each case. If the
+-- CoRec is non-empty this function is total. Note that the order of the
+-- Handlers has to match the type level list (t:ts).
+--
+-- >>> :{
+-- let testCoRec = Col (Identity False) :: CoRec Identity [Int, String, Bool] in
+-- match testCoRec $
+--       (H $ \i -> "my Int is the successor of " ++ show (i - 1))
+--    :& (H $ \s -> "my String is: " ++ s)
+--    :& (H $ \b -> "my Bool is not: " ++ show (not b) ++ " thus it is " ++ show b)
+--    :& RNil
+-- :}
+-- "my Bool is not: True thus it is False"
+match      :: RecApplicative (t ': ts)
+           => CoRec Identity (t ': ts) -> Handlers (t ': ts) b -> b
+match c hs = fromJust $ match' c hs
+           -- Since we require 'ts' both for the Handlers and the CoRec, Handlers
+           -- effectively defines a total function. Hence, we can safely use fromJust
+
+-- | Pattern match on a CoRec by specifying handlers for each case. The only case
+-- in which this can produce a Nothing is if the list ts is empty.
+match'      :: RecApplicative ts => CoRec Identity ts -> Handlers ts b -> Maybe b
+match' c hs = match'' hs $ corecToRec' c
+  where
+    match''                            :: Handlers ts b -> Rec Maybe ts -> Maybe b
+    match'' RNil        RNil           = Nothing
+    match'' (H f :& _)  (Just x  :& _) = Just $ f x
+    match'' (H _ :& fs) (Nothing :& c) = match'' fs c
+
+
+-- | Newtype around functions for a to b
+newtype Handler b a = H (a -> b)
+
+-- | 'Handlers ts b', is essentially a list of functions, one for each type in
+-- ts. All functions produce a value of type 'b'. Hence, 'Handlers ts b' would
+-- represent something like the type-level list: [t -> b | t \in ts ]
+type Handlers ts b = Rec (Handler b) ts
