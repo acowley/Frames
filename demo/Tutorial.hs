@@ -160,7 +160,7 @@ minMax :: Ord a => L.Fold a (Maybe a, Maybe a)
 minMax = (,) <$> L.minimum <*> L.maximum
 
 -- #+BEGIN_EXAMPLE
--- λ> L.fold (L.pretraverse age minMax) ms
+-- λ> L.fold (L.handles age minMax) ms
 -- (Just 7,Just 73)
 -- #+END_EXAMPLE
 

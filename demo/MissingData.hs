@@ -42,3 +42,6 @@ holyRow = rmap First $ pure (Col "joe") :& Nothing :& Nothing :& RNil
 -- We can fill in the holes with our default record.
 unholy :: Maybe (Record '[MyString, MyInt, MyBool])
 unholy = recMaybe . rmap getFirst $ rapply (rmap (Lift . flip (<>)) def) holyRow
+
+main :: IO ()
+main = return ()

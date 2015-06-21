@@ -16,6 +16,6 @@ main = do (lat,lng,n) <- F.purely fold f (readTable "data/FL2.csv")
           print $ lat / n
           print $ lng / n
   where f :: F.Fold Ins (Double,Double,Double)
-        f = (,,) <$> F.pretraverse pointLatitude F.sum
-                 <*> F.pretraverse pointLongitude F.sum
+        f = (,,) <$> F.handles pointLatitude F.sum
+                 <*> F.handles pointLongitude F.sum
                  <*> F.genericLength
