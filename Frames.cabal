@@ -78,9 +78,15 @@ executable plot
     buildable: False
   main-is: Plot.hs
   if flag(demos)
-    build-depends: base, Frames, lens-family-core, vector, text, template-haskell,
-                   pipes, Chart, Chart-diagrams, diagrams-rasterific,
-                   diagrams-lib, readable, containers, statistics
+    build-depends: base, Frames,
+                   lens-family-core, vector, text,
+                   template-haskell,
+                   pipes >= 4.1.5 && < 4.2, 
+                   Chart >= 1.5 && < 1.6,
+                   Chart-diagrams >= 1.5 && < 1.6,
+                   diagrams-rasterific >= 1.3 && < 1.4,
+                   diagrams-lib >= 1.3 && < 1.4,
+                   readable, containers, statistics
   hs-source-dirs: demo
   default-language: Haskell2010
 
@@ -89,9 +95,14 @@ executable plot2
     buildable: False
   main-is: Plot2.hs
   if flag(demos)
-    build-depends: base, Frames, lens-family-core, vector, text, template-haskell,
-                   pipes, Chart, Chart-diagrams, diagrams-rasterific,
-                   diagrams-lib, readable, containers, statistics
+    build-depends: base, Frames,
+                   lens-family-core, vector, text, template-haskell,
+                   pipes >= 4.1.5 && < 4.2,
+                   Chart >= 1.5 && < 1.6,
+                   Chart-diagrams >= 1.5 && < 1.6,
+                   diagrams-rasterific >= 1.3 && < 1.4,
+                   diagrams-lib >= 1.3 && < 1.4, 
+                   readable, containers, statistics
   hs-source-dirs: demo
   default-language: Haskell2010
 
@@ -102,18 +113,21 @@ executable demo
   main-is: Main.hs
   if flag(demos)
     build-depends: base, list-t, lens-family-core, transformers, Frames,
-                   vector, text, template-haskell, ghc-prim, readable, pipes
+                   vector, text, template-haskell, ghc-prim, readable,
+                   pipes >= 4.1.5 && < 4.2
   hs-source-dirs: demo
   default-language: Haskell2010
-  ghc-options: -fllvm -O2
+  ghc-options: -O2 -fllvm
 
 executable tutorial
   if !flag(demos)
     buildable: False
   main-is: TutorialMain.hs
   if flag(demos)
-    build-depends: base, Frames, lens-family-core, vector, text, template-haskell,
-                   foldl, pipes, readable
+    build-depends: base, Frames,
+                   lens-family-core, vector, text, template-haskell, readable,
+                   foldl >= 1.1.0 && < 1.2,
+                   pipes >= 4.1.5 && < 4.2
   hs-source-dirs: demo
   default-language: Haskell2010
 
@@ -123,11 +137,15 @@ executable benchdemo
     buildable: False
   main-is:          BenchDemo.hs
   if flag(demos)
-    build-depends:    base, foldl, pipes, Frames, lens-family-core
+    build-depends:    base, Frames, lens-family-core,
+                      foldl >= 1.1.0 && < 1.2,
+                      pipes >= 4.1.5 && < 4.2
   hs-source-dirs:   benchmarks
   default-language: Haskell2010
-  ghc-options:      -fllvm -O2
+  ghc-options:      -O2 -fllvm
 
+-- A demonstration of dealing with missing data. Provided for source
+-- code and experimentation rather than a useful executable.
 executable missing
   if !flag(demos)
     buildable: False
@@ -142,7 +160,7 @@ benchmark insurance
   type:             exitcode-stdio-1.0
   hs-source-dirs:   benchmarks
   main-is:          InsuranceBench.hs
-  build-depends:    base, criterion, Frames, lens-family-core, pipes,
-                    transformers
+  build-depends:    base, criterion, Frames, lens-family-core, transformers,
+                    pipes >= 4.1.5 && < 4.2
   ghc-options:      -O2 -fllvm
   default-language: Haskell2010
