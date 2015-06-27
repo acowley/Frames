@@ -210,3 +210,8 @@ inCore xs =
 toFrame :: (P.Foldable f, RecVec rs) => f (Record rs) -> Frame (Record rs)
 toFrame xs = runST $ inCoreAoS (P.each xs)
 {-# INLINE toFrame #-}
+
+-- | Keep only those rows of a 'FrameRec' that satisfy a predicate.
+filterFrame :: RecVec rs => (Record rs -> Bool) -> FrameRec rs -> FrameRec rs
+filterFrame p f = runST $ inCoreAoS $ P.each f P.>-> P.filter p
+{-# INLINE filterFrame #-}
