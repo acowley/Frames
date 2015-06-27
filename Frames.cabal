@@ -15,7 +15,7 @@ copyright:           Copyright (C) 2014-2015 Anthony Cowley
 category:            Data
 build-type:          Simple
 extra-source-files:  benchmarks/*.hs benchmarks/*.py
-                     demo/Main.hs
+                     demo/Main.hs CHANGELOG.md
                      data/GetData.hs
 cabal-version:       >=1.10
 
