@@ -17,7 +17,7 @@ module Frames.RecF (V.rappend, V.rtraverse, rdel, CanDelete,
                     UnColumn, AsVinyl(..), mapMono, mapMethod,
                     ShowRec, showRec, ColFun, ColumnHeaders, 
                     columnHeaders, reifyDict) where
-import Control.Applicative ((<$>))
+import Control.Applicative
 import Data.List (intercalate)
 import Data.Proxy
 import qualified Data.Vinyl as V
