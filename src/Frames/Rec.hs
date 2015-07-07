@@ -30,6 +30,9 @@ type Record = Rec Identity
 x &: xs = frameCons (Identity x) xs
 infixr 5 &:
 
+type family RecordColumns t where
+  RecordColumns (Record ts) = ts
+
 -- | Separate the first element of a 'Record' from the rest of the row.
 recUncons :: Record (s :-> a ': rs) -> (a, Record rs)
 recUncons (Identity x :& xs) = (x, xs)

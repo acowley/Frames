@@ -12,7 +12,8 @@
              TypeOperators,
              ViewPatterns #-}
 module Frames.RecF (V.rappend, V.rtraverse, rdel, CanDelete,
-                    frameCons, pattern (:&), pattern Nil, AllCols,
+                    frameCons, frameConsA, frameSnoc,
+                    pattern (:&), pattern Nil, AllCols,
                     UnColumn, AsVinyl(..), mapMono, mapMethod,
                     ShowRec, showRec, ColFun, ColumnHeaders, 
                     columnHeaders, reifyDict) where
@@ -32,10 +33,21 @@ frameCons :: Functor f => f a -> V.Rec f rs -> V.Rec f (s :-> a ': rs)
 frameCons = (V.:&) . fmap Col
 {-# INLINE frameCons #-}
 
+-- | Add a pure column to the head of a row.
+frameConsA :: Applicative f => a -> V.Rec f rs -> V.Rec f (s :-> a ': rs)
+frameConsA = (V.:&) . fmap Col . pure
+{-# INLINE frameConsA #-}
+
 -- | Separate the first element of a row from the rest of the row.
 frameUncons :: Functor f => V.Rec f (s :-> r ': rs) -> (f r, V.Rec f rs)
 frameUncons (x V.:& xs) = (fmap getCol x, xs)
 {-# INLINE frameUncons #-}
+
+-- | Add a column to the tail of a row. Note that the supplied value
+-- should be a 'Col' to work with the @Frames@ tooling.
+frameSnoc :: V.Rec f rs -> f r -> V.Rec f (rs ++ '[r])
+frameSnoc r x = V.rappend r (x V.:& RNil)
+{-# INLINE frameSnoc #-}
 
 pattern Nil = V.RNil
 pattern x :& xs <- (frameUncons -> (x, xs))

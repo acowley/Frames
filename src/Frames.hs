@@ -32,7 +32,7 @@ import Frames.Frame
 import Frames.InCore (toFrame, inCore, inCoreSoA,
                       inCoreAoS, inCoreAoS', toAoS, filterFrame)
 import Frames.Melt (melt, meltRow)
-import Frames.Rec (Record, (&:), recUncons, recMaybe, showFields)
+import Frames.Rec (Record, RecordColumns, (&:), recUncons, recMaybe, showFields)
 import Frames.RecF
 import Frames.RecLens
 import Frames.TypeLevel
