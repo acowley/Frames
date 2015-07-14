@@ -32,7 +32,7 @@ boxedFrame xs = Frame (V.length v) (v V.!)
 instance Monoid (Frame r) where
   mempty = Frame 0 (const $ error "index out of bounds (empty frame)")
   Frame l1 f1 `mappend` Frame l2 f2 = Frame (l1+l2) $ \i ->
-                                      if i < l1 then f1 i else f2 i
+                                      if i < l1 then f1 i else f2 (i - l1)
 
 instance Foldable Frame where
   foldMap f (Frame n row) = foldMap (f . row) [0..n-1]
