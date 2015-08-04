@@ -22,7 +22,9 @@ import Data.Vinyl.Functor (Identity(..), Const(..), Compose(..), (:.))
 import Frames.Col
 import Frames.RecF
 
--- | A record with unadorned values.
+-- | A record with unadorned values. This is @Vinyl@'s 'Rec'
+-- 'Identity'. We give this type a name as it is used pervasively for
+-- records in 'Frames'.
 type Record = Rec Identity
 
 -- | A @cons@ function for building 'Record' values.

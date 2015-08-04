@@ -148,5 +148,8 @@ type CommonColumns = [Bool, Int, Double, T.Text]
 -- | Define a set of variants that captures all possible column types.
 type ColumnUniverse = CoRec ColInfo
 
--- | A universe of common column variants.
+-- | A universe of common column variants. These are the default
+-- column types that @Frames@ can infer. See the
+-- <http://acowley.github.io/Frames/#sec-4 Tutorial> for an example of
+-- extending the default types with your own.
 type Columns = ColumnUniverse CommonColumns

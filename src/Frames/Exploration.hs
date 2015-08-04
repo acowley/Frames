@@ -42,9 +42,12 @@ lenses _ = V.rsubset
 
 -- * Proxy Syntax
 
--- | A proxy value quasiquoter. @[pr|T|]@ will splice an expression
--- @Proxy::Proxy T@, while @[pr|A,B,C|]@ will splice in a value of
--- @Proxy :: Proxy [A,B,C]@.
+-- | A proxy value quasiquoter; a way of passing types as
+-- values. @[pr|T|]@ will splice an expression @Proxy::Proxy T@, while
+-- @[pr|A,B,C|]@ will splice in a value of @Proxy :: Proxy
+-- [A,B,C]@. If we have a record type with @Name@ and @Age@ among
+-- other fields, we can write @select @[pr|Name,Age|]@ for a function
+-- that extracts those fields from a larger record.
 pr :: QuasiQuoter
 pr = QuasiQuoter mkProxy undefined undefined undefined
   where mkProxy s = let ts = map strip $ splitOn ',' s

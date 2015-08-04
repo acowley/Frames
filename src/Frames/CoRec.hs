@@ -10,7 +10,15 @@
              ScopedTypeVariables,
              TypeOperators,
              UndecidableInstances #-}
--- | Co-records: a flexible approach to sum types.
+-- | Co-records: a flexible approach to sum types. 'Frames.Melt.melt'
+-- is a good example of how such a facility is useful in @Frames@
+-- usage scenarios.
+--
+-- Consider a record with three fields @A@, @B@, and @C@. A record is
+-- a product of its fields; that is, it contains all of them: @A@,
+-- @B@, /and/ @C@. If we want to talk about a value whose type is one
+-- of those three types, it is /any one/ of type @A@, @B@, /or/
+-- @C@. The type @CoRec '[A,B,C]@ corresponds to this sum type.
 module Frames.CoRec where
 import Data.Maybe(fromJust)
 import Data.Proxy
