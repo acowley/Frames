@@ -23,8 +23,8 @@ module Frames.CoRec where
 import Data.Maybe(fromJust)
 import Data.Proxy
 import Data.Vinyl
-import Data.Vinyl.Functor (Compose(..), (:.), Identity(..))
-import Data.Vinyl.TypeLevel (RIndex)
+import Data.Vinyl.Functor (Compose(..), (:.), Identity(..), Const(..))
+import Data.Vinyl.TypeLevel (RIndex, RecAll)
 import Frames.RecF (reifyDict)
 import Frames.TypeLevel (LAll, HasInstances, AllHave)
 import GHC.Prim (Constraint)
@@ -53,6 +53,21 @@ instance forall ts. (LAll Show ts, RecApplicative ts)
     where shower :: Rec (Op String) ts
           shower = reifyDict (Proxy::Proxy Show) (Op show)
           show' = runOp (rget Proxy shower)
+
+instance forall ts. (RecAll Maybe ts Eq, RecApplicative ts)
+  => Eq (CoRec Identity ts) where
+  crA == crB = and . recordToList
+             $ zipRecsWith f (toRec crA) (corecToRec' crB)
+    where
+      f :: forall a. (Dict Eq :. Maybe) a -> Maybe a -> Const Bool a
+      f (Compose (Dict a)) b = Const $ a == b
+      toRec = reifyConstraint (Proxy :: Proxy Eq) . corecToRec'
+
+-- | 'zipWith' for Rec's.
+zipRecsWith :: (forall a. f a -> g a -> h a) -> Rec f as -> Rec g as -> Rec h as
+zipRecsWith f RNil      _         = RNil
+zipRecsWith f (r :& rs) (s :& ss) = f r s :& zipRecsWith f rs ss
+
 
 -- | Remove a 'Dict' wrapper from a value.
 dictId :: Dict c a -> Identity a
