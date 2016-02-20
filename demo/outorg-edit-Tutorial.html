@@ -476,7 +476,7 @@ We can consider a single column.
 </p>
 
 <pre class="example">
-λ&gt; take 6 $ F.foldMap ((:[]) . view occupation) ms
+λ&gt; take 6 $ F.toList $ (view occupation) <$> ms
 ["technician","other","writer","technician","other","executive"]
 </pre>
 
