@@ -207,7 +207,7 @@ minMax = (,) <$> L.minimum <*> L.maximum
 -- We can consider a single column.
 
 -- #+BEGIN_EXAMPLE
--- λ> take 6 $ F.foldMap ((:[]) . view occupation) ms
+-- λ> take 6 . F.toList $ view occupation <$> ms
 -- ["technician","other","writer","technician","other","executive"]
 -- #+END_EXAMPLE
 
