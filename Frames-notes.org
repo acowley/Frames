@@ -1,5 +1,5 @@
 * Tasks
-** TODO Add a summarize class
+** TODO [#C] Add a summarize class
 Other data analysis toolkits have something like a ~summary~ function
 that computes arguably sensible properties of columns. It shows things
 like min, max, and mean for numeric columns, or the number of unique
@@ -57,7 +57,7 @@ The summary of a whole frame might just go through summaries for each column:
 | zip code   | class         | Categorical | 
 | zip code   | numCategories | 4           | 
 
-** TODO Simplify the elisp to pretty print the splice dump
+** TODO [#C] Simplify the elisp to pretty print the splice dump
 Can't we handle /any/ infix operator? If the identifier in the
 function position of an application is parenthesized and begins with a
 colon, it's an operator.
