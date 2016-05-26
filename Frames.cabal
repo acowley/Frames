@@ -163,7 +163,7 @@ benchmark insurance
   main-is:          InsuranceBench.hs
   build-depends:    base, criterion, Frames, lens-family-core, transformers,
                     pipes >= 4.1.5 && < 4.2
-  ghc-options:      -O2 -fllvm
+  ghc-options:      -O2
   default-language: Haskell2010
 
 -- Demonstration of tab-separated value parsing
