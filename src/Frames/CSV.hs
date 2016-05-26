@@ -382,6 +382,29 @@ tableType' (RowGen {..}) csvFile =
                   | otherwise = Just (map T.pack columnNames)
         opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
 
+-- | Generate a type for a row of a table all of whose columns remain
+-- unparsed 'Text' values.
+tableTypesText' :: forall a. (ColumnTypeable a, Monoid a)
+                => RowGen a -> FilePath -> DecsQ
+tableTypesText' (RowGen {..}) csvFile =
+  do colNames <- runIO $ withFile csvFile ReadMode $ \h ->
+       maybe (tokenizeRow opts <$> T.hGetLine h)
+             pure
+             (headerOverride opts)
+     let headers = zip colNames (repeat (inferType " "))
+     recTy <- tySynD (mkName rowTypeName) [] (recDec' headers)
+     let optsName = case rowTypeName of
+                      [] -> error "Row type name shouldn't be empty"
+                      h:t -> mkName $ toLower h : t ++ "Parser"
+     optsTy <- sigD optsName [t|ParserOptions|]
+     optsDec <- valD (varP optsName) (normalB $ lift opts) []
+     colDecs <- concat <$> mapM (uncurry $ colDec (T.pack tablePrefix)) headers
+     return (recTy : optsTy : optsDec : colDecs)
+  where recDec' = recDec :: [(T.Text, a)] -> Q Type
+        colNames' | null columnNames = Nothing
+                  | otherwise = Just (map T.pack columnNames)
+        opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
+
 -- | Like 'tableType'', but additionally generates a type synonym for
 -- each column, and a proxy value of that type. If the CSV file has
 -- column names \"foo\", \"bar\", and \"baz\", then this will declare
