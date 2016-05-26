@@ -7,6 +7,7 @@ import qualified Data.Foldable as F
 import Data.Ord (comparing)
 import Data.Proxy
 import qualified Data.Text as T
+import qualified Data.Text.IO as T
 import Data.Vinyl.Functor (Identity(..))
 import Data.Vinyl.TypeLevel (Nat(..))
 import Frames
@@ -50,3 +51,7 @@ partOne' :: IO T.Text
 partOne' = do tbl <- inCoreAoS (readTable "data/weather.csv") :: IO (Frame Row)
               return . getFieldByIndex (Proxy::Proxy Z) $
                 F.maximumBy (comparing getTemperatureRange') tbl
+
+main :: IO ()
+main = do partOne >>= T.putStrLn
+          partOne' >>= T.putStrLn
