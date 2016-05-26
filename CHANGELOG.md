@@ -1,3 +1,7 @@
+# 0.1.3
+
+GHC-8.0.1 compatibility
+
 # 0.1.2.1
 
 Improved documentation based on suggestions by Alexander Kjeldaas
