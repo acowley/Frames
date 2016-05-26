@@ -369,9 +369,9 @@ tableTypes n = tableTypes' rowGen { rowTypeName = n }
 
 -- * Customized Data Set Parsing
 
--- | Generate a type for a row a table. This will be something like
--- @Record ["x" :-> a, "y" :-> b, "z" :-> c]@.  Column type synonyms are
--- /not/ generated (see 'tableTypes'').
+-- | Generate a type for a row of a table. This will be something like
+-- @Record ["x" :-> a, "y" :-> b, "z" :-> c]@.  Column type synonyms
+-- are /not/ generated (see 'tableTypes'').
 tableType' :: forall a. (ColumnTypeable a, Monoid a)
            => RowGen a -> FilePath -> DecsQ
 tableType' (RowGen {..}) csvFile =
