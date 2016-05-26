@@ -18,8 +18,8 @@ class Parseable a where
   -- returns 'Just Possibly' if a value can be read, but is likely
   -- ambiguous (e.g. an empty string); returns 'Just Definitely' if a
   -- value can be read and is unlikely to be ambiguous."
-  parse :: (Functor m, MonadPlus m) => T.Text -> m (Parsed a)
-  default parse :: (Readable a, Functor m, MonadPlus m)
+  parse :: MonadPlus m => T.Text -> m (Parsed a)
+  default parse :: (Readable a, MonadPlus m)
                 => T.Text -> m (Parsed a)
   parse = fmap Definitely . fromText
   {-# INLINE parse #-}
@@ -31,7 +31,7 @@ discardConfidence (Definitely x) = x
 
 -- | Acts just like 'fromText': tries to parse a value from a 'T.Text'
 -- and discards any estimate of the parse's ambiguity.
-parse' :: (Functor m, MonadPlus m, Parseable a) => T.Text -> m a
+parse' :: (MonadPlus m, Parseable a) => T.Text -> m a
 parse' = fmap discardConfidence . parse
 
 instance Parseable Bool where

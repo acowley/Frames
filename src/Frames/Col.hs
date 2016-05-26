@@ -1,11 +1,14 @@
-{-# LANGUAGE DataKinds,
+{-# LANGUAGE CPP,
+             DataKinds,
              GeneralizedNewtypeDeriving,
              KindSignatures,
              ScopedTypeVariables,
              TypeOperators #-}
 -- | Column types
 module Frames.Col where
+#if __GLASGOW_HASKELL__ < 800
 import Data.Monoid
+#endif
 import Data.Proxy
 import GHC.TypeLits
 

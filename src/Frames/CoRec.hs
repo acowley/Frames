@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns,
              ConstraintKinds,
+             CPP,
              DataKinds,
              FlexibleContexts,
              FlexibleInstances,
@@ -27,7 +28,11 @@ import Data.Vinyl.Functor (Compose(..), (:.), Identity(..), Const(..))
 import Data.Vinyl.TypeLevel (RIndex, RecAll)
 import Frames.RecF (reifyDict)
 import Frames.TypeLevel (LAll, HasInstances, AllHave)
+#if __GLASGOW_HASKELL__ < 800
 import GHC.Prim (Constraint)
+#else
+import Data.Kind (Constraint)
+#endif
 
 -- | Generalize algebraic sum types.
 data CoRec :: (* -> *) -> [*] -> * where
@@ -65,7 +70,7 @@ instance forall ts. (RecAll Maybe ts Eq, RecApplicative ts)
 
 -- | 'zipWith' for Rec's.
 zipRecsWith :: (forall a. f a -> g a -> h a) -> Rec f as -> Rec g as -> Rec h as
-zipRecsWith f RNil      _         = RNil
+zipRecsWith _ RNil      _         = RNil
 zipRecsWith f (r :& rs) (s :& ss) = f r s :& zipRecsWith f rs ss
 
 
@@ -206,10 +211,10 @@ match c hs = fromJust $ match' c hs
 match'      :: RecApplicative ts => CoRec Identity ts -> Handlers ts b -> Maybe b
 match' c hs = match'' hs $ corecToRec' c
   where
-    match''                            :: Handlers ts b -> Rec Maybe ts -> Maybe b
-    match'' RNil        RNil           = Nothing
-    match'' (H f :& _)  (Just x  :& _) = Just $ f x
-    match'' (H _ :& fs) (Nothing :& c) = match'' fs c
+    match''                             :: Handlers ts b -> Rec Maybe ts -> Maybe b
+    match'' RNil        RNil            = Nothing
+    match'' (H f :& _)  (Just x  :& _)  = Just $ f x
+    match'' (H _ :& fs) (Nothing :& c') = match'' fs c'
 
 
 -- | Newtype around functions for a to b

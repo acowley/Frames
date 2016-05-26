@@ -1,7 +1,11 @@
-{-# LANGUAGE DataKinds, TypeFamilies, TypeOperators #-}
+{-# LANGUAGE CPP, DataKinds, TypeFamilies, TypeOperators #-}
 -- | Helpers for working with type-level lists.
 module Frames.TypeLevel where
+#if __GLASGOW_HASKELL__ < 800
 import GHC.Prim (Constraint)
+#else
+import Data.Kind (Constraint)
+#endif
 
 -- | Remove the first occurence of a type from a type-level list.
 type family RDelete r rs where

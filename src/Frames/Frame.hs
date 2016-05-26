@@ -1,9 +1,10 @@
-{-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE CPP, TypeOperators #-}
 -- | A 'Frame' is a finite 'Int'-indexed collection of rows.
 module Frames.Frame where
-import Control.Applicative
 import Data.Foldable
+#if __GLASGOW_HASKELL__ < 800
 import Data.Monoid
+#endif
 import qualified Data.Vector as V
 import Data.Vinyl.TypeLevel
 import Frames.Rec (Record)

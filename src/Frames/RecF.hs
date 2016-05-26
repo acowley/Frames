@@ -1,4 +1,5 @@
 {-# LANGUAGE ConstraintKinds,
+             CPP,
              DataKinds,
              FlexibleContexts,
              FlexibleInstances,
@@ -17,7 +18,6 @@ module Frames.RecF (V.rappend, V.rtraverse, rdel, CanDelete,
                     UnColumn, AsVinyl(..), mapMono, mapMethod,
                     ShowRec, showRec, ColFun, ColumnHeaders, 
                     columnHeaders, reifyDict) where
-import Control.Applicative
 import Data.List (intercalate)
 import Data.Proxy
 import qualified Data.Vinyl as V
@@ -49,7 +49,10 @@ frameSnoc :: V.Rec f rs -> f r -> V.Rec f (rs ++ '[r])
 frameSnoc r x = V.rappend r (x V.:& RNil)
 {-# INLINE frameSnoc #-}
 
+-- Nil :: Rec f '[]
 pattern Nil = V.RNil
+
+-- (:&) :: Functor f => f r -> Rec f rs -> Rec f (r ': rs)
 pattern x :& xs <- (frameUncons -> (x, xs))
 
 -- NOTE: A bidirectional pattern synonym would be great, but we'll
@@ -94,7 +97,9 @@ instance AsVinyl '[] where
 instance AsVinyl ts => AsVinyl (s :-> t ': ts) where
   toVinyl (x V.:& xs) = fmap getCol x V.:& toVinyl xs
   fromVinyl (x V.:& xs) = fmap Col x V.:& fromVinyl xs
+#if __GLASGOW_HASKELL__ < 800
   fromVinyl _ = error "GHC coverage checker isn't great"
+#endif
 
 -- | Map a function across a homogeneous, monomorphic 'V.Rec'.
 mapMonoV :: (Functor f, AllAre a ts) => (a -> a) -> V.Rec f ts -> V.Rec f ts

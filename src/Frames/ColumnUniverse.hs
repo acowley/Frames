@@ -1,5 +1,6 @@
 {-# LANGUAGE BangPatterns,
              ConstraintKinds,
+             CPP,
              DataKinds,
              FlexibleContexts,
              FlexibleInstances,
@@ -19,7 +20,9 @@
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Frames.ColumnUniverse (CoRec, Columns, ColumnUniverse, CommonColumns) where
 import Language.Haskell.TH
+#if __GLASGOW_HASKELL__ < 800
 import Data.Monoid
+#endif
 import Data.Proxy
 import qualified Data.Text as T
 import Data.Typeable (Typeable, showsTypeRep, typeRep)
