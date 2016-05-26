@@ -164,3 +164,13 @@ benchmark insurance
                     pipes >= 4.1.5 && < 4.2
   ghc-options:      -O2 -fllvm
   default-language: Haskell2010
+
+-- Demonstration of tab-separated value parsing
+executable kata04
+  if !flag(demos)
+    buildable: False
+  main-is: Kata04.hs
+  if flag(demos)
+    build-depends: base, Frames, vinyl, text, readable
+  hs-source-dirs: demo
+  default-language: Haskell2010
