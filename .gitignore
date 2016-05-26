@@ -4,7 +4,6 @@
 /cabal.sandbox.config
 /dist/
 /src/TAGS
-/data/FL2.csv
 /data/adult.csv
 /data/ml-100k.zip
 /data/ml-100k/
