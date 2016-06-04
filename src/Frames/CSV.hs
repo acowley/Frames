@@ -17,11 +17,11 @@
 module Frames.CSV where
 import Control.Applicative ((<$>), pure, (<*>))
 import Control.Arrow (first)
-import Control.Monad (MonadPlus(..))
+import Control.Monad (MonadPlus(..), when, void)
 import Control.Monad.IO.Class
 import Data.Char (isAlpha, isAlphaNum, toLower, toUpper)
 import Data.Foldable (foldMap)
-import Data.Maybe (fromMaybe)
+import Data.Maybe (fromMaybe, isNothing)
 import Data.Monoid ((<>), Monoid(..))
 import Data.Proxy
 import qualified Data.Text as T
@@ -39,9 +39,6 @@ import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
 import qualified Pipes as P
 import System.IO (Handle, hIsEOF, openFile, IOMode(..), withFile)
-import Control.Monad (when)
-import Data.Maybe (isNothing)
-import Control.Monad (void)
 
 type Separator = T.Text
 
@@ -256,7 +253,7 @@ sanitizeTypeName = unreserved . fixupStart
                  . T.concat . T.split (not . valid) . toTitle'
   where valid c = isAlphaNum c || c == '\'' || c == '_'
         toTitle' = foldMap (onHead toUpper) . T.split (not . isAlphaNum)
-        onHead f = maybe mempty (uncurry T.cons) . fmap (first f) . T.uncons 
+        onHead f = maybe mempty (uncurry T.cons) . fmap (first f) . T.uncons
         unreserved t
           | t `elem` ["Type"] = "Col" <> t
           | otherwise = t
@@ -300,8 +297,9 @@ colDec :: ColumnTypeable a => T.Text -> T.Text -> a -> DecsQ
 colDec prefix colName colTy = (:) <$> mkColTDec colTypeQ colTName'
                                   <*> mkColPDec colTName' colTyQ colPName
   where colTName = sanitizeTypeName (prefix <> colName)
-        colPName = fromMaybe "colDec impossible" $
-                   fmap (\(c,t) -> T.cons (toLower c) t) (T.uncons colTName)
+        colPName = maybe "colDec impossible"
+                         (\(c,t) -> T.cons (toLower c) t)
+                         (T.uncons colTName)
         colTName' = mkName $ T.unpack colTName
         colTyQ = colType colTy
         colTypeQ = [t|$(litT . strTyLit $ T.unpack colName) :-> $colTyQ|]
@@ -313,8 +311,9 @@ declareColumn :: T.Text -> Name -> DecsQ
 declareColumn colName colTy = (:) <$> mkColTDec colTypeQ colTName'
                                   <*> mkColPDec colTName' colTyQ colPName
   where colTName = sanitizeTypeName colName
-        colPName = fromMaybe "colDec impossible" $
-                   fmap (\(c,t) -> T.cons (toLower c) t) (T.uncons colTName)
+        colPName = maybe "colDec impossible"
+                         (\(c,t) -> T.cons (toLower c) t)
+                         (T.uncons colTName)
         colTName' = mkName $ T.unpack colTName
         colTyQ = return (ConT colTy)
         colTypeQ = [t|$(litT . strTyLit $ T.unpack colName) :-> $colTyQ|]

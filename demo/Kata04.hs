@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds, FlexibleContexts, OverloadedStrings,
              TemplateHaskell, TypeFamilies, TypeOperators,
              MultiParamTypeClasses, ScopedTypeVariables,
-             FlexibleContexts, FlexibleInstances #-}
+             FlexibleInstances #-}
 module Main where
 import qualified Data.Foldable as F
 import Data.Ord (comparing)
