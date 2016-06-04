@@ -82,7 +82,7 @@ executable plot
     build-depends: base, Frames,
                    lens-family-core, vector, text,
                    template-haskell,
-                   pipes >= 4.1.5 && < 4.2, 
+                   pipes >= 4.1.5 && < 4.3,
                    Chart >= 1.5 && < 1.8,
                    Chart-diagrams >= 1.5 && < 1.8,
                    diagrams-rasterific >= 1.3 && < 1.4,
@@ -98,11 +98,11 @@ executable plot2
   if flag(demos)
     build-depends: base, Frames,
                    lens-family-core, vector, text, template-haskell,
-                   pipes >= 4.1.5 && < 4.2,
+                   pipes >= 4.1.5 && < 4.3,
                    Chart >= 1.5 && < 1.8,
                    Chart-diagrams >= 1.5 && < 1.8,
                    diagrams-rasterific >= 1.3 && < 1.4,
-                   diagrams-lib >= 1.3 && < 1.4, 
+                   diagrams-lib >= 1.3 && < 1.4,
                    readable, containers, statistics
   hs-source-dirs: demo
   default-language: Haskell2010
@@ -115,7 +115,7 @@ executable demo
   if flag(demos)
     build-depends: base, list-t, lens-family-core, transformers, Frames,
                    vector, text, template-haskell, ghc-prim, readable,
-                   pipes >= 4.1.5 && < 4.2
+                   pipes >= 4.1.5 && < 4.3
   hs-source-dirs: demo
   default-language: Haskell2010
   ghc-options: -O2 -fllvm
@@ -128,7 +128,7 @@ executable tutorial
     build-depends: base, Frames,
                    lens-family-core, vector, text, template-haskell, readable,
                    foldl >= 1.1.0 && < 1.3,
-                   pipes >= 4.1.5 && < 4.2
+                   pipes >= 4.1.5 && < 4.3
   hs-source-dirs: demo
   default-language: Haskell2010
 
@@ -140,7 +140,7 @@ executable benchdemo
   if flag(demos)
     build-depends:    base, Frames, lens-family-core,
                       foldl >= 1.1.0 && < 1.3,
-                      pipes >= 4.1.5 && < 4.2
+                      pipes >= 4.1.5 && < 4.3
   hs-source-dirs:   benchmarks
   default-language: Haskell2010
   ghc-options:      -O2 -fllvm
@@ -162,7 +162,7 @@ benchmark insurance
   hs-source-dirs:   benchmarks
   main-is:          InsuranceBench.hs
   build-depends:    base, criterion, Frames, lens-family-core, transformers,
-                    pipes >= 4.1.5 && < 4.2
+                    pipes >= 4.1.5 && < 4.3
   ghc-options:      -O2
   default-language: Haskell2010
 
