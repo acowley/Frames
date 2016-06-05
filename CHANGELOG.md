@@ -1,3 +1,7 @@
+# 0.1.4
+
+Use `microlens` instead of `lens-family-core` for demos.
+
 # 0.1.3
 
 GHC-8.0.1 compatibility

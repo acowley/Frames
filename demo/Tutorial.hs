@@ -34,7 +34,8 @@ import Control.Applicative
 import qualified Control.Foldl as L
 import qualified Data.Foldable as F
 import Data.Proxy (Proxy(..))
-import Lens.Family
+import Lens.Micro
+import Lens.Micro.Extras
 import Frames
 import Frames.CSV (readTableOpt, rowGen, RowGen(..))
 import Pipes hiding (Proxy)

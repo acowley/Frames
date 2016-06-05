@@ -3,7 +3,7 @@
 module Main where
 import Data.Functor.Identity
 import Frames
-import Lens.Family
+import Lens.Micro
 import qualified ListT as L
 import qualified Pipes as P
 import qualified Pipes.Prelude as P
@@ -17,7 +17,7 @@ tbl :: IO [Row]
 tbl = listTlist $ readTable' "data/data1.csv"
 
 ageDoubler :: (Age ∈ rs) => Record rs -> Record rs
-ageDoubler = age *~ 2
+ageDoubler = age %~ (* 2)
 
 tbl2 :: IO [Row]
 tbl2 = listTlist $ readTable' "data/data2.csv"
