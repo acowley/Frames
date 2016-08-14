@@ -159,6 +159,12 @@ readColHeaders opts f =  withFile f ReadMode $ \h ->
                                        (headerOverride opts)
                              <*> prefixInference opts h
 
+readColNames :: ParserOptions -> FilePath -> IO [T.Text]
+readColNames opts f =  withFile f ReadMode $ \h ->
+                         maybe (tokenizeRow opts <$> T.hGetLine h)
+                               pure
+                               (headerOverride opts)
+
 -- * Loading Data
 
 -- | Parsing each component of a 'RecF' from a list of text chunks,
@@ -427,3 +433,41 @@ tableTypes' (RowGen {..}) csvFile =
         colNames' | null columnNames = Nothing
                   | otherwise = Just (map T.pack columnNames)
         opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
+
+-- | Generate a column type.
+recDecExplicit :: [(T.Text, Q Type)] -> Q Type
+recDecExplicit = appT [t|Record|] . go
+  where go [] = return PromotedNilT
+        go ((n,t):cs) =
+          [t|($(litT $ strTyLit (T.unpack n)) :-> $t) ': $(go cs) |]
+
+tableTypesExplicit' :: forall a. (ColumnTypeable a, Monoid a)
+            => [Q Type] -> RowGen a -> FilePath -> DecsQ
+tableTypesExplicit' tys (RowGen {..}) csvFile =
+  do headers <- fmap (flip zip tys) . runIO $ readColNames opts csvFile
+     recTy <- tySynD (mkName rowTypeName) [] (recDecExplicit headers)
+     let optsName = case rowTypeName of
+                      [] -> error "Row type name shouldn't be empty"
+                      h:t -> mkName $ toLower h : t ++ "Parser"
+     optsTy <- sigD optsName [t|ParserOptions|]
+     optsDec <- valD (varP optsName) (normalB $ lift opts) []
+     colDecs <- concat <$> mapM (uncurry $ colDecExplicit (T.pack tablePrefix)) headers
+     return (recTy : optsTy : optsDec : colDecs)
+     -- (:) <$> (tySynD (mkName n) [] (recDec' headers))
+     --     <*> (concat <$> mapM (uncurry $ colDec (T.pack prefix)) headers)
+  where colNames' | null columnNames = Nothing
+                  | otherwise = Just (map T.pack columnNames)
+        opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
+
+-- | For each column, we declare a type synonym for its type, and a
+-- Proxy value of that type.
+colDecExplicit :: T.Text -> T.Text -> Q Type -> DecsQ
+colDecExplicit prefix colName colTyQ = (:) <$> mkColTDec colTypeQ colTName'
+                                  <*> mkColPDec colTName' colTyQ colPName
+  where colTName = sanitizeTypeName (prefix <> colName)
+        colPName = maybe "colDec impossible"
+                         (\(c,t) -> T.cons (toLower c) t)
+                         (T.uncons colTName)
+        colTName' = mkName $ T.unpack colTName
+        colTypeQ = [t|$(litT . strTyLit $ T.unpack colName) :-> $colTyQ|]
+
