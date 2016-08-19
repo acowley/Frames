@@ -1,5 +1,5 @@
 name:                Frames
-version:             0.1.4
+version:             0.1.5
 synopsis:            Data frames For working with tabular data files
 description:         User-friendly, type safe, runtime efficient tooling for
                      working with tabular data deserialized from
@@ -48,7 +48,7 @@ library
                        TypeOperators, ConstraintKinds, StandaloneDeriving,
                        UndecidableInstances, ScopedTypeVariables,
                        OverloadedStrings
-  build-depends:       base >=4.7 && <4.10,
+  build-depends:       base >=4.8 && <4.10,
                        ghc-prim >=0.3 && <0.6,
                        primitive >= 0.6 && < 0.7,
                        text >= 1.1.1.0,
@@ -68,7 +68,7 @@ executable getdata
     buildable: False
   main-is: GetData.hs
   if flag(demos)
-    build-depends: base, bytestring, http-client, zip-archive
+    build-depends: base, bytestring, http-client >= 0.4.3, zip-archive, directory
   hs-source-dirs: data
   default-language: Haskell2010
   ghc-options: -Wall
@@ -118,7 +118,8 @@ executable demo
                    pipes >= 4.1.5 && < 4.3
   hs-source-dirs: demo
   default-language: Haskell2010
-  ghc-options: -O2 -fllvm
+  ghc-options: -O2
+  -- ghc-options: -O2 -fllvm
 
 executable tutorial
   if !flag(demos)
@@ -143,7 +144,10 @@ executable benchdemo
                       pipes >= 4.1.5 && < 4.3
   hs-source-dirs:   benchmarks
   default-language: Haskell2010
-  ghc-options:      -O2 -fllvm
+  -- ghc-options:      -O2
+
+  -- Use opt and llc found on PATH rather than the GHC settings file
+  ghc-options:      -O2 -pgmlo opt -pgmlc llc -fllvm
 
 -- A demonstration of dealing with missing data. Provided for source
 -- code and experimentation rather than a useful executable.

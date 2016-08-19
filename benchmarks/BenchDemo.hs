@@ -2,9 +2,8 @@
 -- | Demonstration of streaming data processing. Try building with
 -- cabal (@cabal build benchdemo@), then running in bash with
 -- something like,
--- 
+--
 -- @$ /usr/bin/time -l dist/build/benchdemo/benchdemo 2>&1 | head -n 4@
-import Control.Applicative
 import qualified Control.Foldl as F
 import Frames
 import Pipes.Prelude (fold)
