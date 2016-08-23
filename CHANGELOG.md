@@ -1,3 +1,8 @@
+# 0.1.6
+
+Re-export `Frames.CSV.declareColumn` from `Frames`. This makes it much
+easier to manually define column types.
+
 # 0.1.4
 
 Use `microlens` instead of `lens-family-core` for demos.

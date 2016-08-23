@@ -25,7 +25,7 @@ import Data.Vinyl.Lens hiding (rlens, rget, rput)
 import Frames.Col ((:->)(..))
 import Frames.ColumnUniverse
 import Frames.CoRec (Field, onField, onCoRec)
-import Frames.CSV (readTable, readTableMaybe, readTable', 
+import Frames.CSV (readTable, readTableMaybe, readTable', declareColumn,
                    tableType, tableTypes, tableType', tableTypes')
 import Frames.Exploration
 import Frames.Frame
