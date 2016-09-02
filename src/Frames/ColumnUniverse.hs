@@ -92,6 +92,16 @@ newtype ColInfo a = ColInfo (Q Type, Parsed (Typed a))
 -- | We use a join semi-lattice on types for representations. The
 -- bottom of the lattice is effectively an error (we have nothing to
 -- represent), @Bool < Int@, @Int < Double@, and @forall n. n <= Text@.
+--
+-- The high-level goal here is that we will pick the "greater" of two
+-- choices in 'bestRep'. A 'Definitely' parse result is preferred over
+-- a 'Possibly' parse result. If we have two distinct 'Possibly' parse
+-- results, we give up. If we have two distinct 'Definitely' parse
+-- results, we are in dangerous waters: all data is parseable at
+-- /both/ types, so which do we default to? The defaulting choices
+-- made here are described in the previous paragraph. If there is no
+-- defaulting rule, we give up (i.e. use 'T.Text' as a
+-- representation).
 lubTypeReps :: Parsed TypeRep -> Parsed TypeRep -> Maybe Ordering
 lubTypeReps (Possibly _) (Definitely _) = Just LT
 lubTypeReps (Definitely _) (Possibly _) = Just GT
@@ -104,12 +114,10 @@ lubTypeReps (Definitely trX) (Definitely trY)
   | trX == trDbl && trY == trInt = Just GT
   | trX == trBool && trY == trInt = Just LT
   | trX == trInt && trY == trBool = Just GT
-  | trX == trZoneTime && trY == trZoneTime = Just GT
   | otherwise = Nothing
   where trInt = typeRep (Proxy :: Proxy Int)
         trDbl = typeRep (Proxy :: Proxy Double)
         trBool = typeRep (Proxy :: Proxy Bool)
-        trZoneTime = typeRep (Proxy :: Proxy ZonedTime)
 
 instance (T.Text ∈ ts) => Monoid (CoRec ColInfo ts) where
   mempty = Col (ColInfo ([t|T.Text|], Possibly mkTyped) :: ColInfo T.Text)
