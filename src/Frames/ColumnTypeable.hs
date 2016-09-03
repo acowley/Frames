@@ -1,11 +1,15 @@
 {-# LANGUAGE BangPatterns, DefaultSignatures, LambdaCase #-}
 module Frames.ColumnTypeable where
-import Control.Monad (MonadPlus)
+import Control.Monad (MonadPlus, mzero)
+import Control.Monad.Trans.Class
+import Control.Monad.IO.Class
 import Data.Readable (Readable(fromText))
 import qualified Data.Text as T
 import Language.Haskell.TH
 import Data.Time
 import Data.Time (ZonedTime(..))
+import Data.Time.Git
+import Control.Applicative
 
 data Parsed a = Possibly a | Definitely a deriving (Eq, Ord, Show)
 
@@ -45,10 +49,17 @@ instance Parseable Double where
 instance Parseable T.Text where
 instance Parseable ZonedTime where
   parse txt = do
-    fmap Definitely (parseTimeM True defaultTimeLocale "%F %T" (T.unpack txt ))
-    -- case (parseTimeM True defaultTimeLocale "%F %T" (T.unpack txt ):: Maybe ZonedTime) of
-    --   Just zt -> pure $ Definitely zt
-    --   Nothing -> error "Hm. not sure what to do here"
+    tz <- getCurrentTimeZone
+    let ts = (approxidate (T.unpack txt) :: Maybe Integer)
+    let mUtcTime = posixToUTC <$> ts :: Maybe UTCTime
+    let mZonedTime = utcToZonedTime tz <$> mUtcTime :: Maybe ZonedTime
+    let mZonedTime' = fmap Definitely mZonedTime :: Maybe (Parsed ZonedTime)
+    maybe mzero (return ) mZonedTime'
+    -- maybe mzero return mZonedTime
+    -- pure  $ Definitely mZonedTime
+
+    -- undefined
+
 
 -- | This class relates a universe of possible column types to Haskell
 -- types, and provides a mechanism to infer which type best represents

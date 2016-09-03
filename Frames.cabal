@@ -50,6 +50,7 @@ library
                        OverloadedStrings
   build-depends:       base >=4.8 && <4.10,
                        ghc-prim >=0.3 && <0.6,
+                       git-date >=0.2.2 && < 0.3,
                        pipes >= 4.1 && < 5,
                        primitive >= 0.6 && < 0.7,
                        readable >= 0.3.1,
