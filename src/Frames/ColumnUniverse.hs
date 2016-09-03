@@ -34,6 +34,7 @@ import Frames.RecF (reifyDict)
 import Frames.TypeLevel (LAll)
 import Data.Typeable (TypeRep)
 import Data.Maybe (fromMaybe)
+import Data.Time
 
 -- * TypeRep Helpers
 
@@ -103,10 +104,12 @@ lubTypeReps (Definitely trX) (Definitely trY)
   | trX == trDbl && trY == trInt = Just GT
   | trX == trBool && trY == trInt = Just LT
   | trX == trInt && trY == trBool = Just GT
+  | trX == trZoneTime && trY == trZoneTime = Just GT
   | otherwise = Nothing
   where trInt = typeRep (Proxy :: Proxy Int)
         trDbl = typeRep (Proxy :: Proxy Double)
         trBool = typeRep (Proxy :: Proxy Bool)
+        trZoneTime = typeRep (Proxy :: Proxy ZonedTime)
 
 instance (T.Text ∈ ts) => Monoid (CoRec ColInfo ts) where
   mempty = Col (ColInfo ([t|T.Text|], Possibly mkTyped) :: ColInfo T.Text)
@@ -146,7 +149,7 @@ instance (LAll Parseable ts, LAll Typeable ts, FoldRec ts ts,
 -- * Common Columns
 
 -- | Common column types
-type CommonColumns = [Bool, Int, Double, T.Text]
+type CommonColumns = [ZonedTime, Bool, Int, Double, T.Text]
 
 -- | Define a set of variants that captures all possible column types.
 type ColumnUniverse = CoRec ColInfo
