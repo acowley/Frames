@@ -4,6 +4,7 @@ import Control.Monad (MonadPlus, mzero)
 import Control.Monad.Trans.Class
 import Control.Monad.IO.Class
 import Data.Readable (Readable(fromText))
+import Control.Monad.IO.Class (MonadIO)
 import qualified Data.Text as T
 import Language.Haskell.TH
 import Data.Time
@@ -24,8 +25,8 @@ class Parseable a where
   -- returns 'Just Possibly' if a value can be read, but is likely
   -- ambiguous (e.g. an empty string); returns 'Just Definitely' if a
   -- value can be read and is unlikely to be ambiguous."
-  parse :: MonadPlus m => T.Text -> m (Parsed a)
-  default parse :: (Readable a, MonadPlus m)
+  parse :: (MonadPlus m, MonadIO m) => T.Text -> m (Parsed a)
+  default parse :: (Readable a, MonadPlus m, MonadIO m)
                 => T.Text -> m (Parsed a)
   parse = fmap Definitely . fromText
   {-# INLINE parse #-}
@@ -37,7 +38,7 @@ discardConfidence (Definitely x) = x
 
 -- | Acts just like 'fromText': tries to parse a value from a 'T.Text'
 -- and discards any estimate of the parse's ambiguity.
-parse' :: (MonadPlus m, Parseable a) => T.Text -> m a
+parse' :: (MonadIO m, MonadPlus m, Parseable a) => T.Text -> m a
 parse' = fmap discardConfidence . parse
 
 instance Parseable Bool where
@@ -49,16 +50,12 @@ instance Parseable Double where
 instance Parseable T.Text where
 instance Parseable ZonedTime where
   parse txt = do
-    tz <- getCurrentTimeZone
+    tz <- liftIO getCurrentTimeZone
     let ts = (approxidate (T.unpack txt) :: Maybe Integer)
     let mUtcTime = posixToUTC <$> ts :: Maybe UTCTime
     let mZonedTime = utcToZonedTime tz <$> mUtcTime :: Maybe ZonedTime
     let mZonedTime' = fmap Definitely mZonedTime :: Maybe (Parsed ZonedTime)
     maybe mzero (return ) mZonedTime'
-    -- maybe mzero return mZonedTime
-    -- pure  $ Definitely mZonedTime
-
-    -- undefined
 
 
 -- | This class relates a universe of possible column types to Haskell
