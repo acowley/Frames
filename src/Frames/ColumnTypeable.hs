@@ -28,7 +28,7 @@ import Data.Readable (Readable(fromText))
 import qualified Data.Text as T
 import Language.Haskell.TH
 import Data.Time
-import Data.Time (ZonedTime(..))
+import Data.Time (LocalTime(..))
 
 data Parsed a = Possibly a | Definitely a deriving (Eq, Ord, Show)
 
@@ -66,7 +66,7 @@ instance Parseable Double where
   -- Some CSV's export Doubles in a format like '1,000.00', filtering out commas lets us parse those sucessfully
   parse = fmap Definitely . fromText . T.filter (/= ',')
 instance Parseable T.Text where
-instance Parseable ZonedTime where
+instance Parseable LocalTime where
   parse txt = do
     fmap Definitely (parseTimeM True defaultTimeLocale "%F %T" (T.unpack txt ))
     -- case (parseTimeM True defaultTimeLocale "%F %T" (T.unpack txt ):: Maybe ZonedTime) of
