@@ -1,3 +1,26 @@
+-- {-# LANGUAGE OverloadedStrings #-}
+-- {-# LANGUAGE TemplateHaskell #-}
+-- module Frames.ColumnTypeable where
+-- import Data.Time.Zones.DB
+-- import Data.Time.Zones
+-- import Data.Time.Zones.TH
+-- import Data.Time
+-- import qualified Data.ByteString as BS
+
+-- timeExample :: BS.ByteString -> IO ()
+-- timeExample tzString = do
+--     $(includeTZFromDB tzString)
+    -- let (Just tz) = fromTZName tzString
+    -- let dtTz = 
+    -- print tz
+    -- let (Just lt) = parseTimeM True defaultTimeLocale "%F %T" "2016-02-01 03:00:00" :: Maybe LocalTime
+    -- let cstTz = hoursToTimeZone (- 6)
+    -- let cdtTz = hoursToTimeZone (- 5)
+    -- let utcTime = localTimeToUTC cstTz lt
+    -- print lt
+
+
+
 {-# LANGUAGE BangPatterns, DefaultSignatures, LambdaCase #-}
 module Frames.ColumnTypeable where
 import Control.Monad (MonadPlus)
@@ -56,3 +79,7 @@ instance Parseable ZonedTime where
 class ColumnTypeable a where
   colType :: a -> Q Type
   inferType :: T.Text -> a
+
+-- timeExample = do
+--     let (Just lt) = parseTimeM True defaultTimeLocale "%F" "2016-02-01" :: Maybe LocalTime
+--     print lt

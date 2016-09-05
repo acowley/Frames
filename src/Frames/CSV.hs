@@ -39,6 +39,7 @@ import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
 import qualified Pipes as P
 import System.IO (Handle, hIsEOF, openFile, IOMode(..), withFile)
+import Data.Time.Zones
 
 type Separator = T.Text
 
@@ -53,6 +54,7 @@ data QuotingMode
   deriving (Eq, Show)
 
 data ParserOptions = ParserOptions { headerOverride :: Maybe [T.Text]
+                                   , timeZone :: Maybe TZ
                                    , columnSeparator :: Separator
                                    , quotingMode :: QuotingMode }
   deriving (Eq, Show)
@@ -61,19 +63,31 @@ instance Lift QuotingMode where
   lift NoQuoting = [|NoQuoting|]
   lift (RFC4180Quoting char) = [|RFC4180Quoting $(litE . charL $ char)|]
 
+instance Lift TZ where
+  lift _ = undefined
+
 instance Lift ParserOptions where
-  lift (ParserOptions Nothing sep quoting) = [|ParserOptions Nothing $sep' $quoting'|]
+  lift (ParserOptions Nothing Nothing sep quoting) = [|ParserOptions Nothing Nothing $sep' $quoting'|]
     where sep' = [|T.pack $(stringE $ T.unpack sep)|]
           quoting' = lift quoting
-  lift (ParserOptions (Just hs) sep quoting) = [|ParserOptions (Just $hs') $sep' $quoting'|]
+  lift (ParserOptions Nothing (Just tz) sep quoting) = [|ParserOptions Nothing (Just $tz') $sep' $quoting'|]
+    where sep' = [|T.pack $(stringE $ T.unpack sep)|]
+          quoting' = lift quoting
+          tz' = lift tz
+  lift (ParserOptions (Just hs) Nothing sep quoting) = [|ParserOptions (Just $hs') Nothing $sep' $quoting'|]
     where sep' = [|T.pack $(stringE $ T.unpack sep)|]
           hs' = [|map T.pack $(listE $  map (stringE . T.unpack) hs)|]
+          quoting' = lift quoting
+  lift (ParserOptions (Just hs) (Just tz) sep quoting) = [|ParserOptions (Just $hs') (Just $tz') $sep' $quoting'|]
+    where sep' = [|T.pack $(stringE $ T.unpack sep)|]
+          hs' = [|map T.pack $(listE $  map (stringE . T.unpack) hs)|]
+          tz' = lift tz
           quoting' = lift quoting
 
 -- | Default 'ParseOptions' get column names from a header line, and
 -- use commas to separate columns.
 defaultParser :: ParserOptions
-defaultParser = ParserOptions Nothing defaultSep (RFC4180Quoting '\"')
+defaultParser = ParserOptions Nothing Nothing defaultSep (RFC4180Quoting '\"')
 
 -- | Default separator string.
 defaultSep :: Separator
@@ -363,8 +377,8 @@ tableType n = tableType' rowGen { rowTypeName = n }
 -- column names \"foo\", \"bar\", and \"baz\", then this will declare
 -- @type Foo = "foo" :-> Int@, for example, @foo = rlens (Proxy :: Proxy
 -- Foo)@, and @foo' = rlens' (Proxy :: Proxy Foo)@.
-tableTypes :: String -> FilePath -> DecsQ
-tableTypes n = tableTypes' rowGen { rowTypeName = n }
+tableTypes :: String -> FilePath -> String -> DecsQ
+tableTypes n tzString = tableTypes' rowGen { rowTypeName = n } tzString
 
 -- * Customized Data Set Parsing
 
@@ -373,23 +387,26 @@ tableTypes n = tableTypes' rowGen { rowTypeName = n }
 -- are /not/ generated (see 'tableTypes'').
 tableType' :: forall a. (ColumnTypeable a, Monoid a)
            => RowGen a -> FilePath -> DecsQ
-tableType' (RowGen {..}) csvFile =
-    pure . TySynD (mkName rowTypeName) [] <$>
-    (runIO (readColHeaders opts csvFile) >>= recDec')
+tableType' (RowGen {..}) csvFile = do
+    pure . TySynD (mkName rowTypeName) [] <$> (runIO (readColHeaders opts csvFile) >>= recDec')
   where recDec' = recDec :: [(T.Text, a)] -> Q Type
         colNames' | null columnNames = Nothing
                   | otherwise = Just (map T.pack columnNames)
-        opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
+        tz = error "not yet implemented"
+        opts = ParserOptions colNames' tz separator (RFC4180Quoting '\"')
 
 -- | Generate a type for a row of a table all of whose columns remain
 -- unparsed 'Text' values.
 tableTypesText' :: forall a. (ColumnTypeable a, Monoid a)
-                => RowGen a -> FilePath -> DecsQ
-tableTypesText' (RowGen {..}) csvFile =
-  do colNames <- runIO $ withFile csvFile ReadMode $ \h ->
-       maybe (tokenizeRow opts <$> T.hGetLine h)
-             pure
-             (headerOverride opts)
+                => RowGen a -> String -> FilePath -> DecsQ
+tableTypesText' (RowGen {..}) tzString csvFile = do
+     -- TODO catch exception and return maybe value here
+     tz <- runIO $ loadTZFromDB tzString
+     let opts = ParserOptions colNames' (Just tz) separator (RFC4180Quoting '\"')
+     colNames <- runIO $ withFile csvFile ReadMode $ \h ->
+         maybe (tokenizeRow opts <$> T.hGetLine h)
+                 pure
+               (headerOverride opts)
      let headers = zip colNames (repeat (inferType " "))
      recTy <- tySynD (mkName rowTypeName) [] (recDec' headers)
      let optsName = case rowTypeName of
@@ -402,7 +419,6 @@ tableTypesText' (RowGen {..}) csvFile =
   where recDec' = recDec :: [(T.Text, a)] -> Q Type
         colNames' | null columnNames = Nothing
                   | otherwise = Just (map T.pack columnNames)
-        opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
 
 -- | Like 'tableType'', but additionally generates a type synonym for
 -- each column, and a proxy value of that type. If the CSV file has
@@ -410,9 +426,12 @@ tableTypesText' (RowGen {..}) csvFile =
 -- @type Foo = "foo" :-> Int@, for example, @foo = rlens (Proxy ::
 -- Proxy Foo)@, and @foo' = rlens' (Proxy :: Proxy Foo)@.
 tableTypes' :: forall a. (ColumnTypeable a, Monoid a)
-            => RowGen a -> FilePath -> DecsQ
-tableTypes' (RowGen {..}) csvFile =
-  do headers <- runIO $ readColHeaders opts csvFile
+            => RowGen a -> String -> FilePath -> DecsQ
+tableTypes' (RowGen {..}) tzString csvFile = do
+     -- TODO Catch exception here and return a Maybe value
+     tz <- runIO $ loadTZFromDB tzString
+     let opts = ParserOptions colNames' (Just tz) separator (RFC4180Quoting '\"')
+     headers <- runIO $ readColHeaders opts csvFile
      recTy <- tySynD (mkName rowTypeName) [] (recDec' headers)
      let optsName = case rowTypeName of
                       [] -> error "Row type name shouldn't be empty"
@@ -426,4 +445,3 @@ tableTypes' (RowGen {..}) csvFile =
   where recDec' = recDec :: [(T.Text, a)] -> Q Type
         colNames' | null columnNames = Nothing
                   | otherwise = Just (map T.pack columnNames)
-        opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
