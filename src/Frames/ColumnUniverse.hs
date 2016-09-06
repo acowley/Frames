@@ -104,12 +104,12 @@ lubTypeReps (Definitely trX) (Definitely trY)
   | trX == trDbl && trY == trInt = Just GT
   | trX == trBool && trY == trInt = Just LT
   | trX == trInt && trY == trBool = Just GT
-  | trX == trZoneTime && trY == trZoneTime = Just GT
+  -- | trX == trZoneTime && trY == trZoneTime = Just GT
   | otherwise = Nothing
   where trInt = typeRep (Proxy :: Proxy Int)
         trDbl = typeRep (Proxy :: Proxy Double)
         trBool = typeRep (Proxy :: Proxy Bool)
-        trZoneTime = typeRep (Proxy :: Proxy ZonedTime)
+        -- trZoneTime = typeRep (Proxy :: Proxy ZonedTime)
 
 instance (T.Text ∈ ts) => Monoid (CoRec ColInfo ts) where
   mempty = Col (ColInfo ([t|T.Text|], Possibly mkTyped) :: ColInfo T.Text)

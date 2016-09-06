@@ -1,34 +1,17 @@
--- {-# LANGUAGE OverloadedStrings #-}
--- {-# LANGUAGE TemplateHaskell #-}
--- module Frames.ColumnTypeable where
--- import Data.Time.Zones.DB
--- import Data.Time.Zones
--- import Data.Time.Zones.TH
--- import Data.Time
--- import qualified Data.ByteString as BS
-
--- timeExample :: BS.ByteString -> IO ()
--- timeExample tzString = do
---     $(includeTZFromDB tzString)
-    -- let (Just tz) = fromTZName tzString
-    -- let dtTz = 
-    -- print tz
-    -- let (Just lt) = parseTimeM True defaultTimeLocale "%F %T" "2016-02-01 03:00:00" :: Maybe LocalTime
-    -- let cstTz = hoursToTimeZone (- 6)
-    -- let cdtTz = hoursToTimeZone (- 5)
-    -- let utcTime = localTimeToUTC cstTz lt
-    -- print lt
-
-
-
 {-# LANGUAGE BangPatterns, DefaultSignatures, LambdaCase #-}
 module Frames.ColumnTypeable where
-import Control.Monad (MonadPlus)
+import Control.Monad (MonadPlus, mzero)
 import Data.Readable (Readable(fromText))
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
 import Language.Haskell.TH
 import Data.Time
 import Data.Time (LocalTime(..))
+import Data.Time.Zones.DB
+import Data.Time.Zones
+import Data.Time.Zones.Read
+import qualified Data.ByteString as BS
+import qualified Data.ByteString.Char8 as C8
 
 data Parsed a = Possibly a | Definitely a deriving (Eq, Ord, Show)
 
@@ -43,10 +26,10 @@ class Parseable a where
   -- returns 'Just Possibly' if a value can be read, but is likely
   -- ambiguous (e.g. an empty string); returns 'Just Definitely' if a
   -- value can be read and is unlikely to be ambiguous."
-  parse :: MonadPlus m => T.Text -> m (Parsed a)
+  parse :: MonadPlus m => String -> T.Text -> m (Parsed a)
   default parse :: (Readable a, MonadPlus m)
-                => T.Text -> m (Parsed a)
-  parse = fmap Definitely . fromText
+                => String -> T.Text -> m (Parsed a)
+  parse _ txt = fmap Definitely . fromText $ txt
   {-# INLINE parse #-}
 
 -- | Discard any estimate of a parse's ambiguity.
@@ -56,22 +39,23 @@ discardConfidence (Definitely x) = x
 
 -- | Acts just like 'fromText': tries to parse a value from a 'T.Text'
 -- and discards any estimate of the parse's ambiguity.
-parse' :: (MonadPlus m, Parseable a) => T.Text -> m a
-parse' = fmap discardConfidence . parse
+parse' :: (MonadPlus m, Parseable a) => String -> T.Text -> m a
+parse' tz txt = do
+  let parsed = parse tz txt
+  fmap discardConfidence parsed
 
 instance Parseable Bool where
 instance Parseable Int where
 instance Parseable Float where
 instance Parseable Double where
   -- Some CSV's export Doubles in a format like '1,000.00', filtering out commas lets us parse those sucessfully
-  parse = fmap Definitely . fromText . T.filter (/= ',')
+  parse tz txt = fmap Definitely . fromText . T.filter (/= ',') $ txt
 instance Parseable T.Text where
-instance Parseable LocalTime where
-  parse txt = do
-    fmap Definitely (parseTimeM True defaultTimeLocale "%F %T" (T.unpack txt ))
-    -- case (parseTimeM True defaultTimeLocale "%F %T" (T.unpack txt ):: Maybe ZonedTime) of
-    --   Just zt -> pure $ Definitely zt
-    --   Nothing -> error "Hm. not sure what to do here"
+instance Parseable ZonedTime where
+  parse tz txt = do
+    case (parseDateByTZString (C8.pack tz) (T.unpack txt) :: Maybe ZonedTime) of
+      Just zt -> pure $ Definitely zt
+      Nothing -> mzero
 
 -- | This class relates a universe of possible column types to Haskell
 -- types, and provides a mechanism to infer which type best represents
@@ -80,6 +64,18 @@ class ColumnTypeable a where
   colType :: a -> Q Type
   inferType :: T.Text -> a
 
--- timeExample = do
---     let (Just lt) = parseTimeM True defaultTimeLocale "%F" "2016-02-01" :: Maybe LocalTime
---     print lt
+parseDateByTZString
+  :: (Monad m, MonadPlus m) => BS.ByteString -> String -> m ZonedTime
+parseDateByTZString tzString dateString = do
+    let mLocalTime = parseTimeM True defaultTimeLocale "%F %T" dateString
+
+    -- getting raw tz data from label
+    let mTzRawBS = tzDataByLabel <$> fromTZName tzString
+
+    case mTzRawBS of
+      Just tzRawBS -> do
+        let tz = parseOlson tzRawBS
+        let mUtcTime = localTimeToUTCTZ tz <$> mLocalTime
+        let timeZoneAsOfDate = timeZoneForUTCTime tz <$> mUtcTime
+        ZonedTime <$> mLocalTime <*> timeZoneAsOfDate
+      Nothing -> mzero

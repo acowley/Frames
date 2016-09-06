@@ -64,7 +64,7 @@ instance Lift QuotingMode where
   lift (RFC4180Quoting char) = [|RFC4180Quoting $(litE . charL $ char)|]
 
 instance Lift TZ where
-  lift _ = undefined
+  lift tz = [| tz |]
 
 instance Lift ParserOptions where
   lift (ParserOptions Nothing Nothing sep quoting) = [|ParserOptions Nothing Nothing $sep' $quoting'|]
