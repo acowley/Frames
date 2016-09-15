@@ -1,4 +1,5 @@
 {-# LANGUAGE BangPatterns,
+             CPP,
              DataKinds,
              FlexibleInstances,
              KindSignatures,
@@ -15,18 +16,22 @@
 -- necessary types so that you can write type safe programs referring
 -- to those types.
 module Frames.CSV where
+#if __GLASGOW_HASKELL__ < 710
 import Control.Applicative ((<$>), pure, (<*>))
-import Control.Arrow (first)
+import Data.Foldable (foldMap)
+import Data.Traversable (sequenceA)
+import Data.Monoid (Monoid)
+#endif
+
+import Control.Arrow (first, second)
 import Control.Monad (MonadPlus(..), when, void)
 import Control.Monad.IO.Class
 import Data.Char (isAlpha, isAlphaNum, toLower, toUpper)
-import Data.Foldable (foldMap)
-import Data.Maybe (fromMaybe, isNothing)
-import Data.Monoid ((<>), Monoid(..))
+import Data.Maybe (isNothing)
+import Data.Monoid ((<>))
 import Data.Proxy
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
-import Data.Traversable (sequenceA)
 import Data.Vinyl (RElem, Rec)
 import Data.Vinyl.TypeLevel (RIndex)
 import Frames.Col
@@ -240,11 +245,11 @@ readTable = readTableOpt defaultParser
 -- * Template Haskell
 
 -- | Generate a column type.
-recDec :: ColumnTypeable a => [(T.Text, a)] -> Q Type
+recDec :: [(T.Text, Q Type)] -> Q Type
 recDec = appT [t|Record|] . go
   where go [] = return PromotedNilT
         go ((n,t):cs) =
-          [t|($(litT $ strTyLit (T.unpack n)) :-> $(colType t)) ': $(go cs) |]
+          [t|($(litT $ strTyLit (T.unpack n)) :-> $(t)) ': $(go cs) |]
 
 -- | Massage a column name from a CSV file into a valid Haskell type
 -- identifier.
@@ -376,7 +381,7 @@ tableType' :: forall a. (ColumnTypeable a, Monoid a)
 tableType' (RowGen {..}) csvFile =
     pure . TySynD (mkName rowTypeName) [] <$>
     (runIO (readColHeaders opts csvFile) >>= recDec')
-  where recDec' = recDec :: [(T.Text, a)] -> Q Type
+  where recDec' = recDec . map (second colType) :: [(T.Text, a)] -> Q Type
         colNames' | null columnNames = Nothing
                   | otherwise = Just (map T.pack columnNames)
         opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
@@ -399,7 +404,7 @@ tableTypesText' (RowGen {..}) csvFile =
      optsDec <- valD (varP optsName) (normalB $ lift opts) []
      colDecs <- concat <$> mapM (uncurry $ colDec (T.pack tablePrefix)) headers
      return (recTy : optsTy : optsDec : colDecs)
-  where recDec' = recDec :: [(T.Text, a)] -> Q Type
+  where recDec' = recDec . map (second colType) :: [(T.Text, a)] -> Q Type
         colNames' | null columnNames = Nothing
                   | otherwise = Just (map T.pack columnNames)
         opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
@@ -423,7 +428,7 @@ tableTypes' (RowGen {..}) csvFile =
      return (recTy : optsTy : optsDec : colDecs)
      -- (:) <$> (tySynD (mkName n) [] (recDec' headers))
      --     <*> (concat <$> mapM (uncurry $ colDec (T.pack prefix)) headers)
-  where recDec' = recDec :: [(T.Text, a)] -> Q Type
+  where recDec' = recDec . map (second colType) :: [(T.Text, a)] -> Q Type
         colNames' | null columnNames = Nothing
                   | otherwise = Just (map T.pack columnNames)
         opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
