@@ -49,7 +49,7 @@ instance Parseable Int where
 instance Parseable Float where
 instance Parseable Double where
   -- Some CSV's export Doubles in a format like '1,000.00', filtering out commas lets us parse those sucessfully
-  parse tz txt = fmap Definitely . fromText . T.filter (/= ',') $ txt
+  parse _ txt = fmap Definitely . fromText . T.filter (/= ',') $ txt
 instance Parseable T.Text where
 instance Parseable ZonedTime where
   parse tz txt = do
@@ -62,7 +62,7 @@ instance Parseable ZonedTime where
 -- some textual data.
 class ColumnTypeable a where
   colType :: a -> Q Type
-  inferType :: T.Text -> a
+  inferType :: String -> T.Text -> a
 
 parseDateByTZString
   :: (Monad m, MonadPlus m) => BS.ByteString -> String -> m ZonedTime

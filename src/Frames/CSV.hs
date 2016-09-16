@@ -45,6 +45,8 @@ type Separator = T.Text
 
 type QuoteChar = Char
 
+type TimeZoneString = String
+
 data QuotingMode
     -- | No quoting enabled. The separator may not appear in values
   = NoQuoting
@@ -154,10 +156,10 @@ reassembleRFC4180QuotedParts sep quoteChar = finish . foldr f ([], Nothing)
 -- | Infer column types from a prefix (up to 1000 lines) of a CSV
 -- file.
 prefixInference :: (ColumnTypeable a, Monoid a)
-                => ParserOptions -> Handle -> IO [a]
-prefixInference opts h = T.hGetLine h >>= go prefixSize . inferCols
+                => TimeZoneString -> ParserOptions -> Handle -> IO [a]
+prefixInference tzString opts h = T.hGetLine h >>= go prefixSize . inferCols
   where prefixSize = 1000 :: Int
-        inferCols = map inferType . tokenizeRow opts
+        inferCols = map (inferType tzString) . tokenizeRow opts
         go 0 ts = return ts
         go !n ts =
           hIsEOF h >>= \case
@@ -166,64 +168,64 @@ prefixInference opts h = T.hGetLine h >>= go prefixSize . inferCols
 
 -- | Extract column names and inferred types from a CSV file.
 readColHeaders :: (ColumnTypeable a, Monoid a)
-               => ParserOptions -> FilePath -> IO [(T.Text, a)]
-readColHeaders opts f =  withFile f ReadMode $ \h ->
+               => TimeZoneString -> ParserOptions -> FilePath -> IO [(T.Text, a)]
+readColHeaders tzString opts f =  withFile f ReadMode $ \h ->
                          zip <$> maybe (tokenizeRow opts <$> T.hGetLine h)
                                        pure
                                        (headerOverride opts)
-                             <*> prefixInference opts h
+                             <*> prefixInference tzString opts h
 
 -- * Loading Data
 
 -- | Parsing each component of a 'RecF' from a list of text chunks,
 -- one chunk per record component.
 class ReadRec (rs :: [*]) where
-  readRec :: [T.Text] -> Rec Maybe rs
+  readRec :: TimeZoneString -> [T.Text] -> Rec Maybe rs
 
 instance ReadRec '[] where
-  readRec _ = Nil
+  readRec _ _ = Nil
 
 instance (Parseable t, ReadRec ts) => ReadRec (s :-> t ': ts) where
-  readRec [] = frameCons Nothing (readRec [])
-  readRec (h:t) = frameCons (parse' h) (readRec t)
+  readRec tzString [] = frameCons Nothing (readRec tzString [])
+  readRec tzString (h:t) = frameCons (parse' tzString h) (readRec tzString t)
 
 -- | Read a 'RecF' from one line of CSV.
-readRow :: ReadRec rs => ParserOptions -> T.Text -> Rec Maybe rs
-readRow = (readRec .) . tokenizeRow
+readRow :: ReadRec rs => TimeZoneString -> ParserOptions -> T.Text -> Rec Maybe rs
+readRow tzString = (readRec tzString .) . tokenizeRow
 
 -- | Produce rows where any given entry can fail to parse.
 readTableMaybeOpt :: (MonadIO m, ReadRec rs)
-                  => ParserOptions -> FilePath -> P.Producer (Rec Maybe rs) m ()
-readTableMaybeOpt opts csvFile =
+                  => ParserOptions -> TimeZoneString -> FilePath -> P.Producer (Rec Maybe rs) m ()
+readTableMaybeOpt opts tzString csvFile =
   do h <- liftIO $ do
             h <- openFile csvFile ReadMode
             when (isNothing $ headerOverride opts) (void $ T.hGetLine h)
             return h
      let go = liftIO (hIsEOF h) >>= \case
               True -> return ()
-              False -> liftIO (readRow opts <$> T.hGetLine h) >>= P.yield >> go
+              False -> liftIO (readRow tzString opts <$> T.hGetLine h) >>= P.yield >> go
      go
 {-# INLINE readTableMaybeOpt #-}
 
 -- | Produce rows where any given entry can fail to parse.
 readTableMaybe :: (MonadIO m, ReadRec rs)
-               => FilePath -> P.Producer (Rec Maybe rs) m ()
-readTableMaybe = readTableMaybeOpt defaultParser
+               => TimeZoneString -> FilePath -> P.Producer (Rec Maybe rs) m ()
+readTableMaybe tzString = readTableMaybeOpt defaultParser tzString 
 {-# INLINE readTableMaybe #-}
 
 -- | Returns a `MonadPlus` producer of rows for which each column was
 -- successfully parsed. This is typically slower than 'readTableOpt'.
 readTableOpt' :: forall m rs.
                  (MonadPlus m, MonadIO m, ReadRec rs)
-              => ParserOptions -> FilePath -> m (Record rs)
-readTableOpt' opts csvFile =
+              => TimeZoneString -> ParserOptions -> FilePath -> m (Record rs)
+readTableOpt' tzString opts csvFile =
   do h <- liftIO $ do
             h <- openFile csvFile ReadMode
             when (isNothing $ headerOverride opts) (void $ T.hGetLine h)
             return h
      let go = liftIO (hIsEOF h) >>= \case
               True -> mzero
-              False -> let r = recMaybe . readRow opts <$> T.hGetLine h
+              False -> let r = recMaybe . (readRow tzString) opts <$> T.hGetLine h
                        in liftIO r >>= maybe go (flip mplus go . return)
      go
 {-# INLINE readTableOpt' #-}
@@ -231,24 +233,24 @@ readTableOpt' opts csvFile =
 -- | Returns a `MonadPlus` producer of rows for which each column was
 -- successfully parsed. This is typically slower than 'readTable'.
 readTable' :: forall m rs. (MonadPlus m, MonadIO m, ReadRec rs)
-           => FilePath -> m (Record rs)
-readTable' = readTableOpt' defaultParser
+           => TimeZoneString -> FilePath -> m (Record rs)
+readTable' tzString = readTableOpt' tzString defaultParser
 {-# INLINE readTable' #-}
 
 -- | Returns a producer of rows for which each column was successfully
 -- parsed.
 readTableOpt :: forall m rs.
                 (MonadIO m, ReadRec rs)
-             => ParserOptions -> FilePath -> P.Producer (Record rs) m ()
-readTableOpt opts csvFile = readTableMaybeOpt opts csvFile P.>-> go
+             => ParserOptions -> TimeZoneString -> FilePath -> P.Producer (Record rs) m ()
+readTableOpt opts tzString csvFile = readTableMaybeOpt opts tzString csvFile P.>-> go
   where go = P.await >>= maybe go (\x -> P.yield x >> go) . recMaybe
 {-# INLINE readTableOpt #-}
 
 -- | Returns a producer of rows for which each column was successfully
 -- parsed.
 readTable :: forall m rs. (MonadIO m, ReadRec rs)
-          => FilePath -> P.Producer (Record rs) m ()
-readTable = readTableOpt defaultParser
+          => TimeZoneString -> FilePath -> P.Producer (Record rs) m ()
+readTable tzString = readTableOpt defaultParser tzString 
 {-# INLINE readTable #-}
 
 -- * Template Haskell
@@ -369,8 +371,8 @@ rowGen = RowGen [] "" defaultSep "Row" Proxy
 
 -- | Generate a type for each row of a table. This will be something
 -- like @Record ["x" :-> a, "y" :-> b, "z" :-> c]@.
-tableType :: String -> FilePath -> DecsQ
-tableType n = tableType' rowGen { rowTypeName = n }
+tableType :: String -> FilePath -> TimeZoneString -> DecsQ
+tableType n fp tzString = tableType' (rowGen { rowTypeName = n }) tzString fp
 
 -- | Like 'tableType', but additionally generates a type synonym for
 -- each column, and a proxy value of that type. If the CSV file has
@@ -378,7 +380,7 @@ tableType n = tableType' rowGen { rowTypeName = n }
 -- @type Foo = "foo" :-> Int@, for example, @foo = rlens (Proxy :: Proxy
 -- Foo)@, and @foo' = rlens' (Proxy :: Proxy Foo)@.
 tableTypes :: String -> FilePath -> String -> DecsQ
-tableTypes n tzString = tableTypes' rowGen { rowTypeName = n } tzString
+tableTypes n tzString fp  = tableTypes' (rowGen { rowTypeName = n }) tzString fp
 
 -- * Customized Data Set Parsing
 
@@ -386,9 +388,9 @@ tableTypes n tzString = tableTypes' rowGen { rowTypeName = n } tzString
 -- @Record ["x" :-> a, "y" :-> b, "z" :-> c]@.  Column type synonyms
 -- are /not/ generated (see 'tableTypes'').
 tableType' :: forall a. (ColumnTypeable a, Monoid a)
-           => RowGen a -> FilePath -> DecsQ
-tableType' (RowGen {..}) csvFile = do
-    pure . TySynD (mkName rowTypeName) [] <$> (runIO (readColHeaders opts csvFile) >>= recDec')
+           => RowGen a -> TimeZoneString -> FilePath -> DecsQ
+tableType' (RowGen {..}) tzString csvFile = do
+    pure . TySynD (mkName rowTypeName) [] <$> (runIO (readColHeaders tzString opts csvFile) >>= recDec')
   where recDec' = recDec :: [(T.Text, a)] -> Q Type
         colNames' | null columnNames = Nothing
                   | otherwise = Just (map T.pack columnNames)
@@ -407,7 +409,7 @@ tableTypesText' (RowGen {..}) tzString csvFile = do
          maybe (tokenizeRow opts <$> T.hGetLine h)
                  pure
                (headerOverride opts)
-     let headers = zip colNames (repeat (inferType " "))
+     let headers = zip colNames (repeat (inferType tzString " "))
      recTy <- tySynD (mkName rowTypeName) [] (recDec' headers)
      let optsName = case rowTypeName of
                       [] -> error "Row type name shouldn't be empty"
@@ -431,7 +433,7 @@ tableTypes' (RowGen {..}) tzString csvFile = do
      -- TODO Catch exception here and return a Maybe value
      tz <- runIO $ loadTZFromDB tzString
      let opts = ParserOptions colNames' (Just tz) separator (RFC4180Quoting '\"')
-     headers <- runIO $ readColHeaders opts csvFile
+     headers <- runIO $ readColHeaders tzString opts csvFile
      recTy <- tySynD (mkName rowTypeName) [] (recDec' headers)
      let optsName = case rowTypeName of
                       [] -> error "Row type name shouldn't be empty"
