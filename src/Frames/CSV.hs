@@ -394,14 +394,13 @@ tableTypes n tzString fp  = tableTypes' (rowGen { rowTypeName = n }) tzString fp
 -- are /not/ generated (see 'tableTypes'').
 tableType' :: forall a. (ColumnTypeable a, Monoid a)
            => RowGen a -> TimeZoneString -> FilePath -> DecsQ
-tableType' (RowGen {..}) tzString csvFile =
-    pure . TySynD (mkName rowTypeName) [] <$>
-    (runIO (readColHeaders tzString opts csvFile) >>= recDec')
+tableType' (RowGen {..}) tzString csvFile = do
+  tz <- runIO $ loadTZFromDB tzString
+  let opts = ParserOptions colNames' (Just tz) separator (RFC4180Quoting '\"')
+  pure . TySynD (mkName rowTypeName) [] <$> (runIO (readColHeaders tzString opts csvFile) >>= recDec')
   where recDec' = recDec . map (second colType) :: [(T.Text, a)] -> Q Type
         colNames' | null columnNames = Nothing
                   | otherwise = Just (map T.pack columnNames)
-        tz = error "not yet implemented"
-        opts = ParserOptions colNames' tz separator (RFC4180Quoting '\"')
 
 -- | Generate a type for a row of a table all of whose columns remain
 -- unparsed 'Text' values.
