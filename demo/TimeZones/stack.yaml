@@ -1,0 +1,13 @@
+resolver: lts-7.0
+
+packages:
+- '.'
+- /Users/acowley/src/intero
+extra-deps:
+- tz-0.1.2.0
+
+# Override default flag values for local packages and extra-deps
+flags: {}
+
+# Extra package databases containing global packages
+extra-package-dbs: []

@@ -1,6 +1,6 @@
 /.cabal-sandbox/
 /TAGS
-/cabal.config 
+/cabal.config
 /cabal.sandbox.config
 /dist/
 /src/TAGS
@@ -26,3 +26,4 @@
 /data/ex1data2.txt
 /data/prestige.csv
 /plotPrestige.png
+.stack-work
