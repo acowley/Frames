@@ -424,7 +424,7 @@ tableTypes' (RowGen {..}) csvFile =
                       h:t -> mkName $ toLower h : t ++ "Parser"
      optsTy <- sigD optsName [t|ParserOptions|]
      optsDec <- valD (varP optsName) (normalB $ lift opts) []
-     colDecs <- concat <$> mapM (uncurry $ colDec (T.pack tablePrefix)) headers
+     colDecs <- concat <$> mapM (uncurry mkColDecs) headers
      return (recTy : optsTy : optsDec : colDecs)
      -- (:) <$> (tySynD (mkName n) [] (recDec' headers))
      --     <*> (concat <$> mapM (uncurry $ colDec (T.pack prefix)) headers)
@@ -432,3 +432,8 @@ tableTypes' (RowGen {..}) csvFile =
         colNames' | null columnNames = Nothing
                   | otherwise = Just (map T.pack columnNames)
         opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
+        mkColDecs colNm colTy = do
+                      mColNm <- lookupTypeName (T.unpack . sanitizeTypeName $ colNm)
+                      case mColNm of
+                        Just _ -> pure []
+                        Nothing -> colDec (T.pack tablePrefix) colNm colTy
