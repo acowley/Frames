@@ -409,6 +409,41 @@ tableTypesText' (RowGen {..}) csvFile =
                   | otherwise = Just (map T.pack columnNames)
         opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
 
+mkStrmBdy :: String -> String -> DecQ
+mkStrmBdy name csvfile = do
+  -- TODO conditionally make Producer also
+  -- TODO LOL fix this kludge
+  let lowerSanitizeTypeName = T.pack . (\(x:xs) -> toLower x : xs) . T.unpack . sanitizeTypeName
+  let name' = (T.unpack (lowerSanitizeTypeName (T.pack name))) ++ "Stream"
+  let parserName = (T.unpack (lowerSanitizeTypeName (T.pack name))) ++ "Parser"
+  -- make pipes stream
+
+  -- x = 1
+  -- [ValD (VarP x_0) (NormalB (LitE (IntegerL 1))) []]
+  let body = (NormalB (LitE (IntegerL 1)))
+
+  -- TODO make the real body
+  -- λ> runQ [|readTableOpt aParser "a.csv"|]
+  -- AppE (AppE (VarE Frames.CSV.readTableOpt) (VarE TestThing.aParser)) (LitE (StringL "a.csv"))
+
+  mReadTableOptName <- lookupValueName "readTableOpt"
+  -- TODO parserName isn't in scope yet, this is part of the chain that generates it... FIX BUG
+  mParserName <- lookupValueName parserName
+
+  case mReadTableOptName of
+    Just readTableOptName -> do
+      case mParserName of
+        Just parserName' -> do
+          let body' = AppE (AppE (VarE readTableOptName) (VarE parserName')) (LitE (StringL csvfile))
+          pure $ ValD (VarP (mkName name')) body []
+        Nothing -> error $ "failed to find parserName: '" ++ parserName ++ "'"
+    Nothing -> error $ "failed to find readTableOptName: '" ++ "readTableOpt" ++ "'"
+
+  -- -- make "something.csv part"
+  -- -- LitE (StringL "a.csv")
+
+  -- undefined
+
 -- | Like 'tableType'', but additionally generates a type synonym for
 -- each column, and a proxy value of that type. If the CSV file has
 -- column names \"foo\", \"bar\", and \"baz\", then this will declare
@@ -419,13 +454,16 @@ tableTypes' :: forall a. (ColumnTypeable a, Monoid a)
 tableTypes' (RowGen {..}) csvFile =
   do headers <- runIO $ readColHeaders opts csvFile
      recTy <- tySynD (mkName rowTypeName) [] (recDec' headers)
+     strmBdy <- mkStrmBdy rowTypeName csvFile
+     -- strmRecTy <- tySynD (mkName rowTypeName) [] undefined
      let optsName = case rowTypeName of
                       [] -> error "Row type name shouldn't be empty"
                       h:t -> mkName $ toLower h : t ++ "Parser"
      optsTy <- sigD optsName [t|ParserOptions|]
      optsDec <- valD (varP optsName) (normalB $ lift opts) []
      colDecs <- concat <$> mapM (uncurry mkColDecs) headers
-     return (recTy : optsTy : optsDec : colDecs)
+     -- return (recTy : optsTy : optsDec : (colDecs :: [Dec]))
+     return (recTy : optsTy : optsDec : (strmBdy :: Dec) : colDecs)
      -- (:) <$> (tySynD (mkName n) [] (recDec' headers))
      --     <*> (concat <$> mapM (uncurry $ colDec (T.pack prefix)) headers)
   where recDec' = recDec . map (second colType) :: [(T.Text, a)] -> Q Type
