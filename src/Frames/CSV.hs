@@ -27,7 +27,7 @@ import Control.Arrow (first, second)
 import Control.Monad (MonadPlus(..), when, void)
 import Control.Monad.IO.Class
 import Data.Char (isAlpha, isAlphaNum, toLower, toUpper)
-import Data.Maybe (isNothing)
+import Data.Maybe (isNothing, fromMaybe)
 import Data.Monoid ((<>))
 import Data.Proxy
 import qualified Data.Text as T
@@ -271,7 +271,8 @@ sanitizeTypeName = unreserved . fixupStart
 mkColTDec :: TypeQ -> Name -> DecQ
 mkColTDec colTypeQ colTName = tySynD colTName [] colTypeQ
 
--- | Declare a singleton value of the given column type.
+-- | Declare a singleton value of the given column type and lenses for
+-- working with that column.
 mkColPDec :: Name -> TypeQ -> T.Text -> DecsQ
 mkColPDec colTName colTy colPName = sequenceA [tySig, val, tySig', val']
   where nm = mkName $ T.unpack colPName
@@ -296,15 +297,17 @@ mkColPDec colTName colTy colPName = sequenceA [tySig, val, tySig', val']
                     (normalB [e|rlens' (Proxy :: Proxy $(conT colTName))|])
                     []
 
+lowerHead :: T.Text -> Maybe T.Text
+lowerHead = fmap aux . T.uncons
+  where aux (c,t) = T.cons (toLower c) t
+
 -- | For each column, we declare a type synonym for its type, and a
 -- Proxy value of that type.
 colDec :: ColumnTypeable a => T.Text -> T.Text -> a -> DecsQ
 colDec prefix colName colTy = (:) <$> mkColTDec colTypeQ colTName'
                                   <*> mkColPDec colTName' colTyQ colPName
   where colTName = sanitizeTypeName (prefix <> colName)
-        colPName = maybe "colDec impossible"
-                         (\(c,t) -> T.cons (toLower c) t)
-                         (T.uncons colTName)
+        colPName = fromMaybe "colDec impossible" (lowerHead colTName)
         colTName' = mkName $ T.unpack colTName
         colTyQ = colType colTy
         colTypeQ = [t|$(litT . strTyLit $ T.unpack colName) :-> $colTyQ|]
@@ -433,7 +436,8 @@ tableTypes' (RowGen {..}) csvFile =
                   | otherwise = Just (map T.pack columnNames)
         opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
         mkColDecs colNm colTy = do
-                      mColNm <- lookupTypeName (T.unpack . sanitizeTypeName $ colNm)
-                      case mColNm of
-                        Just _ -> pure []
-                        Nothing -> colDec (T.pack tablePrefix) colNm colTy
+          let safeName = tablePrefix ++ (T.unpack . sanitizeTypeName $ colNm)
+          mColNm <- lookupTypeName safeName
+          case mColNm of
+            Just _ -> pure []
+            Nothing -> colDec (T.pack tablePrefix) colNm colTy
