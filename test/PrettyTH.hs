@@ -9,11 +9,11 @@ import Text.Regex.Applicative
 
 import Temp
 
-generateCode :: String -> Q Exp
-generateCode txt =
+generateCode :: String -> String -> Q Exp
+generateCode rowName txt =
     withTempContents
       txt
-      (\fp -> tableTypes "row" fp
+      (\fp -> tableTypes rowName fp
               >>= stringE
               . makePretty
               . renderStyle (style {ribbonsPerLine=1.0, lineLength=150})
@@ -45,13 +45,16 @@ makePretty = -- Add new lines before type synonym definitions
              . replace' "Frames.RecLens." ""
              . replace' "Data.Proxy." ""
              . replace' "Data.Text." "T."
+             . replace' "Data.Text.Internal." "T."
              . replace' "'GHC.Types.:" "(':)"
   where replace' orig replacement = replace (replacement <$ string orig)
         infixCol = (\x y -> '"' : x ++ "\" :-> " ++ y)
-                   <$> ("Frames.Col.:-> \"" *> (some (psym (/= '"'))) <* "\" ")
+                   <$> ("Frames.Col.:-> \"" *> (some (psym (/= '"'))) <* "\"" 
+                        <* some (psym isSpace))
                    <*> some (psym (/= ' '))
         infixNil = (\x -> '[' : x ++ "]")
-                   <$> ("((':) (" *> some (psym (/= ')')) <* ") '[])")
+                   <$> ("((':) (" *> some (psym (/= ')')) <* ")" 
+                        <* some (psym isSpace) <* "'[])")
         infixCons = (\x y -> '[' : x ++ ", " ++ y ++ "]")
                     <$> ("((':) (" *> some (psym (/= ')')) <* ")"
                          <* some (psym isSpace) <* "[")

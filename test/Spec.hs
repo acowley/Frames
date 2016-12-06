@@ -1,5 +1,6 @@
 {-# LANGUAGE CPP, TemplateHaskell, QuasiQuotes #-}
 module Main (manualGeneration, main) where
+import Data.List (find)
 import Data.Monoid (First(..))
 import Language.Haskell.TH
 import Test.Hspec hiding (runIO)
@@ -12,8 +13,20 @@ import PrettyTH
 csvTests :: [(CsvExample, String)]
 csvTests = $(do csvExamples <- runIO (examplesFrom "test/examples.toml")
                 ListE <$> mapM (\x@(CsvExample _ c _) -> 
-                                  [e|(x,$(generateCode c))|])
+                                  [e|(x,$(generateCode "Row" c))|])
                                csvExamples)
+
+-- | Detect type-compatible re-used names and do not attempt to
+-- re-generate definitions for them.
+overlappingGeneration :: String
+overlappingGeneration =
+  $(do csvExamples <- runIO (examplesFrom "test/examples.toml")
+       let Just (CsvExample _ managers _) = 
+             find (\(CsvExample k _ _) -> k == "managers") csvExamples
+           Just (CsvExample _ employees _) = 
+             find (\(CsvExample k _ _) -> k == "employees") csvExamples
+       [e|$(generateCode "ManagerRec" managers) ++ "\n\n" ++ 
+          $(generateCode "EmployeeRec" employees)|])
 
 -- | To generate example generated code from raw CSV data, add the csv
 -- to @examples.toml@ and set the @generated@ key to an empty
@@ -26,7 +39,7 @@ csvTests = $(do csvExamples <- runIO (examplesFrom "test/examples.toml")
 manualGeneration :: String -> Q Exp
 manualGeneration k = do csvExamples <- runIO (examplesFrom "test/examples.toml")
                         maybe (error ("Table " ++ k ++ " not found")) 
-                              generateCode 
+                              (generateCode "Row") 
                               (getFirst $ foldMap aux csvExamples)
   where aux :: CsvExample -> First String
         aux (CsvExample k' c _) = if k == k' then pure c else mempty
