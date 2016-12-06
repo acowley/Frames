@@ -198,5 +198,4 @@ test-suite overlap
   hs-source-dirs:      test
   main-is:             Overlap.hs
   build-depends:       base, Frames
-  ghc-options:         -Wall -Wno-unused-top-binds
   default-language:    Haskell2010
