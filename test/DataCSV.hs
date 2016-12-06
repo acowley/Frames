@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, DeriveLift #-}
+{-# LANGUAGE OverloadedStrings, TemplateHaskell #-}
 module DataCSV where
 import Control.Monad ((>=>))
 import Data.Bifunctor (first)
@@ -6,7 +6,7 @@ import qualified Data.HashMap.Lazy as H
 import Data.Maybe (catMaybes)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
-import Language.Haskell.TH.Syntax (Lift)
+import Language.Haskell.TH.Syntax (Lift(..))
 import Text.Toml
 import Text.Toml.Types (Node (VTable, VString), Table)
 
@@ -21,7 +21,9 @@ employeesCsv = "id,employee,age,pay,manager_id\n\
                 \3,Tom,25,\"40,000\",1"
 
 data CsvExample = CsvExample { name :: String, csv :: String, generated :: String }
-     deriving Lift
+
+instance Lift CsvExample where
+  lift (CsvExample n c g) = [e| CsvExample n c g |]
 
 examplesFrom :: FilePath -> IO [CsvExample]
 examplesFrom fp = (either error id . ((first show . parseTomlDoc "examples") >=> go))
@@ -29,7 +31,7 @@ examplesFrom fp = (either error id . ((first show . parseTomlDoc "examples") >=>
   where go :: Table -> Either String [CsvExample]
         go = fmap catMaybes . mapM (uncurry ex . first T.unpack) . H.toList
         ex :: String -> Node -> Either String (Maybe CsvExample)
-        ex k (VTable v) = 
+        ex k (VTable v) =
           do c <- case H.lookup "csv" v of
                     Nothing -> Right Nothing -- ("No csv key in "++k)
                     Just (VString c) -> Right (Just (T.unpack c))
@@ -42,7 +44,7 @@ examplesFrom fp = (either error id . ((first show . parseTomlDoc "examples") >=>
         ex k _ = Left (k ++ " is not a table")
 
 generatedFrom :: FilePath -> String -> IO String
-generatedFrom fp key = (either error id . (>>= go) 
+generatedFrom fp key = (either error id . (>>= go)
                         . first show . parseTomlDoc "examples")
                        <$> T.readFile fp
   where go :: Table -> Either String String
