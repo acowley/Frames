@@ -2,8 +2,8 @@
 module Main (manualGeneration, main) where
 import Data.List (find)
 import Data.Monoid (First(..))
-import Language.Haskell.TH
-import Test.Hspec hiding (runIO)
+import Language.Haskell.TH as TH
+import Test.Hspec as H
 import Frames
 import DataCSV
 import PrettyTH
@@ -11,7 +11,7 @@ import PrettyTH
 -- | Extract all example @(CSV, generatedCode)@ pairs from
 -- @test/examples.toml@
 csvTests :: [(CsvExample, String)]
-csvTests = $(do csvExamples <- runIO (examplesFrom "test/examples.toml")
+csvTests = $(do csvExamples <- TH.runIO (examplesFrom "test/examples.toml")
                 ListE <$> mapM (\x@(CsvExample _ c _) -> 
                                   [e|(x,$(generateCode "Row" c))|])
                                csvExamples)
@@ -20,7 +20,7 @@ csvTests = $(do csvExamples <- runIO (examplesFrom "test/examples.toml")
 -- re-generate definitions for them.
 overlappingGeneration :: String
 overlappingGeneration =
-  $(do csvExamples <- runIO (examplesFrom "test/examples.toml")
+  $(do csvExamples <- TH.runIO (examplesFrom "test/examples.toml")
        let Just (CsvExample _ managers _) = 
              find (\(CsvExample k _ _) -> k == "managers") csvExamples
            Just (CsvExample _ employees _) = 
@@ -37,7 +37,7 @@ overlappingGeneration =
 -- Note that to load this file into a REPL may require some fiddling
 -- with the path to the examples file in the 'csvTests' splice above.
 manualGeneration :: String -> Q Exp
-manualGeneration k = do csvExamples <- runIO (examplesFrom "test/examples.toml")
+manualGeneration k = do csvExamples <- TH.runIO (examplesFrom "test/examples.toml")
                         maybe (error ("Table " ++ k ++ " not found")) 
                               (generateCode "Row") 
                               (getFirst $ foldMap aux csvExamples)
@@ -49,3 +49,8 @@ main = do
   hspec $
     do describe "Haskell type generation" $ 
          mapM_ (\(CsvExample k _ g, g') -> it k (g' `shouldBe` g)) csvTests
+       describe "Multiple tables" $
+          do g <- H.runIO $ 
+                  generatedFrom "test/examples.toml" "managers_employees"
+             it "Shouldn't duplicate columns" 
+                (overlappingGeneration `shouldBe` g)

@@ -6,13 +6,13 @@ id,manager,age,pay
 """
 
 generated = """
-type Row = Record ["id" :-> Bool, "manager" :-> T.Text, "age" :-> Int, "pay" :-> Double]
+type Row = Record ["id" :-> Int, "manager" :-> T.Text, "age" :-> Int, "pay" :-> Double]
 rowParser :: ParserOptions
 rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
 
-type Id = "id" :-> Bool
+type Id = "id" :-> Int
 id :: forall f_0 rs_1 . (Functor f_0, Id ∈ rs_1) =>
-                        (Bool -> f_0 Bool) -> Record rs_1 -> f_0 (Record rs_1)
+                        (Int -> f_0 Int) -> Record rs_1 -> f_0 (Record rs_1)
 id = rlens (Proxy :: Proxy Id)
 id' :: forall f_2 g_3 rs_4 . (Functor f_2, Functor g_3, Id ∈ rs_4) =>
                              (g_3 Id -> f_2 (g_3 Id)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
@@ -111,13 +111,13 @@ managerId' = rlens' (Proxy :: Proxy ManagerId)"""
 
 [managers_employees]
 generated = """
-type ManagerRec = Record ["id" :-> Bool, "manager" :-> T.Text, "age" :-> Int, "pay" :-> Double]
+type ManagerRec = Record ["id" :-> Int, "manager" :-> T.Text, "age" :-> Int, "pay" :-> Double]
 managerRecParser :: ParserOptions
 managerRecParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
 
-type Id = "id" :-> Bool
+type Id = "id" :-> Int
 id :: forall f_0 rs_1 . (Functor f_0, Id ∈ rs_1) =>
-                        (Bool -> f_0 Bool) -> Record rs_1 -> f_0 (Record rs_1)
+                        (Int -> f_0 Bool) -> Record rs_1 -> f_0 (Record rs_1)
 id = rlens (Proxy :: Proxy Id)
 id' :: forall f_2 g_3 rs_4 . (Functor f_2, Functor g_3, Id ∈ rs_4) =>
                              (g_3 Id -> f_2 (g_3 Id)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)

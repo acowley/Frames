@@ -40,3 +40,16 @@ examplesFrom fp = (either error id . ((first show . parseTomlDoc "examples") >=>
                     Just _ -> Left ("generated key not a string in " ++ k)
              return (CsvExample k <$> c <*> g)
         ex k _ = Left (k ++ " is not a table")
+
+generatedFrom :: FilePath -> String -> IO String
+generatedFrom fp key = (either error id . (>>= go) 
+                        . first show . parseTomlDoc "examples")
+                       <$> T.readFile fp
+  where go :: Table -> Either String String
+        go toml = do tbl <- case H.lookup (T.pack key) toml of
+                              Just (VTable t) -> Right t
+                              _ -> Left (key ++ " is not a table")
+                     case H.lookup "generated" tbl of
+                       Just (VString g) -> Right (T.unpack g)
+                       Just _ -> Left ("generated key not a string in " ++ key)
+                       Nothing -> Left ("No generated key in " ++ key)
