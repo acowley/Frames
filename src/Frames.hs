@@ -18,6 +18,7 @@ module Frames
   , module Frames.RecLens
   , module Frames.TypeLevel
   , Text
+  , ZonedTime
   ) where
 import Data.Text (Text)
 import Data.Vinyl ((<+>))
@@ -36,3 +37,4 @@ import Frames.Rec (Record, RecordColumns, (&:), recUncons, recMaybe, showFields)
 import Frames.RecF
 import Frames.RecLens
 import Frames.TypeLevel
+import Data.Time

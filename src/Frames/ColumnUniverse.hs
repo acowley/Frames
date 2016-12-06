@@ -34,6 +34,7 @@ import Frames.RecF (reifyDict)
 import Frames.TypeLevel (LAll)
 import Data.Typeable (TypeRep)
 import Data.Maybe (fromMaybe)
+import Data.Time
 
 -- * TypeRep Helpers
 
@@ -55,23 +56,23 @@ quoteType x = do n <- lookupTypeName s
 -- | Extract a function to test whether some value of a given type
 -- could be read from some 'T.Text'.
 inferParseable :: forall a. Parseable a
-               => T.Text -> (Maybe :. (Parsed :. Proxy)) a
-inferParseable = Compose
+               => String -> T.Text -> (Maybe :. (Parsed :. Proxy)) a
+inferParseable tzString = Compose
                . fmap (Compose . fmap (const Proxy))
-               . (parse :: T.Text -> Maybe (Parsed a))
+               . (parse tzString :: T.Text -> Maybe (Parsed a))
 
 -- | Helper to call 'inferParseable' on variants of a 'CoRec'.
 inferParseable' :: Parseable a
-                => (((->) T.Text) :. (Maybe :. (Parsed :. Proxy))) a
-inferParseable' = Compose inferParseable
+                => String -> (((->) T.Text) :. (Maybe :. (Parsed :. Proxy))) a
+inferParseable' tzString = Compose (inferParseable tzString)
 
 -- * Record Helpers
 
 tryParseAll :: forall ts. (RecApplicative ts, LAll Parseable ts)
-            => T.Text -> Rec (Maybe :. (Parsed :. Proxy)) ts
-tryParseAll = rtraverse getCompose funs
+            => String -> T.Text -> Rec (Maybe :. (Parsed :. Proxy)) ts
+tryParseAll tzString = rtraverse getCompose funs
   where funs :: Rec (((->) T.Text) :. (Maybe :. (Parsed :. Proxy))) ts
-        funs = reifyDict (Proxy::Proxy Parseable) inferParseable'
+        funs = reifyDict (Proxy::Proxy Parseable) (inferParseable' tzString)
 
 -- | Preserving the outermost two functor layers, replace each element with
 -- its TypeRep.
@@ -113,10 +114,12 @@ lubTypeReps (Definitely trX) (Definitely trY)
   | trX == trDbl && trY == trInt = Just GT
   | trX == trBool && trY == trInt = Just LT
   | trX == trInt && trY == trBool = Just GT
+  -- | trX == trZoneTime && trY == trZoneTime = Just GT
   | otherwise = Nothing
   where trInt = typeRep (Proxy :: Proxy Int)
         trDbl = typeRep (Proxy :: Proxy Double)
         trBool = typeRep (Proxy :: Proxy Bool)
+        -- trZoneTime = typeRep (Proxy :: Proxy ZonedTime)
 
 instance (T.Text ∈ ts) => Monoid (CoRec ColInfo ts) where
   mempty = Col (ColInfo ([t|T.Text|], Possibly mkTyped) :: ColInfo T.Text)
@@ -132,12 +135,12 @@ instance (T.Text ∈ ts) => Monoid (CoRec ColInfo ts) where
 bestRep :: forall ts.
            (LAll Parseable ts, LAll Typeable ts, FoldRec ts ts,
             RecApplicative ts, T.Text ∈ ts)
-        => T.Text -> CoRec ColInfo ts
-bestRep = aux
+        => String -> T.Text -> CoRec ColInfo ts
+bestRep tzString = aux
         . fromMaybe (Col (Compose $ Possibly (mkTyped :: Typed T.Text)))
         . firstField
         . elementTypes
-        . (tryParseAll :: T.Text -> Rec (Maybe :. (Parsed :. Proxy)) ts)
+        . ((tryParseAll tzString) :: T.Text -> Rec (Maybe :. (Parsed :. Proxy)) ts)
   where aux :: CoRec (Parsed :. Typed) ts -> CoRec ColInfo ts
         aux (Col (Compose d@(Possibly (Const tr)))) =
           Col (ColInfo (quoteType tr, d))
@@ -150,13 +153,13 @@ instance (LAll Parseable ts, LAll Typeable ts, FoldRec ts ts,
     ColumnTypeable (CoRec ColInfo ts) where
   colType (Col (ColInfo (t, _))) = t
   {-# INLINE colType #-}
-  inferType = bestRep
+  inferType tzString = (bestRep tzString)
   {-# INLINABLE inferType #-}
 
 -- * Common Columns
 
 -- | Common column types
-type CommonColumns = [Bool, Int, Double, T.Text]
+type CommonColumns = [ZonedTime, Bool, Int, Double, T.Text]
 
 -- | Define a set of variants that captures all possible column types.
 type ColumnUniverse = CoRec ColInfo
