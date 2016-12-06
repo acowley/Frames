@@ -3,6 +3,7 @@ module Main (manualGeneration, main) where
 import Data.List (find)
 import Data.Monoid (First(..))
 import Language.Haskell.TH as TH
+import Language.Haskell.TH.Syntax (addDependentFile)
 import Test.Hspec as H
 import Frames
 import DataCSV
@@ -11,22 +12,27 @@ import PrettyTH
 -- | Extract all example @(CSV, generatedCode)@ pairs from
 -- @test/examples.toml@
 csvTests :: [(CsvExample, String)]
-csvTests = $(do csvExamples <- TH.runIO (examplesFrom "test/examples.toml")
+csvTests = $(do addDependentFile "test/examples.toml"
+                csvExamples <- TH.runIO (examplesFrom "test/examples.toml")
                 ListE <$> mapM (\x@(CsvExample _ c _) -> 
                                   [e|(x,$(generateCode "Row" c))|])
                                csvExamples)
 
 -- | Detect type-compatible re-used names and do not attempt to
--- re-generate definitions for them.
+-- re-generate definitions for them. This does not do the right thing
+-- since the generated declarations are never turned into actual
+-- declarations, they do not affect the `lookupTypeName` call that is
+-- designed to prevent duplicate declarations.
 overlappingGeneration :: String
-overlappingGeneration =
-  $(do csvExamples <- TH.runIO (examplesFrom "test/examples.toml")
-       let Just (CsvExample _ managers _) = 
-             find (\(CsvExample k _ _) -> k == "managers") csvExamples
-           Just (CsvExample _ employees _) = 
-             find (\(CsvExample k _ _) -> k == "employees") csvExamples
-       [e|$(generateCode "ManagerRec" managers) ++ "\n\n" ++ 
-          $(generateCode "EmployeeRec" employees)|])
+overlappingGeneration = m ++ "\n\n" ++ e
+  where m = $(do csvExamples <- TH.runIO (examplesFrom "test/examples.toml")
+                 let Just (CsvExample _ managers _) = 
+                       find (\(CsvExample k _ _) -> k == "managers") csvExamples
+                 generateCode "ManagerRec" managers)
+        e = $(do csvExamples <- TH.runIO (examplesFrom "test/examples.toml")
+                 let Just (CsvExample _ employees _) = 
+                       find (\(CsvExample k _ _) -> k == "employees") csvExamples
+                 generateCode "EmployeeRec" employees)
 
 -- | To generate example generated code from raw CSV data, add the csv
 -- to @examples.toml@ and set the @generated@ key to an empty
@@ -52,5 +58,4 @@ main = do
        describe "Multiple tables" $
           do g <- H.runIO $ 
                   generatedFrom "test/examples.toml" "managers_employees"
-             it "Shouldn't duplicate columns" 
-                (overlappingGeneration `shouldBe` g)
+             it "Shouldn't duplicate columns" pending
