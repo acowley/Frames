@@ -24,6 +24,7 @@ import Frames.Col
 import Frames.Frame
 import Frames.Rec
 import Frames.RecF
+import Data.Time
 #if __GLASGOW_HASKELL__ < 800
 import GHC.Prim (RealWorld)
 #endif
@@ -38,6 +39,7 @@ type instance VectorFor Float = VU.Vector
 type instance VectorFor Double = VU.Vector
 type instance VectorFor String = VB.Vector
 type instance VectorFor Text = VB.Vector
+type instance VectorFor ZonedTime = VB.Vector
 
 -- | The mutable version of 'VectorFor' a particular type.
 type VectorMFor a = VG.Mutable (VectorFor a)
