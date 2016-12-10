@@ -35,6 +35,7 @@ import qualified Data.Text.IO as T
 import Data.Vinyl (RElem, Rec)
 import Data.Vinyl.TypeLevel (RIndex)
 import Frames.Col
+import Frames.CoRec
 import Frames.ColumnTypeable
 import Frames.ColumnUniverse
 import Frames.Rec
@@ -145,10 +146,9 @@ reassembleRFC4180QuotedParts sep quoteChar = finish . foldr f ([], Nothing)
 -- | Infer column types from a prefix (up to 1000 lines) of a CSV
 -- file.
 prefixInference :: (ColumnTypeable a, Monoid a)
-                => ParserOptions -> Handle -> IO [a]
-prefixInference opts h = T.hGetLine h >>= go prefixSize . inferCols
-  where prefixSize = 1000 :: Int
-        inferCols = map inferType . tokenizeRow opts
+                => ParserOptions -> Handle -> Int -> IO [a]
+prefixInference opts h inferenceLimit = T.hGetLine h >>= go inferenceLimit . inferCols
+  where inferCols = map inferType . tokenizeRow opts
         go 0 ts = return ts
         go !n ts =
           hIsEOF h >>= \case
@@ -157,12 +157,12 @@ prefixInference opts h = T.hGetLine h >>= go prefixSize . inferCols
 
 -- | Extract column names and inferred types from a CSV file.
 readColHeaders :: (ColumnTypeable a, Monoid a)
-               => ParserOptions -> FilePath -> IO [(T.Text, a)]
-readColHeaders opts f =  withFile f ReadMode $ \h ->
+               => ParserOptions -> FilePath -> Int -> IO [(T.Text, a)]
+readColHeaders opts f inferenceLimit =  withFile f ReadMode $ \h ->
                          zip <$> maybe (tokenizeRow opts <$> T.hGetLine h)
                                        pure
                                        (headerOverride opts)
-                             <*> prefixInference opts h
+                             <*> prefixInference opts h inferenceLimit
 
 -- * Loading Data
 
@@ -372,7 +372,7 @@ tableType n = tableType' rowGen { rowTypeName = n }
 -- @type Foo = "foo" :-> Int@, for example, @foo = rlens (Proxy :: Proxy
 -- Foo)@, and @foo' = rlens' (Proxy :: Proxy Foo)@.
 tableTypes :: String -> FilePath -> DecsQ
-tableTypes n = tableTypes' rowGen { rowTypeName = n }
+tableTypes n fp = tableTypes' (rowGen { rowTypeName = n }) fp 1000 
 
 -- * Customized Data Set Parsing
 
@@ -383,7 +383,7 @@ tableType' :: forall a. (ColumnTypeable a, Monoid a)
            => RowGen a -> FilePath -> DecsQ
 tableType' (RowGen {..}) csvFile =
     pure . TySynD (mkName rowTypeName) [] <$>
-    (runIO (readColHeaders opts csvFile) >>= recDec')
+    (runIO (readColHeaders opts csvFile 1000) >>= recDec')
   where recDec' = recDec . map (second colType) :: [(T.Text, a)] -> Q Type
         colNames' | null columnNames = Nothing
                   | otherwise = Just (map T.pack columnNames)
@@ -418,9 +418,9 @@ tableTypesText' (RowGen {..}) csvFile =
 -- @type Foo = "foo" :-> Int@, for example, @foo = rlens (Proxy ::
 -- Proxy Foo)@, and @foo' = rlens' (Proxy :: Proxy Foo)@.
 tableTypes' :: forall a. (ColumnTypeable a, Monoid a)
-            => RowGen a -> FilePath -> DecsQ
-tableTypes' (RowGen {..}) csvFile =
-  do headers <- runIO $ readColHeaders opts csvFile
+            => RowGen a -> FilePath -> Int -> DecsQ
+tableTypes' (RowGen {..}) csvFile inferenceLimit =
+  do headers <- runIO $ readColHeaders opts csvFile inferenceLimit
      recTy <- tySynD (mkName rowTypeName) [] (recDec' headers)
      let optsName = case rowTypeName of
                       [] -> error "Row type name shouldn't be empty"
