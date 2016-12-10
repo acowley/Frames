@@ -18,7 +18,8 @@
              TypeOperators,
              UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Frames.ColumnUniverse (CoRec, Columns, ColumnUniverse, CommonColumns) where
+module Frames.ColumnUniverse (CoRec, Columns, ColumnUniverse, CommonColumns, 
+                              parsedTypeRep) where
 import Language.Haskell.TH
 #if __GLASGOW_HASKELL__ < 800
 import Data.Monoid
@@ -88,6 +89,9 @@ elementTypes (Compose x :& xs) =
 -- types.
 newtype ColInfo a = ColInfo (Q Type, Parsed (Typed a))
 
+parsedTypeRep :: ColInfo a -> Parsed TypeRep
+parsedTypeRep (ColInfo (_,p)) = fmap getConst p
+
 -- | We use a join semi-lattice on types for representations. The
 -- bottom of the lattice is effectively an error (we have nothing to
 -- represent), @Bool < Int@, @Int < Double@, and @forall n. n <= Text@.
@@ -109,10 +113,12 @@ lubTypeReps (Possibly trX) (Possibly trY)
   | otherwise = Nothing
 lubTypeReps (Definitely trX) (Definitely trY)
   | trX == trY = Just EQ
-  | trX == trInt && trY == trDbl = Just LT
-  | trX == trDbl && trY == trInt = Just GT
+  | trX == trInt  && trY == trDbl = Just LT
+  | trX == trDbl  && trY == trInt = Just GT
   | trX == trBool && trY == trInt = Just LT
-  | trX == trInt && trY == trBool = Just GT
+  | trX == trInt  && trY == trBool = Just GT
+  | trX == trBool && trY == trDbl = Just LT
+  | trX == trDbl  && trY == trBool = Just GT
   | otherwise = Nothing
   where trInt = typeRep (Proxy :: Proxy Int)
         trDbl = typeRep (Proxy :: Proxy Double)

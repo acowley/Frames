@@ -38,6 +38,9 @@ import Data.Kind (Constraint)
 data CoRec :: (* -> *) -> [*] -> * where
   Col :: RElem a ts (RIndex a ts) => !(f a) -> CoRec f ts
 
+foldCoRec :: (forall a. RElem a ts (RIndex a ts) => f a -> b) -> CoRec f ts -> b
+foldCoRec f (Col x) = f x
+
 -- | A Field of a 'Record' is a 'CoRec Identity'.
 type Field = CoRec Identity
 
@@ -72,7 +75,6 @@ instance forall ts. (RecAll Maybe ts Eq, RecApplicative ts)
 zipRecsWith :: (forall a. f a -> g a -> h a) -> Rec f as -> Rec g as -> Rec h as
 zipRecsWith _ RNil      _         = RNil
 zipRecsWith f (r :& rs) (s :& ss) = f r s :& zipRecsWith f rs ss
-
 
 -- | Remove a 'Dict' wrapper from a value.
 dictId :: Dict c a -> Identity a

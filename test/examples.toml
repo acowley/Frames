@@ -180,3 +180,47 @@ managerId' :: forall f_22 g_23 rs_24 . (Functor f_22,
                                        Rec g_23 rs_24 -> f_22 (Rec g_23 rs_24)
 managerId' = rlens' (Proxy :: Proxy ManagerId)
 """
+
+[double_gt_bool]
+csv = """
+col_a,col_b,col_c
+1,9,"1,000,000.00"
+2,8,"300,000.00"
+3,7,"0"
+4,6,0
+"""
+
+generated = """
+type Row = Record ["col_a" :-> Int, "col_b" :-> Int, "col_c" :-> Double]
+rowParser :: ParserOptions
+rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
+
+type ColA = "col_a" :-> Int
+colA :: forall f_0 rs_1 . (Functor f_0, ColA ∈ rs_1) =>
+                          (Int -> f_0 Int) -> Record rs_1 -> f_0 (Record rs_1)
+colA = rlens (Proxy :: Proxy ColA)
+colA' :: forall f_2 g_3 rs_4 . (Functor f_2,
+                                Functor g_3,
+                                ColA ∈ rs_4) =>
+                               (g_3 ColA -> f_2 (g_3 ColA)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
+colA' = rlens' (Proxy :: Proxy ColA)
+
+type ColB = "col_b" :-> Int
+colB :: forall f_5 rs_6 . (Functor f_5, ColB ∈ rs_6) =>
+                          (Int -> f_5 Int) -> Record rs_6 -> f_5 (Record rs_6)
+colB = rlens (Proxy :: Proxy ColB)
+colB' :: forall f_7 g_8 rs_9 . (Functor f_7,
+                                Functor g_8,
+                                ColB ∈ rs_9) =>
+                               (g_8 ColB -> f_7 (g_8 ColB)) -> Rec g_8 rs_9 -> f_7 (Rec g_8 rs_9)
+colB' = rlens' (Proxy :: Proxy ColB)
+
+type ColC = "col_c" :-> Double
+colC :: forall f_10 rs_11 . (Functor f_10, ColC ∈ rs_11) =>
+                            (Double -> f_10 Double) -> Record rs_11 -> f_10 (Record rs_11)
+colC = rlens (Proxy :: Proxy ColC)
+colC' :: forall f_12 g_13 rs_14 . (Functor f_12,
+                                   Functor g_13,
+                                   ColC ∈ rs_14) =>
+                                  (g_13 ColC -> f_12 (g_13 ColC)) -> Rec g_13 rs_14 -> f_12 (Rec g_13 rs_14)
+colC' = rlens' (Proxy :: Proxy ColC)"""
