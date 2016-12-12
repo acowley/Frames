@@ -224,3 +224,28 @@ colC' :: forall f_12 g_13 rs_14 . (Functor f_12,
                                    ColC ∈ rs_14) =>
                                   (g_13 ColC -> f_12 (g_13 ColC)) -> Rec g_13 rs_14 -> f_12 (Rec g_13 rs_14)
 colC' = rlens' (Proxy :: Proxy ColC)"""
+
+[text_gt_bool]
+csv = """
+col_a
+"0"
+"0"
+"0"
+"0"
+A
+"""
+
+generated = """
+type Row = Record ["col_a" :-> T.Text]
+rowParser :: ParserOptions
+rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
+
+type ColA = "col_a" :-> T.Text
+colA :: forall f_0 rs_1 . (Functor f_0, ColA ∈ rs_1) =>
+                          (T.Text -> f_0 T.Text) -> Record rs_1 -> f_0 (Record rs_1)
+colA = rlens (Proxy :: Proxy ColA)
+colA' :: forall f_2 g_3 rs_4 . (Functor f_2,
+                                Functor g_3,
+                                ColA ∈ rs_4) =>
+                               (g_3 ColA -> f_2 (g_3 ColA)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
+colA' = rlens' (Proxy :: Proxy ColA)"""
