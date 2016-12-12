@@ -30,6 +30,7 @@ import Data.Char (isAlpha, isAlphaNum, toLower, toUpper)
 import Data.Maybe (isNothing, fromMaybe)
 import Data.Monoid ((<>))
 import Data.Proxy
+import Data.Typeable (Typeable, showsTypeRep, typeRep)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Vinyl (RElem, Rec)
@@ -245,12 +246,32 @@ readTable = readTableOpt defaultParser
 
 -- * Template Haskell
 
+txtToQType :: T.Text -> Q Type
+txtToQType txt = case txt of
+  "Int" -> quoteType . typeRep $ (Proxy :: Proxy Int)
+  "Double" -> quoteType . typeRep $ (Proxy :: Proxy Double)
+  "Bool" -> quoteType . typeRep $ (Proxy :: Proxy Bool)
+  _ -> error $ "invalid col type" ++ T.unpack txt
+
+colValOverride :: T.Text -> Q Type -> [(T.Text,T.Text)] -> Q Type
+colValOverride colName qType overrides = do
+  -- if an override exists use it, otherwise return original Q Type
+  case lookup colName overrides of
+    Just _ -> txtToQType colName
+    Nothing -> qType
+
+recDecOverride :: [(T.Text, Q Type)] -> [(T.Text,T.Text)] -> Q Type
+recDecOverride cols overrides = appT [t|Record|] (go cols overrides)
+  where go [] _ = return PromotedNilT
+        go ((colName,colVal):cs) overrides =
+          [t|($(litT $ strTyLit (T.unpack colName)) :-> $(colValOverride colName colVal overrides)) ': $(go cs overrides) |]
+
 -- | Generate a column type.
 recDec :: [(T.Text, Q Type)] -> Q Type
 recDec = appT [t|Record|] . go
   where go [] = return PromotedNilT
-        go ((n,t):cs) =
-          [t|($(litT $ strTyLit (T.unpack n)) :-> $(t)) ': $(go cs) |]
+        go ((colName,colVal):cs) =
+          [t|($(litT $ strTyLit (T.unpack colName)) :-> $(colVal)) ': $(go cs) |]
 
 -- | Massage a column name from a CSV file into a valid Haskell type
 -- identifier.
