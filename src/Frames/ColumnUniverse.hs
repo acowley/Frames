@@ -89,6 +89,13 @@ elementTypes (Compose x :& xs) =
 -- types.
 newtype ColInfo a = ColInfo (Q Type, Parsed (Typed a))
 
+-- making a ColInfo
+-- λ> :t ColInfo (quoteType . typeRep $ (Proxy :: Proxy Int), Definitely (mkTyped :: Typed T.Text))
+-- ColInfo (quoteType . typeRep $ (Proxy :: Proxy Int), Definitely (mkTyped :: Typed T.Text))
+--   :: ColInfo T.Text
+
+
+
 parsedTypeRep :: ColInfo a -> Parsed TypeRep
 parsedTypeRep (ColInfo (_,p)) = fmap getConst p
 
@@ -139,11 +146,10 @@ bestRep :: forall ts.
            (LAll Parseable ts, LAll Typeable ts, FoldRec ts ts,
             RecApplicative ts, T.Text ∈ ts)
         => T.Text -> CoRec ColInfo ts
-bestRep = aux
-        . fromMaybe (Col (Compose $ Possibly (mkTyped :: Typed T.Text)))
-        . firstField
-        . elementTypes
-        . (tryParseAll :: T.Text -> Rec (Maybe :. (Parsed :. Proxy)) ts)
+bestRep txt = do
+  let mParse = (tryParseAll :: T.Text -> Rec (Maybe :. (Parsed :. Proxy)) ts) $ txt
+  let res = aux . fromMaybe (Col (Compose $ Possibly (mkTyped :: Typed T.Text))) . firstField . elementTypes $ mParse
+  res
   where aux :: CoRec (Parsed :. Typed) ts -> CoRec ColInfo ts
         aux (Col (Compose d@(Possibly (Const tr)))) =
           Col (ColInfo (quoteType tr, d))
@@ -158,6 +164,13 @@ instance (LAll Parseable ts, LAll Typeable ts, FoldRec ts ts,
   {-# INLINE colType #-}
   inferType = bestRep
   {-# INLINABLE inferType #-}
+
+-- making a CoRec ColInfo for bestRep
+-- λ> :t Frames.CoRec.Col (ColInfo (quoteType . typeRep $ (Proxy :: Proxy Int), Definitely (mkTyped :: Typed T.Text)))
+-- Frames.CoRec.Col (ColInfo (quoteType . typeRep $ (Proxy :: Proxy Int), Definitely (mkTyped :: Typed T.Text)))
+--   :: RElem T.Text ts (Data.Vinyl.TypeLevel.RIndex T.Text ts) =>
+--      CoRec ColInfo ts
+
 
 -- * Common Columns
 

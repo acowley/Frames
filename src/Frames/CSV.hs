@@ -44,6 +44,7 @@ import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
 import qualified Pipes as P
 import System.IO (Handle, hIsEOF, openFile, IOMode(..), withFile)
+import Debug.Trace
 
 type Separator = T.Text
 
@@ -420,7 +421,7 @@ tableTypesText' (RowGen {..}) csvFile =
 tableTypes' :: forall a. (ColumnTypeable a, Monoid a)
             => RowGen a -> FilePath -> DecsQ
 tableTypes' (RowGen {..}) csvFile =
-  do headers <- runIO $ readColHeaders opts csvFile
+  do headers <- trace ("hello") (runIO $ readColHeaders opts csvFile)
      recTy <- tySynD (mkName rowTypeName) [] (recDec' headers)
      let optsName = case rowTypeName of
                       [] -> error "Row type name shouldn't be empty"
@@ -441,3 +442,30 @@ tableTypes' (RowGen {..}) csvFile =
           case mColNm of
             Just _ -> pure []
             Nothing -> colDec (T.pack tablePrefix) colNm colTy
+
+
+
+
+-- tableTypesNoLookup (RowGen {..}) csvFile =
+--   do headers <- trace ("hello") (runIO $ readColHeaders opts csvFile)
+--      recTy <- tySynD (mkName rowTypeName) [] (recDec' headers)
+--      let optsName = case rowTypeName of
+--                       [] -> error "Row type name shouldn't be empty"
+--                       h:t -> mkName $ toLower h : t ++ "Parser"
+--      optsTy <- sigD optsName [t|ParserOptions|]
+--      optsDec <- valD (varP optsName) (normalB $ lift opts) []
+--      colDecs <- concat <$> mapM (uncurry mkColDecs) headers
+--      return (recTy : optsTy : optsDec : colDecs)
+--      -- (:) <$> (tySynD (mkName n) [] (recDec' headers))
+--      --     <*> (concat <$> mapM (uncurry $ colDec (T.pack prefix)) headers)
+--   where recDec' = recDec . map (second colType) :: [(T.Text, a)] -> Q Type
+--         colNames' | null columnNames = Nothing
+--                   | otherwise = Just (map T.pack columnNames)
+--         opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
+--         mkColDecs colNm colTy = do
+--           -- let safeName = tablePrefix ++ (T.unpack . sanitizeTypeName $ colNm)
+--           colDec (T.pack tablePrefix) colNm colTy
+--           -- mColNm <- lookupTypeName safeName
+--           -- case mColNm of
+--           --   Just _ -> pure []
+--           --   Nothing -> colDec (T.pack tablePrefix) colNm colTy
