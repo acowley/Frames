@@ -246,21 +246,14 @@ readTable = readTableOpt defaultParser
 
 -- * Template Haskell
 
-txtToQType :: T.Text -> Q Type
-txtToQType txt = case txt of
-  "Int" -> quoteType . typeRep $ (Proxy :: Proxy Int)
-  "Double" -> quoteType . typeRep $ (Proxy :: Proxy Double)
-  "Bool" -> quoteType . typeRep $ (Proxy :: Proxy Bool)
-  _ -> error $ "invalid col type: " ++ T.unpack txt
-
-colValOverride :: T.Text -> Q Type -> [(T.Text,T.Text)] -> Q Type
+colValOverride :: T.Text -> Q Type -> [(T.Text,Name)] -> Q Type
 colValOverride colName qType overrides = do
   -- if an override exists use it, otherwise return original Q Type
   case lookup colName overrides of
-    Just qTypeOverride -> txtToQType qTypeOverride
+    Just qTypeOverride -> (conT qTypeOverride)
     Nothing -> qType
 
-recDecOverride :: [(T.Text, Q Type)] -> [(T.Text,T.Text)] -> Q Type
+recDecOverride :: [(T.Text, Q Type)] -> [(T.Text,Name)] -> Q Type
 recDecOverride cols overrides = appT [t|Record|] (go cols)
   where go [] = return PromotedNilT
         go ((colName,colVal):cs) =
@@ -465,7 +458,7 @@ tableTypes' (RowGen {..}) csvFile =
             Nothing -> colDec (T.pack tablePrefix) colNm colTy
 
 tableTypesOveride :: forall a. (ColumnTypeable a, Monoid a)
-            => RowGen a -> FilePath -> [(T.Text,T.Text)] -> DecsQ
+            => RowGen a -> FilePath -> [(T.Text,Name)] -> DecsQ
 tableTypesOveride (RowGen {..}) csvFile overrides =
   do headers <- (runIO $ readColHeaders opts csvFile)
      recTy <- tySynD (mkName rowTypeName) [] (recDec' headers)
