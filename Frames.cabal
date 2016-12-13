@@ -158,7 +158,7 @@ executable missing
     buildable: False
   main-is: MissingData.hs
   if flag(demos)
-    build-depends: base, Frames, vinyl
+    build-depends: base, Frames, vinyl, pipes
   hs-source-dirs: demo
   default-language: Haskell2010
 

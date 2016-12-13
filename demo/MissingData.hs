@@ -1,4 +1,5 @@
-{-# LANGUAGE DataKinds, FlexibleInstances, QuasiQuotes, TypeOperators,
+{-# LANGUAGE DataKinds, FlexibleContexts, FlexibleInstances,
+             QuasiQuotes, TemplateHaskell, TypeOperators,
              UndecidableInstances #-}
 -- | An example of dealing with rows that contain missing data. We may
 -- want to fill in the gaps with default values.
@@ -6,6 +7,8 @@ import Data.Monoid ((<>), First(..))
 import Data.Vinyl (Rec(..), rmap, RecApplicative, rapply)
 import Data.Vinyl.Functor (Lift(..))
 import Frames hiding ((:&))
+import Pipes (cat, Producer, (>->))
+import Pipes.Prelude as P
 
 -- An en passant Default class
 class Default a where
@@ -42,6 +45,27 @@ holyRow = rmap First $ pure (Col "joe") :& Nothing :& Nothing :& RNil
 -- We can fill in the holes with our default record.
 unholy :: Maybe (Record '[MyString, MyInt, MyBool])
 unholy = recMaybe . rmap getFirst $ rapply (rmap (Lift . flip (<>)) def) holyRow
+
+-- * Reading a CSV file with missing data
+
+instance Default ("col_a" :-> Int) where def = Col 0
+instance Default ("col_b" :-> Text) where def = Col mempty
+
+tableTypes "Row" "data/missing.csv"
+
+-- | Fill in missing columns with a default 'Row' value synthesized
+-- from 'Default' instances.
+holesFilled :: Producer Row IO ()
+holesFilled = readTableMaybe "data/missing.csv" >-> P.map (fromJust . holeFiller)
+  where holeFiller :: Rec Maybe (RecordColumns Row) -> Maybe Row
+        holeFiller = recMaybe
+                   . rmap getFirst
+                   . rapply (rmap (Lift . flip (<>)) def)
+                   . rmap First
+        fromJust = maybe (error "Frames holesFilled failure") id
+
+showFilledHoles :: IO ()
+showFilledHoles = pipePreview holesFilled 10 cat
 
 main :: IO ()
 main = return ()
