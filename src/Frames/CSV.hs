@@ -30,6 +30,7 @@ import Data.Char (isAlpha, isAlphaNum, toLower, toUpper)
 import Data.Maybe (isNothing, fromMaybe)
 import Data.Monoid ((<>))
 import Data.Proxy
+import Data.Typeable (Typeable, showsTypeRep, typeRep)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Vinyl (RElem, Rec)
@@ -44,6 +45,7 @@ import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
 import qualified Pipes as P
 import System.IO (Handle, hIsEOF, openFile, IOMode(..), withFile)
+import Debug.Trace
 
 type Separator = T.Text
 
@@ -244,12 +246,25 @@ readTable = readTableOpt defaultParser
 
 -- * Template Haskell
 
+colValOverride :: T.Text -> Q Type -> [(T.Text,Name)] -> Q Type
+colValOverride colName qType overrides = do
+  -- if an override exists use it, otherwise return original Q Type
+  case lookup colName overrides of
+    Just qTypeOverride -> (conT qTypeOverride)
+    Nothing -> qType
+
+recDecOverride :: [(T.Text, Q Type)] -> [(T.Text,Name)] -> Q Type
+recDecOverride cols overrides = appT [t|Record|] (go cols)
+  where go [] = return PromotedNilT
+        go ((colName,colVal):cs) =
+          [t|($(litT $ strTyLit (T.unpack colName)) :-> $(colValOverride colName colVal overrides)) ': $(go cs) |]
+
 -- | Generate a column type.
 recDec :: [(T.Text, Q Type)] -> Q Type
 recDec = appT [t|Record|] . go
   where go [] = return PromotedNilT
-        go ((n,t):cs) =
-          [t|($(litT $ strTyLit (T.unpack n)) :-> $(t)) ': $(go cs) |]
+        go ((colName,colVal):cs) =
+          [t|($(litT $ strTyLit (T.unpack colName)) :-> $(colVal)) ': $(go cs) |]
 
 -- | Massage a column name from a CSV file into a valid Haskell type
 -- identifier.
@@ -420,7 +435,7 @@ tableTypesText' (RowGen {..}) csvFile =
 tableTypes' :: forall a. (ColumnTypeable a, Monoid a)
             => RowGen a -> FilePath -> DecsQ
 tableTypes' (RowGen {..}) csvFile =
-  do headers <- runIO $ readColHeaders opts csvFile
+  do headers <- trace ("hello") (runIO $ readColHeaders opts csvFile)
      recTy <- tySynD (mkName rowTypeName) [] (recDec' headers)
      let optsName = case rowTypeName of
                       [] -> error "Row type name shouldn't be empty"
@@ -432,6 +447,31 @@ tableTypes' (RowGen {..}) csvFile =
      -- (:) <$> (tySynD (mkName n) [] (recDec' headers))
      --     <*> (concat <$> mapM (uncurry $ colDec (T.pack prefix)) headers)
   where recDec' = recDec . map (second colType) :: [(T.Text, a)] -> Q Type
+        colNames' | null columnNames = Nothing
+                  | otherwise = Just (map T.pack columnNames)
+        opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
+        mkColDecs colNm colTy = do
+          let safeName = tablePrefix ++ (T.unpack . sanitizeTypeName $ colNm)
+          mColNm <- lookupTypeName safeName
+          case mColNm of
+            Just _ -> pure []
+            Nothing -> colDec (T.pack tablePrefix) colNm colTy
+
+tableTypesOveride :: forall a. (ColumnTypeable a, Monoid a)
+            => RowGen a -> FilePath -> [(T.Text,Name)] -> DecsQ
+tableTypesOveride (RowGen {..}) csvFile overrides =
+  do headers <- (runIO $ readColHeaders opts csvFile)
+     recTy <- tySynD (mkName rowTypeName) [] (recDec' headers)
+     let optsName = case rowTypeName of
+                      [] -> error "Row type name shouldn't be empty"
+                      h:t -> mkName $ toLower h : t ++ "Parser"
+     optsTy <- sigD optsName [t|ParserOptions|]
+     optsDec <- valD (varP optsName) (normalB $ lift opts) []
+     colDecs <- concat <$> mapM (uncurry mkColDecs) headers
+     return (recTy : optsTy : optsDec : colDecs)
+     -- (:) <$> (tySynD (mkName n) [] (recDec' headers))
+     --     <*> (concat <$> mapM (uncurry $ colDec (T.pack prefix)) headers)
+  where recDec' = (flip recDecOverride overrides) . map (second colType) :: [(T.Text, a)] -> Q Type
         colNames' | null columnNames = Nothing
                   | otherwise = Just (map T.pack columnNames)
         opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
