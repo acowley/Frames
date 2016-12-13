@@ -249,3 +249,38 @@ colA' :: forall f_2 g_3 rs_4 . (Functor f_2,
                                 ColA ∈ rs_4) =>
                                (g_3 ColA -> f_2 (g_3 ColA)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
 colA' = rlens' (Proxy :: Proxy ColA)"""
+
+[missing_data]
+csv = """
+col_a,col_b
+"0","x"
+"2","x"
+"1","x"
+,"x"
+"0","x"
+"""
+
+generated = """
+type Row = Record ["col_a" :-> Int, "col_b" :-> T.Text]
+rowParser :: ParserOptions
+rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
+
+type ColA = "col_a" :-> Int
+colA :: forall f_0 rs_1 . (Functor f_0, ColA ∈ rs_1) =>
+                          (Int -> f_0 Int) -> Record rs_1 -> f_0 (Record rs_1)
+colA = rlens (Proxy :: Proxy ColA)
+colA' :: forall f_2 g_3 rs_4 . (Functor f_2,
+                                Functor g_3,
+                                ColA ∈ rs_4) =>
+                               (g_3 ColA -> f_2 (g_3 ColA)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
+colA' = rlens' (Proxy :: Proxy ColA)
+
+type ColB = "col_b" :-> T.Text
+colB :: forall f_5 rs_6 . (Functor f_5, ColB ∈ rs_6) =>
+                          (T.Text -> f_5 T.Text) -> Record rs_6 -> f_5 (Record rs_6)
+colB = rlens (Proxy :: Proxy ColB)
+colB' :: forall f_7 g_8 rs_9 . (Functor f_7,
+                                Functor g_8,
+                                ColB ∈ rs_9) =>
+                               (g_8 ColB -> f_7 (g_8 ColB)) -> Rec g_8 rs_9 -> f_7 (Rec g_8 rs_9)
+colB' = rlens' (Proxy :: Proxy ColB)"""
