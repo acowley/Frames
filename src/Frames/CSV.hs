@@ -457,9 +457,9 @@ tableTypes' (RowGen {..}) csvFile =
             Just _ -> pure []
             Nothing -> colDec (T.pack tablePrefix) colNm colTy
 
-tableTypesOveride :: forall a. (ColumnTypeable a, Monoid a)
+tableTypesOverride :: forall a. (ColumnTypeable a, Monoid a)
             => RowGen a -> FilePath -> [(T.Text,Name)] -> DecsQ
-tableTypesOveride (RowGen {..}) csvFile overrides =
+tableTypesOverride (RowGen {..}) csvFile overrides =
   do headers <- (runIO $ readColHeaders opts csvFile)
      recTy <- tySynD (mkName rowTypeName) [] (recDec' headers)
      let optsName = case rowTypeName of
