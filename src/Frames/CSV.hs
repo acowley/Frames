@@ -330,30 +330,16 @@ colDec prefix colName colTy = (:) <$> mkColTDec colTypeQ colTName'
         colTyQ = colType colTy
         colTypeQ = [t|$(litT . strTyLit $ T.unpack colName) :-> $colTyQ|]
 
-
-colTyQOrOverride :: T.Text -> T.Text -> T.Text -> TypeQ -> [(T.Text, Name)] -> TypeQ
-colTyQOrOverride prefix colName colTName colTyQ overrides = conT ''Int
--- colTyQOrOverride prefix colName colTName colTyQ overrides = case lookup colName overrides of
---                                                                 Just colTyQOverride -> conT ''Int
---                                                                 Nothing -> colTyQ
-
-
 colDecOverrides :: ColumnTypeable a => T.Text -> T.Text -> a -> [(T.Text,Name)] -> DecsQ
 colDecOverrides prefix colName colTy overrides = (:) <$> mkColTDec colTypeQ colTName'
                                   <*> mkColPDec colTName' colTyQ colPName
   where colTName = sanitizeTypeName (prefix <> colName)
         colPName = fromMaybe "colDec impossible" (lowerHead colTName)
         colTName' = mkName $ T.unpack colTName
-        -- colTyQ = colType colTy -- need to override here too
         colTyQ =  case lookup colName overrides of -- colName maybe isn't "col_c as expected... 
                       Just colTypeName -> promotedT colTypeName
-                      Nothing -> case colName of
-                                     "col_c" -> error "hit this case"
-                                     _ -> colType colTy
-        -- colTypeQ = [t|$(litT . strTyLit $ T.unpack colName) :-> $colTyQ|]
-        colTypeQ = [t|$(litT . strTyLit $ T.unpack colName) :-> $(colTyQOrOverride prefix colName colTName colTyQ overrides)|]
-
-
+                      Nothing -> colType colTy
+        colTypeQ = [t|$(litT . strTyLit $ T.unpack colName) :-> $colTyQ|]
 
 -- | Splice for manually declaring a column of a given type. For
 -- example, @declareColumn "x2" ''Double@ will declare a type synonym
