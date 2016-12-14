@@ -282,10 +282,12 @@ sanitizeTypeName = unreserved . fixupStart
                          Just (c,_) | isAlpha c -> t
                                     | otherwise -> "Col" <> t
 
+-- TODO make overrides respecting version
 -- | Declare a type synonym for a column.
 mkColTDec :: TypeQ -> Name -> DecQ
 mkColTDec colTypeQ colTName = tySynD colTName [] colTypeQ
 
+-- TODO make overrides respecting version
 -- | Declare a singleton value of the given column type and lenses for
 -- working with that column.
 mkColPDec :: Name -> TypeQ -> T.Text -> DecsQ
@@ -316,6 +318,7 @@ lowerHead :: T.Text -> Maybe T.Text
 lowerHead = fmap aux . T.uncons
   where aux (c,t) = T.cons (toLower c) t
 
+
 -- | For each column, we declare a type synonym for its type, and a
 -- Proxy value of that type.
 colDec :: ColumnTypeable a => T.Text -> T.Text -> a -> DecsQ
@@ -329,9 +332,10 @@ colDec prefix colName colTy = (:) <$> mkColTDec colTypeQ colTName'
 
 
 colTyQOrOverride :: T.Text -> T.Text -> T.Text -> TypeQ -> [(T.Text, Name)] -> TypeQ
-colTyQOrOverride prefix colName colTName colTyQ overrides = case lookup colName overrides of
-                                                                Just colTyQOverride -> conT colTyQOverride
-                                                                Nothing -> colTyQ
+colTyQOrOverride prefix colName colTName colTyQ overrides = conT ''Int
+-- colTyQOrOverride prefix colName colTName colTyQ overrides = case lookup colName overrides of
+--                                                                 Just colTyQOverride -> conT ''Int
+--                                                                 Nothing -> colTyQ
 
 
 colDecOverrides :: ColumnTypeable a => T.Text -> T.Text -> a -> [(T.Text,Name)] -> DecsQ
@@ -340,7 +344,13 @@ colDecOverrides prefix colName colTy overrides = (:) <$> mkColTDec colTypeQ colT
   where colTName = sanitizeTypeName (prefix <> colName)
         colPName = fromMaybe "colDec impossible" (lowerHead colTName)
         colTName' = mkName $ T.unpack colTName
-        colTyQ = colType colTy
+        -- colTyQ = colType colTy -- need to override here too
+        colTyQ =  case lookup colName overrides of -- colName maybe isn't "col_c as expected... 
+                      Just colTypeName -> promotedT colTypeName
+                      Nothing -> case colName of
+                                     "col_c" -> error "hit this case"
+                                     _ -> colType colTy
+        -- colTypeQ = [t|$(litT . strTyLit $ T.unpack colName) :-> $colTyQ|]
         colTypeQ = [t|$(litT . strTyLit $ T.unpack colName) :-> $(colTyQOrOverride prefix colName colTName colTyQ overrides)|]
 
 
