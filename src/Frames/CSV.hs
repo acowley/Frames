@@ -327,6 +327,24 @@ colDec prefix colName colTy = (:) <$> mkColTDec colTypeQ colTName'
         colTyQ = colType colTy
         colTypeQ = [t|$(litT . strTyLit $ T.unpack colName) :-> $colTyQ|]
 
+
+colTyQOrOverride :: T.Text -> T.Text -> T.Text -> TypeQ -> [(T.Text, Name)] -> TypeQ
+colTyQOrOverride prefix colName colTName colTyQ overrides = case lookup colName overrides of
+                                                                Just colTyQOverride -> conT colTyQOverride
+                                                                Nothing -> colTyQ
+
+
+colDecOverrides :: ColumnTypeable a => T.Text -> T.Text -> a -> [(T.Text,Name)] -> DecsQ
+colDecOverrides prefix colName colTy overrides = (:) <$> mkColTDec colTypeQ colTName'
+                                  <*> mkColPDec colTName' colTyQ colPName
+  where colTName = sanitizeTypeName (prefix <> colName)
+        colPName = fromMaybe "colDec impossible" (lowerHead colTName)
+        colTName' = mkName $ T.unpack colTName
+        colTyQ = colType colTy
+        colTypeQ = [t|$(litT . strTyLit $ T.unpack colName) :-> $(colTyQOrOverride prefix colName colTName colTyQ overrides)|]
+
+
+
 -- | Splice for manually declaring a column of a given type. For
 -- example, @declareColumn "x2" ''Double@ will declare a type synonym
 -- @type X2 = "x2" :-> Double@ and a lens @x2@.
@@ -480,4 +498,4 @@ tableTypesOverride (RowGen {..}) csvFile overrides =
           mColNm <- lookupTypeName safeName
           case mColNm of
             Just _ -> pure []
-            Nothing -> colDec (T.pack tablePrefix) colNm colTy
+            Nothing -> colDecOverrides (T.pack tablePrefix) colNm colTy overrides
