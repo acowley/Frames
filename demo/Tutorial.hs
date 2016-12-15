@@ -4,7 +4,7 @@
              ViewPatterns #-}
 
 -- This is a loose port of a
--- [[http://ajkl.github.io/Dataframes/][dataframe tutorial]] Rosetta
+-- [[https://ajkl.github.io/2014/11/23/Dataframes/][dataframe tutorial]] Rosetta
 -- Stone to compare traditional dataframe tools built in R, Julia,
 -- Python, etc. with
 -- [[https://github.com/acowley/Frames][Frames]]. Performing data
