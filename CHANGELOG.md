@@ -1,3 +1,9 @@
+# 0.1.9
+
+Fixed column type inference bug that led the inferencer to prefer `Bool` too strongly.
+
+This was fallout from typing columns whose values are all 0 or 1 as `Bool`.
+
 # 0.1.6
 
 Re-export `Frames.CSV.declareColumn` from `Frames`. This makes it much

@@ -1,6 +1,6 @@
 {-# LANGUAGE DataKinds, FlexibleContexts, FlexibleInstances,
-             QuasiQuotes, TemplateHaskell, TypeOperators,
-             UndecidableInstances #-}
+             MultiParamTypeClasses, QuasiQuotes, TemplateHaskell,
+             TypeOperators, UndecidableInstances #-}
 -- | An example of dealing with rows that contain missing data. We may
 -- want to fill in the gaps with default values.
 import Data.Monoid ((<>), First(..))
