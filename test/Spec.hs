@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, TemplateHaskell, QuasiQuotes #-}
+{-# LANGUAGE CPP, TemplateHaskell, QuasiQuotes, OverloadedStrings #-}
 module Main (manualGeneration, main) where
 import Data.List (find)
 import Data.Monoid (First(..))
@@ -6,8 +6,12 @@ import Language.Haskell.TH as TH
 import Language.Haskell.TH.Syntax (addDependentFile)
 import Test.Hspec as H
 import Frames
+import Frames.ByteString.PolyFill
 import DataCSV
 import PrettyTH
+import qualified Data.ByteString.Char8 as C8
+import qualified Data.Text as T
+import qualified Data.Text.Encoding as TE
 
 -- | Extract all example @(CSV, generatedCode)@ pairs from
 -- @test/examples.toml@
@@ -59,3 +63,20 @@ main = do
           do g <- H.runIO $ 
                   generatedFrom "test/examples.toml" "managers_employees"
              it "Shouldn't duplicate columns" pending
+
+       describe "FramesByteString polyfills" $ do
+         it "bsSplitOn should be equivalent to T.splitOn 1" $ do
+           (TE.decodeUtf8 <$> bsSplitOn "\r\n" "a\r\nb\r\nd\r\ne") == T.splitOn "\r\n" "a\r\nb\r\nd\r\ne"
+         it "bsSplitOn should be equivalent to T.splitOn 2" $ do
+           (TE.decodeUtf8 <$> bsSplitOn "aaa"  "aaaXaaaXaaaXaaa") == T.splitOn "aaa" "aaaXaaaXaaaXaaa"
+         it "bsSplitOn should be equivalent to T.splitOn 3" $ do
+          (TE.decodeUtf8 <$> bsSplitOn "x" "x") == T.splitOn "x" "x"
+
+         it "bsDropEnd should be equivalent to T.dropEnd 1" $ do
+           (TE.decodeUtf8 $ bsDropEnd 3 "foobar") == T.dropEnd 3 "foobar"
+
+         it "bsDropWhileEnd should be equivalent to T.dropWhileEnd 1" $ do
+           (TE.decodeUtf8 $ bsDropWhileEnd (=='.') "foo...") == T.dropWhileEnd (=='.') "foo..."
+
+         it "bsStrip should be equivalent to T.dropWhileEnd 1" $ do
+           (TE.decodeUtf8 $ bsStrip " foo " == T.strip " foo "
