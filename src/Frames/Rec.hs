@@ -21,6 +21,8 @@ import Data.Vinyl.TypeLevel (RecAll)
 import Data.Vinyl.Functor (Identity(..), Const(..), Compose(..), (:.))
 import Frames.Col
 import Frames.RecF
+import Data.Text (Text)
+import TextShow
 
 -- | A record with unadorned values. This is @Vinyl@'s 'Rec'
 -- 'Identity'. We give this type a name as it is used pervasively for
@@ -54,3 +56,16 @@ showFields = recordToList . rmap aux . reifyConstraint p . toVinyl
         aux :: (Dict Show :. Identity) a -> Const String a
         aux (Compose (Dict x)) = Const (show x)
 {-# INLINABLE showFields #-}
+
+-- TODO Possibly submit this upstream to Vinyl since it's for Data.Vinyl.Functor.Identity
+instance TextShow a => TextShow (Identity a) where
+  showt (Identity x) = showt x
+
+-- | Show each field of a 'Record' /without/ its column name.
+showFieldsText :: (RecAll Identity (UnColumn ts) TextShow, AsVinyl ts)
+           => Record ts -> [Text]
+showFieldsText = recordToList . rmap aux . reifyConstraint p . toVinyl
+  where p = Proxy :: Proxy TextShow
+        aux :: (Dict TextShow :. Identity) a -> Const Text a
+        aux (Compose (Dict x)) = Const (showt x)
+{-# INLINABLE showFieldsText #-}
