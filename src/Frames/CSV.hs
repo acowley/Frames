@@ -33,7 +33,8 @@ import Data.Proxy
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Vinyl (RElem, Rec)
-import Data.Vinyl.TypeLevel (RIndex)
+import Data.Vinyl.Functor (Identity)
+import Data.Vinyl.TypeLevel (RIndex,RecAll)
 import Frames.Col
 import Frames.ColumnTypeable
 import Frames.ColumnUniverse
@@ -43,7 +44,10 @@ import Frames.RecLens
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
 import qualified Pipes as P
+import qualified Pipes.Prelude as P
+import qualified Pipes.Text.IO as Text
 import System.IO (Handle, hIsEOF, openFile, IOMode(..), withFile)
+import TextShow
 
 type Separator = T.Text
 
@@ -163,6 +167,17 @@ readColHeaders opts f =  withFile f ReadMode $ \h ->
                                        pure
                                        (headerOverride opts)
                              <*> prefixInference opts h
+
+writeCsv
+  :: (AsVinyl ts, RecAll Identity (UnColumn ts) TextShow) =>
+     FilePath -> P.Proxy P.X () () (Record ts) IO r -> IO r
+writeCsv fp rows = withFile fp AppendMode $ \h -> P.runEffect $ rows P.>-> writeCsvRow h
+
+writeCsvRow
+  :: (MonadIO m, AsVinyl ts,
+      RecAll Identity (UnColumn ts) TextShow) =>
+     Handle -> P.Proxy () (Record ts) c' c m r
+writeCsvRow h  = P.map ((<> "\n") . T.intercalate "," . showFieldsText) P.>-> Text.toHandle h
 
 -- * Loading Data
 
