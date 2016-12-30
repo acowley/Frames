@@ -27,13 +27,16 @@ import Control.Arrow (first, second)
 import Control.Monad (MonadPlus(..), when, void)
 import Control.Monad.IO.Class
 import Data.Char (isAlpha, isAlphaNum, toLower, toUpper)
+import qualified Data.Foldable as F
+import Data.List (intercalate)
 import Data.Maybe (isNothing, fromMaybe)
 import Data.Monoid ((<>))
 import Data.Proxy
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
 import Data.Vinyl (RElem, Rec)
-import Data.Vinyl.TypeLevel (RIndex)
+import Data.Vinyl.TypeLevel (RecAll, RIndex)
+import Data.Vinyl.Functor (Identity)
 import Frames.Col
 import Frames.ColumnTypeable
 import Frames.ColumnUniverse
@@ -43,6 +46,7 @@ import Frames.RecLens
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
 import qualified Pipes as P
+import qualified Pipes.Prelude as P
 import System.IO (Handle, hIsEOF, openFile, IOMode(..), withFile)
 
 type Separator = T.Text
@@ -441,3 +445,23 @@ tableTypes' (RowGen {..}) csvFile =
           case mColNm of
             Just _ -> pure []
             Nothing -> colDec (T.pack tablePrefix) colNm colTy
+
+-- * Writing CSV Data
+
+-- | 'P.yield' a header row with column names followed by a line of
+-- text for each 'Record' with each field separated by a comma.
+produceCSV :: forall f ts m.
+              (ColumnHeaders ts, AsVinyl ts, Foldable f, Monad m,
+               RecAll Identity (UnColumn ts) Show)
+           => f (Record ts) -> P.Producer String m ()
+produceCSV recs = do
+  P.yield (intercalate "," (columnHeaders (Proxy :: Proxy (Record ts))))
+  F.mapM_ (P.yield . intercalate "," . showFields) recs
+
+-- | Write a header row with column names followed by a line of text
+-- for each 'Record' to the given file.
+writeCSV :: (ColumnHeaders ts, AsVinyl ts, Foldable f,
+             RecAll Identity (UnColumn ts) Show)
+         => FilePath -> f (Record ts) -> IO ()
+writeCSV fp recs = withFile fp WriteMode $ \h ->
+                     P.runEffect $ produceCSV recs P.>-> P.toHandle h

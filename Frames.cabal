@@ -1,5 +1,5 @@
 name:                Frames
-version:             0.1.9
+version:             0.1.10
 synopsis:            Data frames For working with tabular data files
 description:         User-friendly, type safe, runtime efficient tooling for
                      working with tabular data deserialized from
@@ -189,7 +189,7 @@ test-suite spec
   other-modules:       DataCSV PrettyTH Temp
   build-depends:       base, text, hspec, Frames, template-haskell,
                        temporary, directory, htoml, regex-applicative, pretty,
-                       unordered-containers
+                       unordered-containers, pipes, HUnit
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall
   default-language:    Haskell2010
 

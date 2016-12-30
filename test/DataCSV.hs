@@ -10,16 +10,6 @@ import Language.Haskell.TH.Syntax (Lift(..))
 import Text.Toml
 import Text.Toml.Types (Node (VTable, VString), Table)
 
-managersCsv :: [Char]
-managersCsv = "id,manager,age,pay\n\
-               \0,Joe,53,\"80,000\"\n\
-               \1,Sarah,44,\"80,000\""
-
-employeesCsv :: [Char]
-employeesCsv = "id,employee,age,pay,manager_id\n\
-                \2,Sadie,28,\"40,000\",0\n\
-                \3,Tom,25,\"40,000\",1"
-
 data CsvExample = CsvExample { name :: String, csv :: String, generated :: String }
 
 instance Lift CsvExample where

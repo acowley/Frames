@@ -1,3 +1,9 @@
+# 0.1.10
+
+- Added CSV output functions: `produceCSV` and `writeCSV`
+- Added an Eq instance for the `Frame` type
+
+
 # 0.1.9
 
 Fixed column type inference bug that led the inferencer to prefer `Bool` too strongly.

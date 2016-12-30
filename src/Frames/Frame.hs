@@ -27,6 +27,10 @@ boxedFrame :: Foldable f => f r -> Frame r
 boxedFrame xs = Frame (V.length v) (v V.!)
   where v = V.fromList (toList xs)
 
+instance Eq r => Eq (Frame r) where
+  Frame l1 r1 == Frame l2 r2 =
+    l1 == l2 && and (map (\i -> r1 i == r2 i) [0 .. l1 - 1])
+
 -- | The 'Monoid' instance for 'Frame' provides a mechanism for
 -- vertical concatenation of 'Frame's. That is, @f1 <> f2@ will return
 -- a new 'Frame' with the rows of @f1@ followed by the rows of @f2@.
