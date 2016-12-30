@@ -23,6 +23,7 @@ import Data.Traversable (sequenceA)
 import Data.Monoid (Monoid)
 #endif
 
+import qualified Data.Foldable as F
 import Control.Arrow (first, second)
 import Control.Monad (MonadPlus(..), when, void)
 import Control.Monad.IO.Class
@@ -168,10 +169,26 @@ readColHeaders opts f =  withFile f ReadMode $ \h ->
                                        (headerOverride opts)
                              <*> prefixInference opts h
 
-writeCsv
-  :: (AsVinyl ts, RecAll Identity (UnColumn ts) TextShow) =>
-     FilePath -> P.Proxy P.X () () (Record ts) IO r -> IO r
-writeCsv fp rows = withFile fp AppendMode $ \h -> P.runEffect $ rows P.>-> writeCsvRow h
+writeCsv :: ( AsVinyl rs
+            , ColumnHeaders rs
+            , AsVinyl ts
+            , RecAll Identity (UnColumn ts) TextShow
+            ) =>
+            FilePath
+         -> P.Producer (Record rs) IO ()
+         -> P.Producer (Record ts) IO ()
+         -> IO ()
+writeCsv fp rows rows2 = do
+  withFile fp WriteMode $ \h -> do
+    rows' <- P.toListM (rows P.>-> P.take 1)
+    case rows' of
+      [firstRow] -> do
+        let colHeaders = T.intercalate "," $ T.pack <$> columnHeaders (asProxyTypeOf firstRow)
+            colHeaders' = colHeaders <> "\n"
+          in
+          T.hPutStr h colHeaders'
+  withFile fp AppendMode $ \h -> P.runEffect $ rows2 P.>-> writeCsvRow h
+    -- where uncolRows = rows :: (AsVinyl ts, RecAll Identity (UnColumn ts) TextShow) => P.Proxy P.X () () (Record ts) IO b
 
 writeCsvRow
   :: (MonadIO m, AsVinyl ts,
