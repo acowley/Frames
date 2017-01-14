@@ -104,33 +104,35 @@ tokenizeRow options =
 -- | Post processing applied to a list of tokens split by the
 -- separator which should have quoted sections reassembeld
 reassembleRFC4180QuotedParts :: Separator -> QuoteChar -> [T.Text] -> [T.Text]
-reassembleRFC4180QuotedParts sep quoteChar = finish . foldr f ([], Nothing)
-  where f :: T.Text -> ([T.Text], Maybe T.Text) -> ([T.Text], Maybe T.Text)
-        f part (rest, Just accum)
-          | prefixQuoted part = let token = unescape (T.drop 1 part) <> sep <> accum
-                                in (token : rest, Nothing)
-          | otherwise         = (rest, Just (unescape part <> sep <> accum))
-        f part (rest, Nothing)
-          | prefixQuoted part &&
-            suffixQuoted part = ((unescape . T.drop 1 . T.dropEnd 1 $ part) : rest, Nothing)
-          | suffixQuoted part = (rest, Just (unescape . T.dropEnd 1 $ part))
-          | otherwise         = (T.strip part : rest, Nothing)
+reassembleRFC4180QuotedParts sep quoteChar = go
+  where go [] = []
+        go (part:parts)
+          | T.null part = T.empty : go parts
+          | prefixQuoted part =
+            if suffixQuoted part
+            then unescape (T.drop 1 . T.dropEnd 1 $ part) : go parts
+            else case break suffixQuoted parts of
+                   (h,[]) -> [unescape (T.intercalate sep (T.drop 1 part : h))]
+                   (h,t:ts) -> unescape
+                                 (T.intercalate
+                                    sep
+                                    (T.drop 1 part : h ++ [T.dropEnd 1 t]))
+                               : go ts
+          | otherwise = T.strip part : go parts
 
         prefixQuoted t =
-          quoteText `T.isPrefixOf` t &&
-          (T.length t - (T.length . T.dropWhile (== quoteChar) $ t)) `mod` 2 == 1
+          T.head t == quoteChar &&
+          T.length (T.takeWhile (== quoteChar) t) `rem` 2 == 1
+
         suffixQuoted t =
           quoteText `T.isSuffixOf` t &&
-          (T.length t - (T.length . T.dropWhileEnd (== quoteChar) $ t)) `mod` 2 == 1
+          T.length (T.takeWhileEnd (== quoteChar) t) `rem` 2 == 1
 
         quoteText = T.singleton quoteChar
 
         unescape :: T.Text -> T.Text
-        unescape = T.replace (quoteText <> quoteText) quoteText
-
-        finish :: ([T.Text], Maybe T.Text) -> [T.Text]
-        finish (rest, Just dangling) = dangling : rest -- FIXME? just assumes the close quote if it's missing
-        finish (rest, Nothing      ) =            rest
+        unescape = T.replace q2 quoteText
+          where q2 = quoteText <> quoteText
 
 --tokenizeRow :: Separator -> T.Text -> [T.Text]
 --tokenizeRow sep = map (unquote . T.strip) . T.splitOn sep
