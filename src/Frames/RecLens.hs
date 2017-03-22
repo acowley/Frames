@@ -16,7 +16,7 @@ import Data.Vinyl.TypeLevel
 import Frames.Col ((:->)(..))
 import Frames.Rec (Record)
 
-rlens' :: (i ~ RIndex r rs, V.RElem r rs i, Functor f, Functor g)
+rlens' :: (i ~ RIndex r rs, V.RElem r rs i, Functor f)
        => sing r
        -> (g r -> f (g r))
        -> V.Rec g rs
