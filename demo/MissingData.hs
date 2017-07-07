@@ -25,7 +25,7 @@ instance Default MyString where def = Col ""
 instance Default MyBool where def = Col False
 
 -- We can write instances for /all/ 'Rec' values.
-instance (Applicative f, LAll Default ts, RecApplicative ts)
+instance (Applicative f, AllConstrained Default ts, RecApplicative ts)
   => Default (Rec f ts) where
   def = reifyDict [pr|Default|] (pure def)
 

@@ -16,7 +16,7 @@ module Frames.RecF (V.rappend, V.rtraverse, rdel, CanDelete,
                     frameCons, frameConsA, frameSnoc,
                     pattern (:&), pattern Nil, AllCols,
                     UnColumn, AsVinyl(..), mapMono, mapMethod,
-                    ShowRec, showRec, ColFun, ColumnHeaders, 
+                    ShowRec, showRec, ColFun, ColumnHeaders,
                     columnHeaders, reifyDict) where
 import Data.List (intercalate)
 import Data.Proxy
@@ -49,10 +49,10 @@ frameSnoc :: V.Rec f rs -> f r -> V.Rec f (rs ++ '[r])
 frameSnoc r x = V.rappend r (x V.:& RNil)
 {-# INLINE frameSnoc #-}
 
--- Nil :: Rec f '[]
+pattern Nil :: Rec f '[]
 pattern Nil = V.RNil
 
--- (:&) :: Functor f => f r -> Rec f rs -> Rec f (r ': rs)
+pattern (:&) :: Functor f => f r -> Rec f rs -> Rec f (s :-> r ': rs)
 pattern x :& xs <- (frameUncons -> (x, xs))
 
 -- NOTE: A bidirectional pattern synonym would be great, but we'll
@@ -82,7 +82,7 @@ type family UnColumn ts where
   UnColumn ((s :-> t) ': ts) = t ': UnColumn ts
 
 -- | Enforce a constraint on the payload type of each column.
-type AllCols c ts = LAll c (UnColumn ts)
+type AllCols c ts = AllConstrained c (UnColumn ts)
 
 -- | Remove the column name phantom types from a record, leaving you
 -- with an unadorned Vinyl 'V.Rec'.
@@ -113,16 +113,17 @@ mapMono f = fromVinyl . mapMonoV f . toVinyl
 
 -- | Map a typeclass method across a 'V.Rec' each of whose fields
 -- have instances of the typeclass.
-mapMethodV :: forall c f ts. (Functor f, LAll c ts)
+mapMethodV :: forall c f ts. (Functor f, AllConstrained c ts)
            => Proxy c -> (forall a. c a => a -> a) -> V.Rec f ts -> V.Rec f ts
 mapMethodV _ f = go
-  where go :: LAll c ts' => V.Rec f ts' -> V.Rec f ts'
+  where go :: AllConstrained c ts' => V.Rec f ts' -> V.Rec f ts'
         go V.RNil = V.RNil
         go (x V.:& xs) = fmap f x V.:& go xs
 
 -- | Map a typeclass method across a 'Rec' each of whose fields
 -- has an instance of the typeclass.
-mapMethod :: forall f c ts. (Functor f, LAll c (UnColumn ts), AsVinyl ts)
+mapMethod :: forall f c ts.
+             (Functor f, AllConstrained c (UnColumn ts), AsVinyl ts)
           => Proxy c -> (forall a. c a => a -> a) -> Rec f ts -> Rec f ts
 mapMethod p f = fromVinyl . mapMethodV p f . toVinyl
 
@@ -151,9 +152,9 @@ showRec r = "{" ++ intercalate ", " (showRec' r) ++ "}"
 
 -- | Build a record whose elements are derived solely from a
 -- constraint satisfied by each.
-reifyDict :: forall c f proxy ts. (LAll c ts, RecApplicative ts)
+reifyDict :: forall c f proxy ts. (AllConstrained c ts, RecApplicative ts)
           => proxy c -> (forall a. c a => f a) -> Rec f ts
 reifyDict _ f = go (rpure Nothing)
-  where go :: LAll c ts' => Rec Maybe ts' -> Rec f ts'
+  where go :: AllConstrained c ts' => Rec Maybe ts' -> Rec f ts'
         go RNil = RNil
         go (_ V.:& xs) = f V.:& go xs

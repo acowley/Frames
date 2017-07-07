@@ -5,15 +5,13 @@
 module Frames.Melt where
 import Data.Proxy
 import Data.Vinyl
+import Data.Vinyl.CoRec (CoRec(..))
 import Data.Vinyl.Functor (Identity(..))
 import Data.Vinyl.TypeLevel
 import Frames.Col
-import Frames.CoRec (CoRec)
-import qualified Frames.CoRec as C
 import Frames.Frame (Frame(..), FrameRec)
 import Frames.Rec
 import Frames.RecF (ColumnHeaders(..), frameCons)
-import Frames.TypeLevel
 
 type family Elem t ts :: Bool where
   Elem t '[] = 'False
@@ -41,7 +39,7 @@ instance RowToColumn ts '[] where
   rowToColumnAux _ _ = []
 
 instance (r ∈ ts, RowToColumn ts rs) => RowToColumn ts (r ': rs) where
-  rowToColumnAux p (x :& xs) = C.Col x : rowToColumnAux p xs
+  rowToColumnAux p (x :& xs) = CoRec x : rowToColumnAux p xs
 
 -- | Transform a record into a list of its fields, retaining proof
 -- that each field is part of the whole.
@@ -106,7 +104,7 @@ instance forall t ts. HasLength ts => HasLength (t ': ts) where
 -- | Applies 'meltRow' to each row of a 'FrameRec'.
 melt :: forall vs ts ss proxy.
         (vs ⊆ ts, ss ⊆ ts, vs ~ RDeleteAll ss ts, HasLength vs,
-         Disjoint ss ts ~ 'True, ts ≅ (vs ++ ss), 
+         Disjoint ss ts ~ 'True, ts ≅ (vs ++ ss),
          ColumnHeaders vs, RowToColumn vs vs)
      => proxy ss
      -> FrameRec ts

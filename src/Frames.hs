@@ -4,10 +4,11 @@
 -- can then be streamed from disk, or worked with in memory.
 module Frames
   ( module Data.Vinyl
+  , module Data.Vinyl.CoRec
   , module Data.Vinyl.Lens
+  , module Data.Vinyl.TypeLevel
   , module Frames.Col
   , module Frames.ColumnUniverse
-  , module Frames.CoRec
   , module Frames.CSV
   , module Frames.Exploration
   , module Frames.Frame
@@ -21,10 +22,11 @@ module Frames
   ) where
 import Data.Text (Text)
 import Data.Vinyl ((<+>))
+import Data.Vinyl.CoRec (Field, onField, onCoRec)
 import Data.Vinyl.Lens hiding (rlens, rget, rput)
+import Data.Vinyl.TypeLevel (AllConstrained, AllSatisfied, AllAllSat)
 import Frames.Col ((:->)(..))
 import Frames.ColumnUniverse
-import Frames.CoRec (Field, onField, onCoRec)
 import Frames.CSV (readTable, readTableMaybe, readTable', declareColumn,
                    tableType, tableTypes, tableType', tableTypes')
 import Frames.Exploration

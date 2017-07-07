@@ -18,7 +18,7 @@
              TypeOperators,
              UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Frames.ColumnUniverse (CoRec, Columns, ColumnUniverse, CommonColumns, 
+module Frames.ColumnUniverse (CoRec, Columns, ColumnUniverse, CommonColumns,
                               parsedTypeRep) where
 import Language.Haskell.TH
 #if __GLASGOW_HASKELL__ < 800
@@ -28,11 +28,11 @@ import Data.Proxy
 import qualified Data.Text as T
 import Data.Typeable (Typeable, showsTypeRep, typeRep)
 import Data.Vinyl
+import Data.Vinyl.CoRec
 import Data.Vinyl.Functor
-import Frames.CoRec
+import Data.Vinyl.TypeLevel (AllConstrained)
 import Frames.ColumnTypeable
 import Frames.RecF (reifyDict)
-import Frames.TypeLevel (LAll)
 import Data.Typeable (TypeRep)
 import Data.Maybe (fromMaybe)
 
@@ -68,7 +68,7 @@ inferParseable' = Compose inferParseable
 
 -- * Record Helpers
 
-tryParseAll :: forall ts. (RecApplicative ts, LAll Parseable ts)
+tryParseAll :: forall ts. (RecApplicative ts, AllConstrained Parseable ts)
             => T.Text -> Rec (Maybe :. (Parsed :. Proxy)) ts
 tryParseAll = rtraverse getCompose funs
   where funs :: Rec (((->) T.Text) :. (Maybe :. (Parsed :. Proxy))) ts
@@ -76,7 +76,7 @@ tryParseAll = rtraverse getCompose funs
 
 -- | Preserving the outermost two functor layers, replace each element with
 -- its TypeRep.
-elementTypes :: (Functor f, Functor g, LAll Typeable ts)
+elementTypes :: (Functor f, Functor g, AllConstrained Typeable ts)
              => Rec (f :. (g :. h)) ts -> Rec (f :. (g :. Typed)) ts
 elementTypes RNil = RNil
 elementTypes (Compose x :& xs) =
@@ -136,35 +136,35 @@ instance (T.Text ∈ ts) => Monoid (CoRec ColInfo ts) where
 -- | Find the best (i.e. smallest) 'CoRec' variant to represent a
 -- parsed value. For inspection in GHCi after loading this module,
 -- consider this example:
--- 
+--
 -- >>> :set -XTypeApplications
 -- >>> :set -XOverloadedStrings
--- >>> import Frames.CoRec (foldCoRec)
+-- >>> import Data.Vinyl.CoRec (foldCoRec)
 -- >>> foldCoRec parsedTypeRep (bestRep @CommonColumns "2.3")
 -- Definitely Double
 bestRep :: forall ts.
-           (LAll Parseable ts, LAll Typeable ts, FoldRec ts ts,
+           (AllConstrained Parseable ts, AllConstrained Typeable ts, FoldRec ts ts,
             RecApplicative ts, T.Text ∈ ts)
         => T.Text -> CoRec ColInfo ts
 bestRep t
-  | T.null t = aux (Col (Compose (Possibly (mkTyped :: Typed T.Text))))
+  | T.null t = aux (CoRec (Compose (Possibly (mkTyped :: Typed T.Text))))
   | otherwise = aux
-              . fromMaybe (Col (Compose $ Possibly (mkTyped :: Typed T.Text)))
+              . fromMaybe (CoRec (Compose $ Possibly (mkTyped :: Typed T.Text)))
               . firstField
               . elementTypes
               . (tryParseAll :: T.Text -> Rec (Maybe :. (Parsed :. Proxy)) ts)
               $ t
   where aux :: CoRec (Parsed :. Typed) ts -> CoRec ColInfo ts
-        aux (Col (Compose d@(Possibly (Const tr)))) =
-          Col (ColInfo (quoteType tr, d))
-        aux (Col (Compose d@(Definitely (Const tr)))) =
-          Col (ColInfo (quoteType tr, d))
+        aux (CoRec (Compose d@(Possibly (Const tr)))) =
+          CoRec (ColInfo (quoteType tr, d))
+        aux (CoRec (Compose d@(Definitely (Const tr)))) =
+          CoRec (ColInfo (quoteType tr, d))
 {-# INLINABLE bestRep #-}
 
-instance (LAll Parseable ts, LAll Typeable ts, FoldRec ts ts,
+instance (AllConstrained Parseable ts, AllConstrained Typeable ts, FoldRec ts ts,
           RecApplicative ts, T.Text ∈ ts) =>
     ColumnTypeable (CoRec ColInfo ts) where
-  colType (Col (ColInfo (t, _))) = t
+  colType (CoRec (ColInfo (t, _))) = t
   {-# INLINE colType #-}
   inferType = bestRep
   {-# INLINABLE inferType #-}
