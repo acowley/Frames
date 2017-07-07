@@ -113,6 +113,8 @@ lubTypeReps (Possibly trX) (Possibly trY)
   | otherwise = Nothing
 lubTypeReps (Definitely trX) (Definitely trY)
   | trX == trY = Just EQ
+  | trX == trText = Just GT
+  | trY == trText = Just LT
   | trX == trInt  && trY == trDbl = Just LT
   | trX == trDbl  && trY == trInt = Just GT
   | trX == trBool && trY == trInt = Just LT
@@ -123,10 +125,11 @@ lubTypeReps (Definitely trX) (Definitely trY)
   where trInt = typeRep (Proxy :: Proxy Int)
         trDbl = typeRep (Proxy :: Proxy Double)
         trBool = typeRep (Proxy :: Proxy Bool)
+        trText = typeRep (Proxy :: Proxy T.Text)
 
 instance (T.Text ∈ ts) => Monoid (CoRec ColInfo ts) where
-  mempty = Col (ColInfo ([t|T.Text|], Possibly mkTyped) :: ColInfo T.Text)
-  mappend x@(Col (ColInfo (_, trX))) y@(Col (ColInfo (_, trY))) =
+  mempty = CoRec (ColInfo ([t|T.Text|], Possibly mkTyped) :: ColInfo T.Text)
+  mappend x@(CoRec (ColInfo (_, trX))) y@(CoRec (ColInfo (_, trY))) =
       case lubTypeReps (fmap getConst trX) (fmap getConst trY) of
         Just GT -> x
         Just LT -> y

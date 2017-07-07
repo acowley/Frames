@@ -15,6 +15,7 @@ import Frames
 -- Data set from http://codekata.com/data/04/weather.dat
 -- Associated with this problem set:
 -- http://codekata.com/kata/kata04-data-munging/
+-- Asterisk suffixes were manually removed from temperature columns.
 tableTypes "Row" "data/weather.csv"
 
 getTemperatureRange :: (MxT ∈ rs, MnT ∈ rs) => Record rs -> Double
