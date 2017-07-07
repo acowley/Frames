@@ -266,7 +266,7 @@ sanitizeTypeName = unreserved . fixupStart
         toTitle' = foldMap (onHead toUpper) . T.split (not . isAlphaNum)
         onHead f = maybe mempty (uncurry T.cons) . fmap (first f) . T.uncons
         unreserved t
-          | t `elem` ["Type"] = "Col" <> t
+          | t `elem` ["Type", "Class"] = "Col" <> t
           | otherwise = t
         fixupStart t = case T.uncons t of
                          Nothing -> "Col"
