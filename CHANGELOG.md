@@ -1,3 +1,15 @@
+# 0.2.1
+
+- Refactored to use the `CoRec` type provided by `vinyl` >= 0.6.0
+
+- Fixed bug in typing mostly-numeric columns
+Such columns must be represented as `Text`. Previously, we strove a bit too hard to avoid falling back to `Text` resulting in dropping rows containing non-numeric values for columns we crammed into a numeric type.
+
+- Minor optimization of CSV parsing
+In particular, dealing with RFC4180 style quoting
+
+- GHC-8.2.1 compatibility
+
 # 0.1.10
 
 - Added CSV output functions: `produceCSV` and `writeCSV`
