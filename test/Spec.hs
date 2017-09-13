@@ -3,6 +3,7 @@
 module Main (manualGeneration, main) where
 import Control.Monad (unless)
 import Data.Functor.Identity
+import Data.Char
 import Data.List (find)
 import Data.Monoid (First(..))
 import qualified Data.Text as T
@@ -62,11 +63,16 @@ manualGeneration k = do csvExamples <- TH.runIO (examplesFrom "test/examples.tom
 type ManagersRow =
   Record ["id" :-> Int, "manager" :-> Text, "age" :-> Int, "pay" :-> Double]
 
+newtype Code = Code String
+instance Show Code where show (Code x) = x
+instance Eq Code where
+  Code a == Code b = filter (not . isSpace) a == filter (not . isSpace) b
+
 main :: IO ()
 main = do
   hspec $
     do describe "Haskell type generation" $
-         mapM_ (\(CsvExample k _ g, g') -> it k (g' `shouldBe` g)) csvTests
+         mapM_ (\(CsvExample k _ g, g') -> it k (Code g' `shouldBe` Code g)) csvTests
        describe "Multiple tables" $
           do _g <- H.runIO $
                    generatedFrom "test/examples.toml" "managers_employees"
