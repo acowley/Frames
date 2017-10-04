@@ -19,6 +19,7 @@ extra-source-files:  benchmarks/*.hs benchmarks/*.py
                      data/GetData.hs
                      test/examples.toml
                      test/data/managers.csv test/data/employees.csv
+                     test/data/mpg.csv
 cabal-version:       >=1.10
 tested-with:         GHC == 7.10.3, GHC == 8.0.1, GHC == 8.2.1
 
