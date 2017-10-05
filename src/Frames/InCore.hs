@@ -63,7 +63,7 @@ type family Vectors rs where
 -- records of vectors.
 class RecVec rs where
   allocRec   :: PrimMonad m
-             => proxy rs -> m (Record (VectorMs m rs))
+             => proxy rs -> Int -> m (Record (VectorMs m rs))
   freezeRec  :: PrimMonad m
              => proxy rs -> Int -> Record (VectorMs m rs)
              -> m (Record (Vectors rs))
@@ -80,7 +80,7 @@ class RecVec rs where
 -- apparently missing pattern match causes a type checker error!
 
 instance RecVec '[] where
-  allocRec _ = return Nil
+  allocRec _ _ = return Nil
   {-# INLINE allocRec #-}
 
   freezeRec _ _ V.RNil = return V.RNil
@@ -115,7 +115,7 @@ instance forall s a rs.
    VG.Vector (VectorFor a) a,
    RecVec rs)
   => RecVec (s :-> a ': rs) where
-  allocRec _ = (&:) <$> VGM.new initialCapacity <*> allocRec (Proxy::Proxy rs)
+  allocRec _ size = (&:) <$> VGM.new size <*> allocRec (Proxy::Proxy rs) size
   {-# INLINE allocRec #-}
 
   freezeRec _ n (Identity (Col x) V.:& xs) =
@@ -165,7 +165,7 @@ instance forall s a rs.
 inCoreSoA :: forall m rs. (PrimMonad m, RecVec rs)
           => P.Producer (Record rs) m () -> m (Int, V.Rec ((->) Int) rs)
 inCoreSoA xs =
-  do mvs <- allocRec (Proxy :: Proxy rs)
+  do mvs <- allocRec (Proxy :: Proxy rs) initialCapacity
      let feed (!i, !sz, !mvs') row
            | i == sz = growRec (Proxy::Proxy rs) mvs'
                        >>= flip feed row . (i, sz*2,)
@@ -209,7 +209,7 @@ toAoS n = Frame n . rtraverse (fmap Identity)
 inCore :: forall m n rs. (PrimMonad m, RecVec rs, Monad n)
        => P.Producer (Record rs) m () -> m (P.Producer (Record rs) n ())
 inCore xs =
-  do mvs <- allocRec (Proxy :: Proxy rs)
+  do mvs <- allocRec (Proxy :: Proxy rs) initialCapacity
      let feed (!i,!sz,!mvs') row
               | i == sz = growRec (Proxy::Proxy rs) mvs'
                           >>= flip feed row . (i, sz*2,)
