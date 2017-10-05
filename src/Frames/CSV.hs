@@ -248,6 +248,65 @@ readTable :: forall m rs. (MonadIO m, ReadRec rs)
 readTable = readTableOpt defaultParser
 {-# INLINE readTable #-}
 
+
+-- * Loading Data Purely
+
+-- Pipes.each produces a Producer', not a Producer
+each' :: (Foldable f, Monad m) => f a -> P.Producer a m ()
+each' = foldr (\a p -> P.yield a >> p) (return ())
+
+-- | Produce rows where any given entry can fail to parse. The pure equivalent
+-- of `readTableMaybeOpt`.
+toTableMaybeOpt :: (Monad m, ReadRec rs)
+                => ParserOptions -> T.Text -> P.Producer (Rec Maybe rs) m ()
+toTableMaybeOpt opts
+  | isNothing $ headerOverride opts = each' . map (readRow opts) . drop 1 . T.lines
+  | otherwise                       = each' . map (readRow opts) . T.lines
+{-# INLINE toTableMaybeOpt #-}
+
+-- | Produce rows where any given entry can fail to parse. The pure equivalent
+-- of `readTableMaybe`.
+toTableMaybe :: (Monad m, ReadRec rs)
+             => T.Text -> P.Producer (Rec Maybe rs) m ()
+toTableMaybe = toTableMaybeOpt defaultParser
+{-# INLINE toTableMaybe #-}
+
+-- | Returns a producer of rows for which each column was successfully parsed.
+-- The pure equivalent of `readTableOpt`
+toTableOpt :: forall m rs.
+            (MonadPlus m, Monad m, ReadRec rs)
+            => ParserOptions -> T.Text -> P.Producer (Record rs) m ()
+toTableOpt opts txt = toTableMaybeOpt opts txt P.>-> go
+  where go = P.await >>= maybe go (\x -> P.yield x >> go) . recMaybe
+{-# INLINE toTableOpt #-}
+
+toTable :: forall m rs.
+        (MonadPlus m, Monad m, ReadRec rs)
+        => T.Text -> P.Producer (Record rs) m ()
+toTable = toTableOpt defaultParser
+{-# INLINE toTable #-}
+
+-- | Returns a `MonadPlus` producer of rows for which each column was
+-- successfully parsed. This is typically slower than `toTableOpt`. The pure
+-- equivalent of `readTableOpt`.
+toTableOpt' :: forall m rs.
+        (MonadPlus m, Monad m, ReadRec rs)
+        => ParserOptions -> T.Text -> m (Record rs)
+toTableOpt' opts
+  | isNothing $ headerOverride opts = run . map (recMaybe . readRow opts) . drop 1 . T.lines
+  | otherwise                       = run . map (recMaybe . readRow opts) . T.lines
+  where
+    run = foldr (\mr go -> maybe go (\x -> mplus (return x) go) mr) mzero
+
+-- | Returns a `MonadPlus` producer of rows for which each column was
+-- successfully parsed. This is typically slower than `toTable`. The pure
+-- equivalent of `readTable`.
+toTable' :: forall m rs.
+        (MonadPlus m, Monad m, ReadRec rs)
+        => T.Text -> m (Record rs)
+toTable' = toTableOpt' defaultParser
+
+
 -- * Template Haskell
 
 -- | Generate a column type.
