@@ -11,7 +11,7 @@ import Pipes.Prelude (fold)
 tableTypes "Ins" "data/FL2.csv"
 
 main :: IO ()
-main = do (lat,lng,n) <- F.purely fold f (readTable "data/FL2.csv")
+main = do (lat,lng,n) <- runSafeT $ F.purely fold f (readTable "data/FL2.csv")
           print $ lat / n
           print $ lng / n
   where f :: F.Fold Ins (Double,Double,Double)

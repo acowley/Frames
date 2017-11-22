@@ -55,7 +55,7 @@ tableTypes "Row" "data/missing.csv"
 
 -- | Fill in missing columns with a default 'Row' value synthesized
 -- from 'Default' instances.
-holesFilled :: Producer Row IO ()
+holesFilled :: MonadSafe m => Producer Row m ()
 holesFilled = readTableMaybe "data/missing.csv" >-> P.map (fromJust . holeFiller)
   where holeFiller :: Rec Maybe (RecordColumns Row) -> Maybe Row
         holeFiller = recMaybe
@@ -65,7 +65,7 @@ holesFilled = readTableMaybe "data/missing.csv" >-> P.map (fromJust . holeFiller
         fromJust = maybe (error "Frames holesFilled failure") id
 
 showFilledHoles :: IO ()
-showFilledHoles = pipePreview holesFilled 10 cat
+showFilledHoles = runSafeT (pipePreview holesFilled 10 cat)
 
 main :: IO ()
 main = return ()

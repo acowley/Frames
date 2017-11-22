@@ -4,26 +4,22 @@ module Main where
 import Data.Functor.Identity
 import Frames
 import Lens.Micro
-import qualified ListT as L
 import qualified Pipes as P
 import qualified Pipes.Prelude as P
 
 tableTypes "Row" "data/data1.csv"
 
-listTlist :: Monad m => L.ListT m a -> m [a]
-listTlist = L.toList
-
 tbl :: IO [Row]
-tbl = listTlist $ readTable' "data/data1.csv"
+tbl = runSafeT . P.toListM $ readTable "data/data1.csv"
 
 ageDoubler :: (Age ∈ rs) => Record rs -> Record rs
 ageDoubler = age %~ (* 2)
 
 tbl2 :: IO [Row]
-tbl2 = listTlist $ readTable' "data/data2.csv"
+tbl2 = runSafeT . P.toListM $ readTable "data/data2.csv"
 
 tbl2a :: IO [ColFun Maybe Row]
-tbl2a = P.toListM $ readTableMaybe "data/data2.csv"
+tbl2a = runSafeT . P.toListM $ readTableMaybe "data/data2.csv"
 
 {-
 
@@ -53,10 +49,10 @@ REPL examples:
 -- characters (\n) for the text library's line parsing to work.
 tableTypes "Ins" "data/FL2.csv"
 
-insuranceTbl :: P.Producer Ins IO ()
+insuranceTbl :: MonadSafe m => P.Producer Ins m ()
 insuranceTbl = readTable "data/FL2.csv"
 
-insMaybe :: P.Producer (ColFun Maybe Ins) IO ()
+insMaybe :: MonadSafe m => P.Producer (ColFun Maybe Ins) m ()
 insMaybe = readTableMaybe "data/FL2.csv"
 
 type TinyIns = Record [PolicyID, PointLatitude, PointLongitude]

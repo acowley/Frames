@@ -14,21 +14,21 @@ import qualified Data.Foldable as F
 -- Data from http://archive.ics.uci.edu/ml/datasets/Adult
 tableTypes "Income" "data/adult.csv"
 
-adultData :: Producer Income IO ()
+adultData :: MonadSafe m => Producer Income m ()
 adultData = readTable "data/adult.csv"
 
-fishers :: Producer Income IO ()
+fishers :: MonadSafe m => Producer Income m ()
 fishers = adultData >-> P.filter isFisher >-> P.filter makesMoney
   where isFisher = ((>0) . T.count "fishing" . T.toCaseFold . view occupation)
         makesMoney = (> 0) . view capitalGain
 
-fisherIncomeData :: Producer (Record [Age, CapitalGain]) IO ()
+fisherIncomeData :: MonadSafe m => Producer (Record [Age, CapitalGain]) m ()
 fisherIncomeData = fishers >-> P.map rcast
 
 mkPlot :: IO ()
 mkPlot = do env <- defaultEnv bitmapAlignmentFns 640 480
             let chart2diagram = fst . runBackendR env . toRenderable . execEC
-            xs <- P.toListM fisherIncomeData
+            xs <- runSafeT $ P.toListM fisherIncomeData
             let d = chart2diagram $ do
                       layout_title .= "Farmer/fisher Income vs Age"
                       layout_x_axis . laxis_title .= "Age (Years)"
@@ -39,7 +39,8 @@ mkPlot = do env <- defaultEnv bitmapAlignmentFns 640 480
 
 -- Manually fused folds
 main :: IO ()
-main = do ((age_,inc,n), _) <- P.fold' aux (0,0,0::Double) id fisherIncomeData
+main = do ((age_,inc,n), _) <- runSafeT $
+                               P.fold' aux (0,0,0::Double) id fisherIncomeData
           putStrLn $ "The average farmer/fisher is "++
                      show (fromIntegral age_ / n) ++
                      " and made " ++ show (fromIntegral inc / n)

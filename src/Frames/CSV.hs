@@ -1,3 +1,4 @@
+{-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE BangPatterns,
              CPP,
              DataKinds,
@@ -24,8 +25,7 @@ import Data.Monoid (Monoid)
 #endif
 
 import Control.Arrow (first, second)
-import Control.Monad (MonadPlus(..), when, void)
-import Control.Monad.IO.Class
+import Control.Monad (when, void)
 import Data.Char (isAlpha, isAlphaNum, toLower, toUpper)
 import qualified Data.Foldable as F
 import Data.List (intercalate)
@@ -33,7 +33,6 @@ import Data.Maybe (isNothing, fromMaybe)
 import Data.Monoid ((<>))
 import Data.Proxy
 import qualified Data.Text as T
-import qualified Data.Text.IO as T
 import Data.Vinyl (RElem, Rec)
 import Data.Vinyl.TypeLevel (RecAll, RIndex)
 import Data.Vinyl.Functor (Identity)
@@ -45,9 +44,18 @@ import Frames.RecF
 import Frames.RecLens
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
+import Pipes ((>->))
 import qualified Pipes as P
 import qualified Pipes.Prelude as P
-import System.IO (Handle, hIsEOF, openFile, IOMode(..), withFile)
+import qualified Pipes.ByteString
+import qualified Pipes.Group
+import qualified Pipes.Parse as P
+import qualified Pipes.Prelude.Text as PT
+import qualified Pipes.Text as PT
+import qualified Pipes.Text.Encoding as PT
+import qualified Pipes.Safe as P
+import qualified Pipes.Safe.Prelude
+import System.IO (IOMode(ReadMode))
 
 type Separator = T.Text
 
@@ -150,25 +158,26 @@ reassembleRFC4180QuotedParts sep quoteChar = go
 
 -- | Infer column types from a prefix (up to 1000 lines) of a CSV
 -- file.
-prefixInference :: (ColumnTypeable a, Monoid a)
-                => ParserOptions -> Handle -> IO [a]
-prefixInference opts h = T.hGetLine h >>= go prefixSize . inferCols
-  where prefixSize = 1000 :: Int
-        inferCols = map inferType . tokenizeRow opts
-        go 0 ts = return ts
-        go !n ts =
-          hIsEOF h >>= \case
-            True -> return ts
-            False -> T.hGetLine h >>= go (n - 1) . zipWith (<>) ts . inferCols
+prefixInference :: (ColumnTypeable a, Monoid a, Monad m)
+                => ParserOptions
+                -> P.Parser T.Text m [a]
+prefixInference opts = P.draw >>= \case
+  Nothing -> return []
+  Just row1 -> P.foldAll (\ts -> zipWith (<>) ts . inferCols)
+                         (inferCols row1)
+                         id
+  where inferCols = map inferType . tokenizeRow opts
 
 -- | Extract column names and inferred types from a CSV file.
-readColHeaders :: (ColumnTypeable a, Monoid a)
-               => ParserOptions -> FilePath -> IO [(T.Text, a)]
-readColHeaders opts f =  withFile f ReadMode $ \h ->
-                         zip <$> maybe (tokenizeRow opts <$> T.hGetLine h)
-                                       pure
-                                       (headerOverride opts)
-                             <*> prefixInference opts h
+readColHeaders :: (ColumnTypeable a, Monoid a, Monad m)
+               => ParserOptions -> P.Producer T.Text m () -> m [(T.Text, a)]
+readColHeaders opts = P.evalStateT $
+  do headerRow <- maybe ((tokenizeRow opts
+                         . fromMaybe (error "Empty Producer has no header row")) <$> P.draw)
+                        pure
+                        (headerOverride opts)
+     colTypes <- prefixInference opts
+     return (zip headerRow colTypes)
 
 -- * Loading Data
 
@@ -184,69 +193,100 @@ instance (Parseable t, ReadRec ts) => ReadRec (s :-> t ': ts) where
   readRec [] = frameCons Nothing (readRec [])
   readRec (h:t) = frameCons (parse' h) (readRec t)
 
+-- | Produce the lines of a latin1 (or ISO8859 Part 1) encoded file as
+-- ’T.Text’ values. Similar to ’PT.readFileLn’ that uses the system
+-- locale for decoding, but built on the ’PT.decodeIso8859_1’ decoder.
+readFileLatin1Ln :: P.MonadSafe m => FilePath -> P.Producer T.Text m ()
+readFileLatin1Ln fp = Pipes.Safe.Prelude.withFile fp ReadMode $ \h ->
+  let latinText = void (PT.decodeIso8859_1 (Pipes.ByteString.fromHandle h))
+      latinLines = PT.decode PT.lines latinText
+  in Pipes.Group.concats latinLines
+
 -- | Read a 'RecF' from one line of CSV.
 readRow :: ReadRec rs => ParserOptions -> T.Text -> Rec Maybe rs
 readRow = (readRec .) . tokenizeRow
 
 -- | Produce rows where any given entry can fail to parse.
-readTableMaybeOpt :: (MonadIO m, ReadRec rs)
+readTableMaybeOpt :: (P.MonadSafe m, ReadRec rs)
                   => ParserOptions -> FilePath -> P.Producer (Rec Maybe rs) m ()
 readTableMaybeOpt opts csvFile =
-  do h <- liftIO $ do
-            h <- openFile csvFile ReadMode
-            when (isNothing $ headerOverride opts) (void $ T.hGetLine h)
-            return h
-     let go = liftIO (hIsEOF h) >>= \case
-              True -> return ()
-              False -> liftIO (readRow opts <$> T.hGetLine h) >>= P.yield >> go
-     go
+  PT.readFileLn csvFile >-> pipeTableMaybeOpt opts
 {-# INLINE readTableMaybeOpt #-}
 
+-- | Stream lines of CSV data into rows of ’Rec’ values values where
+-- any given entry can fail to parse.
+pipeTableMaybeOpt :: (Monad m, ReadRec rs)
+                  => ParserOptions
+                  -> P.Pipe T.Text (Rec Maybe rs) m ()
+pipeTableMaybeOpt opts = do
+  when (isNothing (headerOverride opts)) (() <$ P.await)
+  P.map (readRow opts)
+{-# INLINE pipeTableMaybeOpt #-}
+
 -- | Produce rows where any given entry can fail to parse.
-readTableMaybe :: (MonadIO m, ReadRec rs)
+readTableMaybe :: (P.MonadSafe m, ReadRec rs)
                => FilePath -> P.Producer (Rec Maybe rs) m ()
 readTableMaybe = readTableMaybeOpt defaultParser
 {-# INLINE readTableMaybe #-}
 
--- | Returns a `MonadPlus` producer of rows for which each column was
--- successfully parsed. This is typically slower than 'readTableOpt'.
-readTableOpt' :: forall m rs.
-                 (MonadPlus m, MonadIO m, ReadRec rs)
-              => ParserOptions -> FilePath -> m (Record rs)
-readTableOpt' opts csvFile =
-  do h <- liftIO $ do
-            h <- openFile csvFile ReadMode
-            when (isNothing $ headerOverride opts) (void $ T.hGetLine h)
-            return h
-     let go = liftIO (hIsEOF h) >>= \case
-              True -> mzero
-              False -> let r = recMaybe . readRow opts <$> T.hGetLine h
-                       in liftIO r >>= maybe go (flip mplus go . return)
-     go
-{-# INLINE readTableOpt' #-}
+-- | Stream lines of CSV data into rows of ’Rec’ values where any
+-- given entry can fail to parse.
+pipeTableMaybe :: (Monad m, ReadRec rs) => P.Pipe T.Text (Rec Maybe rs) m ()
+pipeTableMaybe = pipeTableMaybeOpt defaultParser
+{-# INLINE pipeTableMaybe #-}
 
--- | Returns a `MonadPlus` producer of rows for which each column was
--- successfully parsed. This is typically slower than 'readTable'.
-readTable' :: forall m rs. (MonadPlus m, MonadIO m, ReadRec rs)
-           => FilePath -> m (Record rs)
-readTable' = readTableOpt' defaultParser
-{-# INLINE readTable' #-}
+-- -- | Returns a `MonadPlus` producer of rows for which each column was
+-- -- successfully parsed. This is typically slower than 'readTableOpt'.
+-- readTableOpt' :: forall m rs.
+--                  (MonadPlus m, MonadIO m, ReadRec rs)
+--               => ParserOptions -> FilePath -> m (Record rs)
+-- readTableOpt' opts csvFile =
+--   do h <- liftIO $ do
+--             h <- openFile csvFile ReadMode
+--             when (isNothing $ headerOverride opts) (void $ T.hGetLine h)
+--             return h
+--      let go = liftIO (hIsEOF h) >>= \case
+--               True -> mzero
+--               False -> let r = recMaybe . readRow opts <$> T.hGetLine h
+--                        in liftIO r >>= maybe go (flip mplus go . return)
+--      go
+-- {-# INLINE readTableOpt' #-}
+
+-- -- | Returns a `MonadPlus` producer of rows for which each column was
+-- -- successfully parsed. This is typically slower than 'readTable'.
+-- readTable' :: forall m rs. (P.MonadSafe m, ReadRec rs)
+--            => FilePath -> m (Record rs)
+-- readTable' = readTableOpt' defaultParser
+-- {-# INLINE readTable' #-}
 
 -- | Returns a producer of rows for which each column was successfully
 -- parsed.
 readTableOpt :: forall m rs.
-                (MonadIO m, ReadRec rs)
+                (P.MonadSafe m, ReadRec rs)
              => ParserOptions -> FilePath -> P.Producer (Record rs) m ()
 readTableOpt opts csvFile = readTableMaybeOpt opts csvFile P.>-> go
   where go = P.await >>= maybe go (\x -> P.yield x >> go) . recMaybe
 {-# INLINE readTableOpt #-}
 
+-- | Pipe lines of CSV text into rows for which each column was
+-- successfully parsed.
+pipeTableOpt :: (ReadRec rs, Monad m)
+             => ParserOptions -> P.Pipe T.Text (Record rs) m ()
+pipeTableOpt opts = pipeTableMaybeOpt opts >-> P.map recMaybe >-> P.concat
+{-# INLINE pipeTableOpt #-}
+
 -- | Returns a producer of rows for which each column was successfully
 -- parsed.
-readTable :: forall m rs. (MonadIO m, ReadRec rs)
+readTable :: forall m rs. (P.MonadSafe m, ReadRec rs)
           => FilePath -> P.Producer (Record rs) m ()
 readTable = readTableOpt defaultParser
 {-# INLINE readTable #-}
+
+-- | Pipe lines of CSV text into rows for which each column was
+-- successfully parsed.
+pipeTable :: (ReadRec rs, Monad m) => P.Pipe T.Text (Record rs) m ()
+pipeTable = pipeTableOpt defaultParser
+{-# INLINE pipeTable #-}
 
 -- * Template Haskell
 
@@ -353,6 +393,8 @@ data RowGen a = RowGen { columnNames    :: [String]
                        -- can be used to classify a column. This is
                        -- essentially a type-level list of types. See
                        -- 'colQ'.
+                       , lineReader :: P.Producer T.Text (P.SafeT IO) ()
+                       -- ^ A producer of lines of ’T.Text’xs
                        }
 
 -- | Shorthand for a 'Proxy' value of 'ColumnUniverse' applied to the
@@ -364,13 +406,13 @@ colQ n = [e| (Proxy :: Proxy (ColumnUniverse $(conT n))) |]
 -- get column names from the data file, use the default column
 -- separator (a comma), infer column types from the default 'Columns'
 -- set of types, and produce a row type with name @Row@.
-rowGen :: RowGen Columns
-rowGen = RowGen [] "" defaultSep "Row" Proxy
+rowGen :: FilePath -> RowGen Columns
+rowGen = RowGen [] "" defaultSep "Row" Proxy . PT.readFileLn
 
 -- | Generate a type for each row of a table. This will be something
 -- like @Record ["x" :-> a, "y" :-> b, "z" :-> c]@.
 tableType :: String -> FilePath -> DecsQ
-tableType n = tableType' rowGen { rowTypeName = n }
+tableType n fp = tableType' (rowGen fp) { rowTypeName = n }
 
 -- | Like 'tableType', but additionally generates a type synonym for
 -- each column, and a proxy value of that type. If the CSV file has
@@ -378,32 +420,42 @@ tableType n = tableType' rowGen { rowTypeName = n }
 -- @type Foo = "foo" :-> Int@, for example, @foo = rlens (Proxy :: Proxy
 -- Foo)@, and @foo' = rlens' (Proxy :: Proxy Foo)@.
 tableTypes :: String -> FilePath -> DecsQ
-tableTypes n = tableTypes' rowGen { rowTypeName = n }
+tableTypes n fp = tableTypes' (rowGen fp) { rowTypeName = n }
 
 -- * Customized Data Set Parsing
+
+-- | Inspect no more than this many lines when inferring column types.
+prefixSize :: Int
+prefixSize = 1000
 
 -- | Generate a type for a row of a table. This will be something like
 -- @Record ["x" :-> a, "y" :-> b, "z" :-> c]@.  Column type synonyms
 -- are /not/ generated (see 'tableTypes'').
 tableType' :: forall a. (ColumnTypeable a, Monoid a)
-           => RowGen a -> FilePath -> DecsQ
-tableType' (RowGen {..}) csvFile =
+           => RowGen a -> DecsQ
+tableType' (RowGen {..}) =
     pure . TySynD (mkName rowTypeName) [] <$>
-    (runIO (readColHeaders opts csvFile) >>= recDec')
+    (runIO (P.runSafeT (readColHeaders opts lineSource)) >>= recDec')
   where recDec' = recDec . map (second colType) :: [(T.Text, a)] -> Q Type
         colNames' | null columnNames = Nothing
                   | otherwise = Just (map T.pack columnNames)
         opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
+        lineSource = lineReader >-> P.take prefixSize
+
+-- | Tokenize the first line of a ’P.Producer’.
+colNamesP :: Monad m
+          => ParserOptions -> P.Producer T.Text m () -> m [T.Text]
+colNamesP opts src = either (const []) (tokenizeRow opts . fst) <$> P.next src
 
 -- | Generate a type for a row of a table all of whose columns remain
 -- unparsed 'Text' values.
 tableTypesText' :: forall a. (ColumnTypeable a, Monoid a)
-                => RowGen a -> FilePath -> DecsQ
-tableTypesText' (RowGen {..}) csvFile =
-  do colNames <- runIO $ withFile csvFile ReadMode $ \h ->
-       maybe (tokenizeRow opts <$> T.hGetLine h)
-             pure
-             (headerOverride opts)
+                => RowGen a -> DecsQ
+tableTypesText' (RowGen {..}) =
+  do colNames <- runIO . P.runSafeT $
+                 maybe (colNamesP opts lineReader)
+                       pure
+                       (headerOverride opts)
      let headers = zip colNames (repeat (inferType " "))
      recTy <- tySynD (mkName rowTypeName) [] (recDec' headers)
      let optsName = case rowTypeName of
@@ -424,9 +476,9 @@ tableTypesText' (RowGen {..}) csvFile =
 -- @type Foo = "foo" :-> Int@, for example, @foo = rlens (Proxy ::
 -- Proxy Foo)@, and @foo' = rlens' (Proxy :: Proxy Foo)@.
 tableTypes' :: forall a. (ColumnTypeable a, Monoid a)
-            => RowGen a -> FilePath -> DecsQ
-tableTypes' (RowGen {..}) csvFile =
-  do headers <- runIO $ readColHeaders opts csvFile
+            => RowGen a -> DecsQ
+tableTypes' (RowGen {..}) =
+  do headers <- runIO . P.runSafeT $ readColHeaders opts lineSource
      recTy <- tySynD (mkName rowTypeName) [] (recDec' headers)
      let optsName = case rowTypeName of
                       [] -> error "Row type name shouldn't be empty"
@@ -441,6 +493,7 @@ tableTypes' (RowGen {..}) csvFile =
         colNames' | null columnNames = Nothing
                   | otherwise = Just (map T.pack columnNames)
         opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
+        lineSource = lineReader >-> P.take prefixSize
         mkColDecs colNm colTy = do
           let safeName = tablePrefix ++ (T.unpack . sanitizeTypeName $ colNm)
           mColNm <- lookupTypeName safeName
@@ -465,5 +518,5 @@ produceCSV recs = do
 writeCSV :: (ColumnHeaders ts, AsVinyl ts, Foldable f,
              RecAll Identity (UnColumn ts) Show)
          => FilePath -> f (Record ts) -> IO ()
-writeCSV fp recs = withFile fp WriteMode $ \h ->
-                     P.runEffect $ produceCSV recs P.>-> P.toHandle h
+writeCSV fp recs = P.runSafeT . P.runEffect $
+                   produceCSV recs >-> P.map T.pack >-> PT.writeFileLn fp

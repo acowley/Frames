@@ -1,3 +1,11 @@
+# 0.3.0
+
+- Pervasive use of `pipes` for CSV data loading
+
+This provides better exception handling (file handles should be closed more reliably), and offers an interface point for customized handling of input texts. An example of this latter point is working with particular file encodings.
+
+A breaking change is that operations that previously returned `IO` values now return `MonadSafe` constrained values.
+
 # 0.2.1
 
 - Refactored to use the `CoRec` type provided by `vinyl` >= 0.6.0

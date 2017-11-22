@@ -14,7 +14,7 @@ import Statistics.Sample.KernelDensity (kde)
 tableTypes "Trigly" "data/trigly_d.csv"
 
 -- Load the data. Invalid records use zeros as a placeholder.
-triglyData :: P.Producer Trigly IO ()
+triglyData :: MonadSafe m => P.Producer Trigly m ()
 triglyData = readTable "data/trigly_d.csv" P.>-> P.filter ((> 0) . view lBDLDL)
 
 -- Adapted from a Chart example
@@ -49,7 +49,7 @@ mkPlots xs = do layout_title .= "Distributions"
 main :: IO ()
 main = do env <- defaultEnv bitmapAlignmentFns 640 480
           let chart2diagram = fst . runBackendR env . toRenderable . execEC
-          ldlData <- P.toListM $ triglyData P.>-> P.map rcast
+          ldlData <- runSafeT . P.toListM $ triglyData P.>-> P.map rcast
           let d = chart2diagram $ mkPlots ldlData
               sz = dims2D (width d) (height d)
           renderRasterific "plot.png" sz d

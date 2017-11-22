@@ -12,7 +12,7 @@ import Graphics.Rendering.Chart.Easy
 tableTypes "Row" "data/prestige.csv"
 
 loadRows :: IO (Frame Row)
-loadRows = inCoreAoS $ readTable "data/prestige.csv"
+loadRows = inCoreAoS (readTable "data/prestige.csv")
 
 mkPlot :: IO ()
 mkPlot = do pts <- toList . fmap (view education &&& view income) <$> loadRows

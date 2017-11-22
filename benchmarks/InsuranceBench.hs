@@ -13,7 +13,7 @@ tableTypes "Ins" "data/FL2.csv"
 
 type TinyIns = Record [PolicyID, PointLatitude, PointLongitude]
 
-tblP :: P.Producer Ins IO ()
+tblP :: P.Producer Ins (SafeT IO) ()
 tblP = readTable "data/FL2.csv"
 
 -- Strict pair
@@ -22,13 +22,15 @@ data P a = P !a !a
 -- | Perform two consecutive folds of streamed-in data.
 pipeBench :: IO (P Double)
 pipeBench = do (n,sumLat) <-
+                 runSafeT $
                  P.fold (\ !(!i, !s) r -> (i+1, s+rget pointLatitude r))
                         (0::Int,0)
                         id
                         tbl
-               sumLong <- P.fold (\s r -> (s + rget pointLongitude r)) 0 id tbl
+               sumLong <- runSafeT $
+                          P.fold (\s r -> (s + rget pointLongitude r)) 0 id tbl
                return $! P (sumLat / fromIntegral n) (sumLong / fromIntegral n)
-  where tbl = P.for tblP (P.yield . rcast) :: P.Producer TinyIns IO ()
+  where tbl = P.for tblP (P.yield . rcast) :: P.Producer TinyIns (SafeT IO) ()
 
 -- | Perform two consecutive folds after first streaming all data into
 -- an in-memory representation.
@@ -75,4 +77,4 @@ main :: IO ()
 main = defaultMain [ bench "pipes" $ whnfIO pipeBench
                    , bench "pipes in-core" $ whnfIO pipeBenchInCore
                    , bench "pipes in-core subset" $ whnfIO pipeBenchInCore'
-                   , bench "pipes AoS" $ whnfIO pipeBenchAoS ]
+                   , bench "pipes AoS subset" $ whnfIO pipeBenchAoS ]
