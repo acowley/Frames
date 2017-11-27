@@ -62,7 +62,7 @@ library
                        pipes-bytestring >= 2.1.6 && < 2.2,
                        pipes-group >= 1.0.8 && < 1.1,
                        pipes-parse >= 3.0 && < 3.1,
-                       pipes-safe >= 2.2.4 && < 2.3,
+                       pipes-safe >= 2.2.6 && < 2.3,
                        pipes-text >= 0.0.2.5 && < 0.1,
                        vinyl >= 0.6 && < 0.7
   hs-source-dirs:      src

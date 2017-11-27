@@ -49,11 +49,6 @@ import qualified Pipes.Safe as PS
 import Control.Monad.Primitive
 import Control.Monad.Trans.Class
 
-instance PrimMonad m => PrimMonad (PS.SafeT m) where
-  type PrimState (PS.SafeT m) = PrimState m
-  primitive = lift . primitive
-  {-# INLINE primitive #-}
-
 -- * SafeT helpers
 
 -- | Run a self-contained ’Pipes.Effect’ and execute the finalizers
