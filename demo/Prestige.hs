@@ -1,7 +1,7 @@
 {-# LANGUAGE DataKinds, FlexibleContexts, QuasiQuotes, TemplateHaskell #-}
 import Control.Applicative
 import Control.Arrow ((&&&))
-import Diagrams.Prelude (Diagram, R2, dims2D, width, height)
+import Diagrams.Prelude (Diagram, dims2D, width, height)
 import Diagrams.Backend.Rasterific
 import Data.Foldable (toList)
 import Frames
