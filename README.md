@@ -43,8 +43,8 @@ ratio :: Record '[Income, Prestige] -> Double
 ratio = runcurry' (\i p -> fromIntegral i / p)
 
 averageRatio :: IO Double
-averageRatio = L.fold (L.premap (ratio . rcast) go) <$> loadRows
-  where go = (/) <$> L.sum <*> L.genericLength
+averageRatio = L.fold (L.premap (ratio . rcast) avg) <$> loadRows
+  where avg = (/) <$> L.sum <*> L.genericLength
 ```
 
 ## Tutorial
