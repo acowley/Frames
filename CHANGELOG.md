@@ -6,6 +6,9 @@ This provides better exception handling (file handles should be closed more reli
 
 A breaking change is that operations that previously returned `IO` values now return `MonadSafe` constrained values.
 
+- Adaptation of `Data.Vinyl.Curry.runcurry` to the Frames `Record` type
+This simply strips the column name information from a row before applying the function from `vinyl`.
+
 # 0.2.1
 
 - Refactored to use the `CoRec` type provided by `vinyl` >= 0.6.0
