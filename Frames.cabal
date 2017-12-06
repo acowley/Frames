@@ -1,5 +1,5 @@
 name:                Frames
-version:             0.3.0
+version:             0.3.0.1
 synopsis:            Data frames For working with tabular data files
 description:         User-friendly, type safe, runtime efficient tooling for
                      working with tabular data deserialized from
@@ -15,7 +15,7 @@ copyright:           Copyright (C) 2014-2015 Anthony Cowley
 category:            Data
 build-type:          Simple
 extra-source-files:  benchmarks/*.hs benchmarks/*.py
-                     demo/Main.hs CHANGELOG.md
+                     demo/Main.hs CHANGELOG.md README.md
                      data/GetData.hs
                      test/examples.toml
                      test/data/managers.csv test/data/employees.csv
