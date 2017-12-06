@@ -26,7 +26,7 @@ import Data.Monoid (Monoid)
 
 import Control.Arrow (first, second)
 import Control.Monad (when, void)
-import Data.Char (isAlpha, isAlphaNum, toLower, toUpper)
+import Data.Char (isSpace, isAlpha, isAlphaNum, toLower, toUpper)
 import qualified Data.Foldable as F
 import Data.List (intercalate)
 import Data.Maybe (isNothing, fromMaybe)
@@ -352,7 +352,9 @@ lowerHead = fmap aux . T.uncons
 colDec :: ColumnTypeable a => T.Text -> T.Text -> a -> DecsQ
 colDec prefix colName colTy = (:) <$> mkColTDec colTypeQ colTName'
                                   <*> mkColPDec colTName' colTyQ colPName
-  where colTName = sanitizeTypeName (prefix <> colName)
+  where colTName = sanitizeTypeName
+                     (T.filter (not . isSpace)
+                               (T.toTitle $ prefix <> " " <> colName))
         colPName = fromMaybe "colDec impossible" (lowerHead colTName)
         colTName' = mkName $ T.unpack colTName
         colTyQ = colType colTy
