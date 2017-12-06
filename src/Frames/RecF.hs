@@ -16,13 +16,15 @@ module Frames.RecF (V.rappend, V.rtraverse, rdel, CanDelete,
                     frameCons, frameConsA, frameSnoc,
                     pattern (:&), pattern Nil, AllCols,
                     UnColumn, AsVinyl(..), mapMono, mapMethod,
+                    runcurry, runcurry', runcurryA, runcurryA',
                     ShowRec, showRec, ColFun, ColumnHeaders,
                     columnHeaders, reifyDict) where
 import Data.List (intercalate)
 import Data.Proxy
 import qualified Data.Vinyl as V
 import Data.Vinyl (Rec(RNil), RecApplicative(rpure))
-import Data.Vinyl.Functor (Identity)
+import qualified Data.Vinyl.Curry as V
+import Data.Vinyl.Functor (Compose, Identity)
 import Data.Vinyl.TypeLevel
 import Frames.Col
 import Frames.TypeLevel
@@ -126,6 +128,32 @@ mapMethod :: forall f c ts.
              (Functor f, AllConstrained c (UnColumn ts), AsVinyl ts)
           => Proxy c -> (forall a. c a => a -> a) -> Rec f ts -> Rec f ts
 mapMethod p f = fromVinyl . mapMethodV p f . toVinyl
+
+-- * Currying Adapted from "Vinyl.Curry"
+
+-- | N-ary version of 'uncurry' over functorial frame rows. See 'V.runcurry'.
+runcurry :: (Functor f, AsVinyl ts)
+         => V.CurriedF f (UnColumn ts) a -> Rec f ts -> a
+runcurry = (. toVinyl) . V.runcurry
+{-# INLINABLE runcurry #-}
+
+-- | N-ary version of 'uncurry' over pure frame rows. See 'V.runcurry''.
+runcurry' :: AsVinyl ts => V.Curried (UnColumn ts) a -> Rec Identity ts -> a
+runcurry' = (. toVinyl) . V.runcurry'
+{-# INLINABLE runcurry' #-}
+
+-- | Lift an N-ary function to work over a row of 'Applicative'
+-- computations. See 'V.runcurryA'.
+runcurryA' :: (Applicative f, AsVinyl ts)
+           => V.Curried (UnColumn ts) a -> Rec f ts -> f a
+runcurryA' = (. toVinyl) . V.runcurryA'
+
+-- | Lift an N-ary function over types in @g@ to work over a record of
+-- 'Compose'd 'Applicative' computations. A more general version of
+-- 'runcurryA''.
+runcurryA :: (Applicative f, Functor g, AsVinyl ts)
+          => V.CurriedF g (UnColumn ts) a -> Rec (Compose f g) ts -> f a
+runcurryA = (. toVinyl) . V.runcurryA
 
 -- | A constraint that a field can be deleted from a record.
 type CanDelete r rs = (V.RElem r rs (RIndex r rs), RDelete r rs V.⊆ rs)
