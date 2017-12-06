@@ -297,14 +297,18 @@ recDec = appT [t|Record|] . go
         go ((n,t):cs) =
           [t|($(litT $ strTyLit (T.unpack n)) :-> $(t)) ': $(go cs) |]
 
+
+-- | Capitalize the first letter of a 'T.Text'.
+capitalize1 :: T.Text -> T.Text
+capitalize1 = foldMap (onHead toUpper) . T.split (not . isAlphaNum)
+  where onHead f = maybe mempty (uncurry T.cons . first f) . T.uncons
+
 -- | Massage a column name from a CSV file into a valid Haskell type
 -- identifier.
 sanitizeTypeName :: T.Text -> T.Text
 sanitizeTypeName = unreserved . fixupStart
-                 . T.concat . T.split (not . valid) . toTitle'
+                 . T.concat . T.split (not . valid) . capitalize1
   where valid c = isAlphaNum c || c == '\'' || c == '_'
-        toTitle' = foldMap (onHead toUpper) . T.split (not . isAlphaNum)
-        onHead f = maybe mempty (uncurry T.cons) . fmap (first f) . T.uncons
         unreserved t
           | t `elem` ["Type", "Class"] = "Col" <> t
           | otherwise = t
@@ -352,9 +356,7 @@ lowerHead = fmap aux . T.uncons
 colDec :: ColumnTypeable a => T.Text -> T.Text -> a -> DecsQ
 colDec prefix colName colTy = (:) <$> mkColTDec colTypeQ colTName'
                                   <*> mkColPDec colTName' colTyQ colPName
-  where colTName = sanitizeTypeName
-                     (T.filter (not . isSpace)
-                               (T.toTitle $ prefix <> " " <> colName))
+  where colTName = sanitizeTypeName (prefix <> capitalize1 colName)
         colPName = fromMaybe "colDec impossible" (lowerHead colTName)
         colTName' = mkName $ T.unpack colTName
         colTyQ = colType colTy
