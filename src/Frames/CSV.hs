@@ -1,16 +1,7 @@
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE BangPatterns,
-             CPP,
-             DataKinds,
-             FlexibleInstances,
-             KindSignatures,
-             LambdaCase,
-             MultiParamTypeClasses,
-             OverloadedStrings,
-             QuasiQuotes,
-             RecordWildCards,
-             ScopedTypeVariables,
-             TemplateHaskell,
+{-# LANGUAGE BangPatterns, CPP, DataKinds, FlexibleInstances,
+             KindSignatures, LambdaCase, MultiParamTypeClasses,
+             OverloadedStrings, QuasiQuotes, RankNTypes,
+             RecordWildCards, ScopedTypeVariables, TemplateHaskell,
              TypeOperators #-}
 -- | Infer row types from comma-separated values (CSV) data and read
 -- that data from files. Template Haskell is used to generate the
@@ -26,7 +17,7 @@ import Data.Monoid (Monoid)
 
 import Control.Arrow (first, second)
 import Control.Monad (when, void)
-import Data.Char (isSpace, isAlpha, isAlphaNum, toLower, toUpper)
+import Data.Char (isAlpha, isAlphaNum, toLower, toUpper)
 import qualified Data.Foldable as F
 import Data.List (intercalate)
 import Data.Maybe (isNothing, fromMaybe)

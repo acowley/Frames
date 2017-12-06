@@ -24,6 +24,7 @@ module Frames
   , Text
   ) where
 import Control.Monad.IO.Class (MonadIO)
+import Control.Monad.Primitive
 import Data.Text (Text)
 import Data.Vinyl ((<+>), Rec)
 import Data.Vinyl.CoRec (Field, onField, onCoRec)
@@ -45,9 +46,6 @@ import Frames.TypeLevel
 import qualified Pipes as P
 import Pipes.Safe (MonadSafe, runSafeT, runSafeP, SafeT)
 import qualified Pipes.Safe as PS
-
-import Control.Monad.Primitive
-import Control.Monad.Trans.Class
 
 -- * SafeT helpers
 
