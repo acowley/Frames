@@ -28,7 +28,6 @@ Lets infer a bunch of types from a data file at compile time, then, at runtime, 
 ```haskell
 {-# LANGUAGE DataKinds, FlexibleContexts, QuasiQuotes, TemplateHaskell #-}
 import qualified Control.Foldl as L
-import Data.Vinyl.Curry (runcurry')
 import Data.Vinyl (rcast)
 import Frames
 
