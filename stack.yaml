@@ -1,9 +1,10 @@
-resolver: lts-9.13
+resolver: nightly-2017-12-13
+
 packages:
 - '.'
-extra-deps:
-- vinyl-0.6.0
 flags:
   Frames:
     demos: false
 extra-package-dbs: []
+nix:
+  shell-file: shell.nix

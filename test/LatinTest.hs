@@ -7,10 +7,10 @@
 {-# LANGUAGE TypeOperators     #-}
 {-# OPTIONS_GHC -Wall #-}
 
-module PipesSafe where
+module LatinTest where
 
 import           Data.Vinyl    (Rec)
-import           Frames        ((:->), MonadSafe, Text, runSafeEffect)
+import           Frames        ((:->), MonadSafe, Text, runSafeEffect, rget)
 import           Frames.CSV    (declareColumn, pipeTableMaybe, readFileLatin1Ln)
 import           Frames.Rec
 import           Pipes         (Producer, (>->))
@@ -28,6 +28,7 @@ type ManMaybe = Rec Maybe ManColumns
 manStreamM :: MonadSafe m => Producer ManMaybe m ()
 manStreamM = readFileLatin1Ln "test/data/latinManagers.csv" >-> pipeTableMaybe
 
-printManagers :: IO ()
-printManagers =
-  runSafeEffect $ manStreamM >-> P.map recMaybe >-> P.concat >-> P.print
+managers :: IO [Text]
+managers =
+  runSafeEffect . P.toListM $
+  manStreamM >-> P.map recMaybe >-> P.concat >-> P.map (rget manager)

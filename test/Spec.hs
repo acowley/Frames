@@ -19,6 +19,8 @@ import System.IO.Temp (withSystemTempFile)
 import Test.Hspec as H
 import Test.HUnit.Lang (assertFailure)
 
+import qualified LatinTest as Latin
+
 -- | Extract all example @(CSV, generatedCode)@ pairs from
 -- @test/examples.toml@
 csvTests :: [(CsvExample, String)]
@@ -33,16 +35,16 @@ csvTests = $(do addDependentFile "test/examples.toml"
 -- since the generated declarations are never turned into actual
 -- declarations, they do not affect the `lookupTypeName` call that is
 -- designed to prevent duplicate declarations.
-overlappingGeneration :: String
-overlappingGeneration = m ++ "\n\n" ++ e
-  where m = $(do csvExamples <- TH.runIO (examplesFrom "test/examples.toml")
-                 let Just (CsvExample _ managers _) =
-                       find (\(CsvExample k _ _) -> k == "managers") csvExamples
-                 generateCode "ManagerRec" managers)
-        e = $(do csvExamples <- TH.runIO (examplesFrom "test/examples.toml")
-                 let Just (CsvExample _ employees _) =
-                       find (\(CsvExample k _ _) -> k == "employees") csvExamples
-                 generateCode "EmployeeRec" employees)
+-- overlappingGeneration :: String
+-- overlappingGeneration = m ++ "\n\n" ++ e
+--   where m = $(do csvExamples <- TH.runIO (examplesFrom "test/examples.toml")
+--                  let Just (CsvExample _ managers _) =
+--                        find (\(CsvExample k _ _) -> k == "managers") csvExamples
+--                  generateCode "ManagerRec" managers)
+--         e = $(do csvExamples <- TH.runIO (examplesFrom "test/examples.toml")
+--                  let Just (CsvExample _ employees _) =
+--                        find (\(CsvExample k _ _) -> k == "employees") csvExamples
+--                  generateCode "EmployeeRec" employees)
 
 -- | To generate example generated code from raw CSV data, add the csv
 -- to @examples.toml@ and set the @generated@ key to an empty
@@ -73,10 +75,10 @@ main = do
   hspec $
     do describe "Haskell type generation" $
          mapM_ (\(CsvExample k _ g, g') -> it k (Code g' `shouldBe` Code g)) csvTests
-       describe "Multiple tables" $
-          do _g <- H.runIO $
-                   generatedFrom "test/examples.toml" "managers_employees"
-             it "Shouldn't duplicate columns" pending
+       -- describe "Multiple tables" $
+       --    do _g <- H.runIO $
+       --             generatedFrom "test/examples.toml" "managers_employees"
+       --       it "Shouldn't duplicate columns" pending
        describe "Writing CSV Data" $ do
          let csvInput = case find ((== "managers") . name . fst) csvTests of
                           Just (ex,_) -> csv ex
@@ -105,3 +107,7 @@ main = do
          it "Produces parseable output" $
            unless (frame == frame2)
                   (assertFailure "Reparsed CSV differs from input")
+       describe "Latin1 Text Encoding" $
+         do managers <- H.runIO (Latin.managers)
+            it "Parses" $
+              managers `shouldBe` ["João", "Esperança"]
