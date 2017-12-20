@@ -16,14 +16,15 @@ import Language.Haskell.TH
 import Language.Haskell.TH.Quote
 import Pipes hiding (Proxy)
 import qualified Pipes.Prelude as P
+import Pipes.Safe (SafeT, runSafeT, MonadMask)
 
 -- * Preview Results
 
 -- | @preview src n f@ prints out the first @n@ results of piping
 -- @src@ through @f@.
-pipePreview :: (MonadIO m, Show b)
-            => Producer a m () -> Int -> Pipe a b m () -> m ()
-pipePreview src n f = runEffect $ src >-> f >-> P.take n >-> P.print
+pipePreview :: (Show b, MonadIO m, MonadMask m)
+            => Producer a (SafeT m) () -> Int -> Pipe a b (SafeT m) () -> m ()
+pipePreview src n f = runSafeT . runEffect $ src >-> f >-> P.take n >-> P.print
 
 -- * Column Selection
 
