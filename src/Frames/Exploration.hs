@@ -41,6 +41,9 @@ lenses :: (fs V.⊆ rs, Functor f)
        => proxy fs -> (Record fs -> f (Record fs)) -> Record rs -> f (Record rs)
 lenses _ = V.rsubset
 
+{-# DEPRECATED select "Use Data.Vinyl.rcast with a type application. " #-}
+{-# DEPRECATED lenses "Use Data.Vinyl.rsubset with a type application." #-}
+
 -- * Proxy Syntax
 
 -- | A proxy value quasiquoter; a way of passing types as
