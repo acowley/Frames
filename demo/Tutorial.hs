@@ -1,7 +1,7 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts, GADTs,
              OverloadedStrings, PatternSynonyms, QuasiQuotes,
-             ScopedTypeVariables, TemplateHaskell, TypeOperators,
-             ViewPatterns #-}
+             ScopedTypeVariables, TemplateHaskell, TypeApplications,
+             TypeOperators, ViewPatterns #-}
 
 -- This is a loose port of a
 -- [[https://ajkl.github.io/2014/11/23/Dataframes/][dataframe tutorial]] Rosetta
@@ -30,7 +30,6 @@
 -- operations and parser customization. I encourage you to start with a
 -- smaller test program than this!
 
-import Control.Applicative
 import qualified Control.Foldl as L
 import qualified Data.Foldable as F
 import Data.Proxy (Proxy(..))
@@ -64,11 +63,11 @@ import TutorialZipCode
 -- these mismatches do provide an opportunity to see that the ~Frames~
 -- library is flexible enough to meet a variety of needs.
 
-tableTypes'  rowGen { rowTypeName = "User"
-                    , columnNames = [ "user id", "age", "gender"
-                                    , "occupation", "zip code" ]
-                    , separator = "|" }
-             "data/ml-100k/u.user"
+tableTypes' (rowGen "data/ml-100k/u.user")
+            { rowTypeName = "User"
+            , columnNames = [ "user id", "age", "gender"
+                            , "occupation", "zip code" ]
+            , separator = "|" }
 
 -- This template haskell splice explicitly specifies the name for the
 -- inferred record type, column names, a separator string, and the
@@ -101,7 +100,7 @@ tableTypes'  rowGen { rowTypeName = "User"
 -- data set is too large to keep in memory, we can process it as it
 -- streams through RAM.
 
-movieStream :: Producer User IO ()
+movieStream :: MonadSafe m => Producer User m ()
 movieStream = readTableOpt userParser "data/ml-100k/u.user"
 
 -- Alternately, if we want to run multiple operations against a data set
@@ -228,21 +227,11 @@ miniUser = rcast
 -- #+END_EXAMPLE
 
 -- If you'd rather not define a function like ~miniUser~, you can fix
--- the types in-line by using the ~select~ function.
+-- the types in-line by using the ~rcast~ function.
 
 -- #+BEGIN_EXAMPLE
--- λ> :set -XDataKinds
--- λ> select (Proxy::Proxy '[Occupation,Gender,Age]) $ frameRow ms 0
--- {occupation :-> "technician", gender :-> "M", age :-> 24}
--- #+END_EXAMPLE
-
--- If you are frequently using this style of projection, you can also
--- take advantage of another bit of Template Haskell shorthand for
--- creating those ~Proxy~ values.
-
--- #+BEGIN_EXAMPLE
--- λ> :set -XDataKinds -XQuasiQuotes
--- λ> select [pr|Occupation,Gender,Age|] $ frameRow ms 0
+-- λ> :set -XTypeApplications -XDataKinds
+-- λ> rcast @'[Occupation,Gender,Age] $ frameRow ms 0
 -- {occupation :-> "technician", gender :-> "M", age :-> 24}
 -- #+END_EXAMPLE
 
@@ -256,7 +245,7 @@ writers :: (Occupation ∈ rs, Monad m) => Pipe (Record rs) (Record rs) m r
 writers = P.filter ((== "writer") . view occupation)
 
 -- #+BEGIN_EXAMPLE
--- λ> runEffect $ movieStream >-> writers >-> P.take 6 >-> P.print
+-- λ> runSafeEffect $ movieStream >-> writers >-> P.take 6 >-> P.print
 -- {user id :-> 3, age :-> 23, gender :-> "M", occupation :-> "writer", zip code :-> "32067"}
 -- {user id :-> 21, age :-> 26, gender :-> "M", occupation :-> "writer", zip code :-> "30068"}
 -- {user id :-> 22, age :-> 25, gender :-> "M", occupation :-> "writer", zip code :-> "40206"}
@@ -313,10 +302,10 @@ intFieldDoubler = mapMono (* 2)
 addTwoRest :: (AllCols Num rs, AsVinyl rs)
            => Record (s :-> a ': rs) -> Record (s :-> a ': rs)
 addTwoRest (h :& t) = frameCons h (aux t)
-  where aux = mapMethod [pr|Num|] (\x -> x + 2)
+  where aux = mapMethod @Num (\x -> x + 2)
 
 -- #+BEGIN_EXAMPLE
--- λ> addTwoRest (select [pr|Occupation, UserId, Age|] (frameRow ms 0))
+-- λ> addTwoRest (rcast @'[Occupation, UserId, Age] (frameRow ms 0))
 -- {occupation :-> "technician", user id :-> 3, age :-> 26}
 -- #+END_EXAMPLE
 
@@ -330,10 +319,10 @@ addTwoOccupation :: (CanDelete Occupation rs,
                      AllCols Num rs', AsVinyl rs')
                  => Record rs -> Record (Occupation ': RDelete Occupation rs)
 addTwoOccupation r = frameCons (rget' occupation' r)
-                   $ mapMethod [pr|Num|] (+ 2) (rdel [pr|Occupation|] r)
+                   $ mapMethod @Num (+ 2) (rdel [pr|Occupation|] r)
 
 -- #+BEGIN_EXAMPLE
--- λ> addTwoOccupation (select [pr|UserId,Age,Occupation|] (frameRow ms 0))
+-- λ> addTwoOccupation (rcast @'[UserId,Age,Occupation] (frameRow ms 0))
 -- {occupation :-> "technician", user id :-> 3, age :-> 26}
 -- #+END_EXAMPLE
 
@@ -349,10 +338,10 @@ addTwoOccupation' :: forall rs rs'.
                       rs' ~ RDelete Occupation rs,
                       AllCols Num rs', AsVinyl rs')
                   => Record rs -> Record rs
-addTwoOccupation' = lenses [pr|rs'|] %~ mapMethod [pr|Num|] (+ 2)
+addTwoOccupation' = rsubset @rs' %~ mapMethod @Num (+ 2)
 
 -- #+BEGIN_EXAMPLE
--- λ> addTwoOccupation' (select [pr|UserId,Age,Occupation|] (frameRow ms 0))
+-- λ> addTwoOccupation' (rcast @'[UserId,Age,Occupation] (frameRow ms 0))
 -- {user id :-> 3, age :-> 26, occupation :-> "technician"}
 -- #+END_EXAMPLE
 
@@ -381,19 +370,17 @@ addTwoOccupation' = lenses [pr|rs'|] %~ mapMethod [pr|Num|] (+ 2)
 -- one of the columns?
 
 -- #+BEGIN_EXAMPLE
--- λ> addTwoOccupation (select [pr|Age,Occupation,Gender|] (frameRow ms 0))
+-- λ> addTwoOccupation (rcast @'[Age,Occupation,Gender] (frameRow ms 0))
 
 -- <interactive>:15:1-16:
 --     No instance for (Num Text) arising from a use of ‘addTwoOccupation’
 --     In the expression:
 --       addTwoOccupation
---         (select
---            (Proxy :: Proxy '[Age, Occupation, Gender]) (frameRow ms 0))
+--         (rcast @'[Age, Occupation, Gender] (frameRow ms 0))
 --     In an equation for ‘it’:
 --         it
 --           = addTwoOccupation
---               (select
---                  (Proxy :: Proxy '[Age, Occupation, Gender]) (frameRow ms 0))
+--               (rcast @'[Age, Occupation, Gender] (frameRow ms 0))
 -- #+END_EXAMPLE
 
 -- This error message isn't ideal in that it doesn't tell us which
@@ -410,7 +397,7 @@ restInts :: (AllAre Int (UnColumn rs), AsVinyl rs)
 restInts (recUncons -> (h, t)) = (h, recToList t)
 
 -- #+BEGIN_EXAMPLE
--- λ> restInts (select [pr|Occupation,UserId,Age|] (frameRow ms 0))
+-- λ> restInts (rcast @'[Occupation,UserId,Age] (frameRow ms 0))
 -- ("technician",[1,24])
 -- #+END_EXAMPLE
 
@@ -457,15 +444,16 @@ restInts (recUncons -> (h, t)) = (h, recToList t)
 -- and lenses a prefix, "u2", so they don't conflict with the definitions
 -- we generated earlier.
 
-tableTypes' rowGen { rowTypeName = "U2"
-                   , columnNames = [ "user id", "age", "gender"
-                                   , "occupation", "zip code" ]
-                   , separator = "|"
-                   , tablePrefix = "u2"
-                   , columnUniverse = $(colQ ''MyColumns) }
-            "data/ml-100k/u.user"
+tableTypes' (rowGen "data/ml-100k/u.user")
+            { rowTypeName = "U2"
+            , columnNames = [ "user id", "age", "gender"
+                            , "occupation", "zip code" ]
+            , separator = "|"
+            , tablePrefix = "u2"
+            , columnUniverse = $(colQ ''MyColumns) }
 
-movieStream2 :: Producer U2 IO ()
+
+movieStream2 :: MonadSafe m => Producer U2 m ()
 movieStream2 = readTableOpt u2Parser "data/ml-100k/u.user"
 
 -- This new record type, =U2=, has a more interesting =zip code=
@@ -482,15 +470,15 @@ movieStream2 = readTableOpt u2Parser "data/ml-100k/u.user"
 -- Let's take the occupations of the first 10 users from New England,
 -- New Jersey, and other places whose zip codes begin with a zero.
 
-neOccupations :: (U2zipCode ∈ rs, U2occupation ∈ rs, Monad m)
+neOccupations :: (U2ZipCode ∈ rs, U2Occupation ∈ rs, Monad m)
               => Pipe (Record rs) Text m r
-neOccupations = P.filter (isNewEngland . view u2zipCode)
-                >-> P.map (view u2occupation)
+neOccupations = P.filter (isNewEngland . view u2ZipCode)
+                >-> P.map (view u2Occupation)
   where isNewEngland (ZipUS 0 _ _ _ _) = True
         isNewEngland _ = False
 
 -- #+BEGIN_EXAMPLE
--- λ> runEffect $ movieStream2 >-> neOccupations >-> P.take 10 >-> P.print
+-- λ> runSafeEffect $ movieStream2 >-> neOccupations >-> P.take 10 >-> P.print
 -- "administrator"
 -- "student"
 -- "other"
@@ -589,12 +577,11 @@ neOccupations = P.filter (isNewEngland . view u2zipCode)
 
 -- -- #+begin_src haskell
 --   tableTypes'
---     (rowGen
---        {rowTypeName = "User",
---         columnNames = ["user id", "age", "gender", "occupation",
---                        "zip code"],
---         separator = "|"})
---     "data/ml-100k/u.user"
+--     (rowGen "data/ml-100k/u.user")
+--     {rowTypeName = "User",
+--      columnNames = ["user id", "age", "gender", "occupation",
+--                     "zip code"],
+--      separator = "|"})
 -- ======>
 --   type User =
 --       Record ["user id" :-> Int, "age" :-> Int, "gender" :-> Text, "occupation" :-> Text, "zip code" :-> Text]
