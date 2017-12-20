@@ -1,4 +1,5 @@
-{-# LANGUAGE ConstraintKinds,
+{-# LANGUAGE AllowAmbiguousTypes,
+             ConstraintKinds,
              CPP,
              DataKinds,
              FlexibleContexts,
@@ -9,6 +10,7 @@
              PatternSynonyms,
              RankNTypes,
              ScopedTypeVariables,
+             TypeApplications,
              TypeFamilies,
              TypeOperators,
              ViewPatterns #-}
@@ -116,18 +118,18 @@ mapMono f = fromVinyl . mapMonoV f . toVinyl
 -- | Map a typeclass method across a 'V.Rec' each of whose fields
 -- have instances of the typeclass.
 mapMethodV :: forall c f ts. (Functor f, AllConstrained c ts)
-           => Proxy c -> (forall a. c a => a -> a) -> V.Rec f ts -> V.Rec f ts
-mapMethodV _ f = go
+           => (forall a. c a => a -> a) -> V.Rec f ts -> V.Rec f ts
+mapMethodV f = go
   where go :: AllConstrained c ts' => V.Rec f ts' -> V.Rec f ts'
         go V.RNil = V.RNil
         go (x V.:& xs) = fmap f x V.:& go xs
 
 -- | Map a typeclass method across a 'Rec' each of whose fields
 -- has an instance of the typeclass.
-mapMethod :: forall f c ts.
+mapMethod :: forall c f ts.
              (Functor f, AllConstrained c (UnColumn ts), AsVinyl ts)
-          => Proxy c -> (forall a. c a => a -> a) -> Rec f ts -> Rec f ts
-mapMethod p f = fromVinyl . mapMethodV p f . toVinyl
+          => (forall a. c a => a -> a) -> Rec f ts -> Rec f ts
+mapMethod f = fromVinyl . mapMethodV @c f . toVinyl
 
 -- * Currying Adapted from "Vinyl.Curry"
 
