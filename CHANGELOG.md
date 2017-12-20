@@ -1,3 +1,9 @@
+# 0.4.0
+
+- Changed types of `mapMethod` and `mapMethodV`
+
+These now rely on explicit `TypeApplications` rather than `Proxy` values.
+
 # 0.3.0
 
 - Pervasive use of `pipes` for CSV data loading
