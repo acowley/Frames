@@ -458,12 +458,18 @@ tableTypesText' (RowGen {..}) =
                       h:t -> mkName $ toLower h : t ++ "Parser"
      optsTy <- sigD optsName [t|ParserOptions|]
      optsDec <- valD (varP optsName) (normalB $ lift opts) []
-     colDecs <- concat <$> mapM (uncurry $ colDec (T.pack tablePrefix)) headers
+     colDecs <- concat <$> mapM (uncurry mkColDecs) headers
      return (recTy : optsTy : optsDec : colDecs)
   where recDec' = recDec . map (second colType) :: [(T.Text, a)] -> Q Type
         colNames' | null columnNames = Nothing
                   | otherwise = Just (map T.pack columnNames)
         opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
+        mkColDecs colNm colTy = do
+          let safeName = tablePrefix ++ (T.unpack . sanitizeTypeName $ colNm)
+          mColNm <- lookupTypeName safeName
+          case mColNm of
+            Just _ -> pure []
+            Nothing -> colDec (T.pack tablePrefix) colNm colTy
 
 -- | Like 'tableType'', but additionally generates a type synonym for
 -- each column, and a proxy value of that type. If the CSV file has
