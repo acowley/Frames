@@ -284,3 +284,69 @@ colB' :: forall f_7 g_8 rs_9 . (Functor f_7,
                                 ColB ∈ rs_9) =>
                                (g_8 ColB -> f_7 (g_8 ColB)) -> Rec g_8 rs_9 -> f_7 (Rec g_8 rs_9)
 colB' = rlens' (Proxy :: Proxy ColB)"""
+
+[NoTruncate]
+csv = """
+id,foo
+1,23
+2,42
+3,
+4,56
+"""
+
+generated = """
+type Row = Record ["id" :-> Int, "foo" :-> Int]
+rowParser :: ParserOptions
+rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
+
+type Id = "id" :-> Int
+id :: forall f_0 rs_1 . (Functor f_0, Id ∈ rs_1) =>
+                        (Int -> f_0 Int) -> Record rs_1 -> f_0 (Record rs_1)
+id = rlens (Proxy :: Proxy Id)
+id' :: forall f_2 g_3 rs_4 . (Functor f_2, Functor g_3, Id ∈ rs_4) =>
+                             (g_3 Id -> f_2 (g_3 Id)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
+id' = rlens' (Proxy :: Proxy Id)
+
+type Foo = "foo" :-> Int
+foo :: forall f_5 rs_6 . (Functor f_5, Foo ∈ rs_6) =>
+                             (Int -> f_5 Int) -> Record rs_6 -> f_5 (Record rs_6)
+foo = rlens (Proxy :: Proxy Foo)
+foo' :: forall f_7 g_8 rs_9 . (Functor f_7,
+                                   Functor g_8,
+                                   Foo ∈ rs_9) =>
+                                  (g_8 Foo -> f_7 (g_8 Foo)) -> Rec g_8 rs_9 -> f_7 (Rec g_8 rs_9)
+foo' = rlens' (Proxy :: Proxy Foo)"""
+
+[NoTruncateNA]
+csv = """
+id,foo
+1,23
+2,42
+3,
+4,56
+5,NA
+6,19
+"""
+
+generated = """
+type Row = Record ["id" :-> Int, "foo" :-> Int]
+rowParser :: ParserOptions
+rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
+
+type Id = "id" :-> Int
+id :: forall f_0 rs_1 . (Functor f_0, Id ∈ rs_1) =>
+                        (Int -> f_0 Int) -> Record rs_1 -> f_0 (Record rs_1)
+id = rlens (Proxy :: Proxy Id)
+id' :: forall f_2 g_3 rs_4 . (Functor f_2, Functor g_3, Id ∈ rs_4) =>
+                             (g_3 Id -> f_2 (g_3 Id)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
+id' = rlens' (Proxy :: Proxy Id)
+
+type Foo = "foo" :-> Int
+foo :: forall f_5 rs_6 . (Functor f_5, Foo ∈ rs_6) =>
+                             (Int -> f_5 Int) -> Record rs_6 -> f_5 (Record rs_6)
+foo = rlens (Proxy :: Proxy Foo)
+foo' :: forall f_7 g_8 rs_9 . (Functor f_7,
+                                   Functor g_8,
+                                   Foo ∈ rs_9) =>
+                                  (g_8 Foo -> f_7 (g_8 Foo)) -> Rec g_8 rs_9 -> f_7 (Rec g_8 rs_9)
+foo' = rlens' (Proxy :: Proxy Foo)"""

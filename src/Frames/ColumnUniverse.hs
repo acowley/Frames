@@ -150,7 +150,8 @@ bestRep :: forall ts.
             RecApplicative ts, T.Text ∈ ts)
         => T.Text -> CoRec ColInfo ts
 bestRep t
-  | T.null t = aux (CoRec (Compose (Possibly (mkTyped :: Typed T.Text))))
+  | T.null t || t == "NA" =
+    aux (CoRec (Compose (Possibly (mkTyped :: Typed T.Text))))
   | otherwise = aux
               . fromMaybe (CoRec (Compose $ Possibly (mkTyped :: Typed T.Text)))
               . firstField

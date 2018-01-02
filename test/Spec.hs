@@ -4,6 +4,7 @@ module Main (manualGeneration, main) where
 import Control.Monad (unless)
 import Data.Functor.Identity
 import Data.Char
+import qualified Data.Foldable as F
 import Data.List (find)
 import Data.Monoid (First(..))
 import qualified Data.Text as T
@@ -65,6 +66,8 @@ manualGeneration k = do csvExamples <- TH.runIO (examplesFrom "test/examples.tom
 type ManagersRow =
   Record ["id" :-> Int, "manager" :-> Text, "age" :-> Int, "pay" :-> Double]
 
+type NoTruncateRow = Record ["id" :-> Int, "foo" :-> Int]
+
 newtype Code = Code String
 instance Show Code where show (Code x) = x
 instance Eq Code where
@@ -111,3 +114,25 @@ main = do
          do managers <- H.runIO (Latin.managers)
             it "Parses" $
               managers `shouldBe` ["João", "Esperança"]
+       describe "Skip Missing Data" $ do
+         let csvInput = case find ((== "NoTruncate") . name . fst) csvTests of
+                          Just (ex,_) -> csv ex
+                          Nothing -> error "Couldn't find NoTruncate test data"
+         frameMissing <- H.runIO $
+                         withSystemTempFile "FramesSpecOutput" $ \fp h -> do
+                           hClose h
+                           writeFile fp csvInput
+                           inCoreAoS (readTable fp) :: IO (Frame NoTruncateRow)
+         it "Doesn't truncate after missing data" $
+           F.length frameMissing `shouldBe` 3
+       describe "Skip NA Data" $ do
+         let csvInput = case find ((== "NoTruncateNA") . name . fst) csvTests of
+                          Just (ex,_) -> csv ex
+                          Nothing -> error "Couldn't find NoTruncateNA test data"
+         frameMissing <- H.runIO $
+                         withSystemTempFile "FramesSpecOutput" $ \fp h -> do
+                           hClose h
+                           writeFile fp csvInput
+                           inCoreAoS (readTable fp) :: IO (Frame NoTruncateRow)
+         it "Doesn't truncate after missing data" $
+           F.length frameMissing `shouldBe` 4
