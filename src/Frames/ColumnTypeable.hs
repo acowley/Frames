@@ -1,6 +1,7 @@
 {-# LANGUAGE BangPatterns, DefaultSignatures, LambdaCase #-}
 module Frames.ColumnTypeable where
 import Control.Monad (MonadPlus)
+import Data.Maybe (fromMaybe)
 import Data.Readable (Readable(fromText))
 import qualified Data.Text as T
 import Language.Haskell.TH
@@ -36,6 +37,8 @@ parse' = fmap discardConfidence . parse
 
 instance Parseable Bool where
 instance Parseable Int where
+  parse t = Definitely <$>
+            fromText (fromMaybe t (T.stripSuffix (T.pack ".0") t))
 instance Parseable Float where
 instance Parseable Double where
   -- Some CSV's export Doubles in a format like '1,000.00', filtering
