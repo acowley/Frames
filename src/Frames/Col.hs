@@ -1,8 +1,5 @@
-{-# LANGUAGE CPP,
-             DataKinds,
-             GeneralizedNewtypeDeriving,
-             KindSignatures,
-             ScopedTypeVariables,
+{-# LANGUAGE CPP, DataKinds, GeneralizedNewtypeDeriving,
+             KindSignatures, ScopedTypeVariables, TypeFamilies,
              TypeOperators #-}
 -- | Column types
 module Frames.Col where
@@ -29,3 +26,9 @@ col' = Col' . Col
 
 instance (KnownSymbol s, Show a) => Show (Col' s a) where
   show (Col' c) = "(" ++ show c ++ ")"
+
+-- | @ReplaceColumns x ys@ keeps the textual name of each element of
+-- @ys@, but replaces its data type with @x@.
+type family ReplaceColumns x ys where
+  ReplaceColumns x '[] = '[]
+  ReplaceColumns x (c :-> y ': ys) = c :-> x ': ReplaceColumns x ys

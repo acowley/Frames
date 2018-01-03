@@ -106,13 +106,16 @@ instance AsVinyl ts => AsVinyl (s :-> t ': ts) where
 #endif
 
 -- | Map a function across a homogeneous, monomorphic 'V.Rec'.
-mapMonoV :: (Functor f, AllAre a ts) => (a -> a) -> V.Rec f ts -> V.Rec f ts
+mapMonoV :: (Functor f, AllAre a ts)
+         => (a -> b) -> V.Rec f ts -> V.Rec f (ReplaceAll b ts)
 mapMonoV _ V.RNil = V.RNil
 mapMonoV f (x V.:& xs) = fmap f x V.:& mapMonoV f xs
 
 -- | Map a function across a homogeneous, monomorphic 'Rec'.
-mapMono :: (AllAre a (UnColumn ts), Functor f, AsVinyl ts)
-        => (a -> a) -> Rec f ts -> Rec f ts
+mapMono :: (AllAre a (UnColumn ts), AsVinyl ts, Functor f,
+            AsVinyl (ReplaceColumns b ts),
+            ReplaceAll b (UnColumn ts) ~ UnColumn (ReplaceColumns b ts))
+        => (a -> b) -> Rec f ts -> Rec f (ReplaceColumns b ts)
 mapMono f = fromVinyl . mapMonoV f . toVinyl
 
 -- | Map a typeclass method across a 'V.Rec' each of whose fields

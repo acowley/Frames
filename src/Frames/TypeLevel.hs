@@ -13,3 +13,11 @@ import Data.Kind (Constraint)
 type family AllAre a ts :: Constraint where
   AllAre a '[] = ()
   AllAre a (t ': ts) = (t ~ a, AllAre a ts)
+
+-- | @ReplaceAll x ys@ produces a type-level list of the same length
+-- as @ys@ where each element is @x@. In other words, it replaces each
+-- element of @ys@ with @x@. This would be @map (const x) ys@ in
+-- value-level Haskell.
+type family ReplaceAll a xs where
+  ReplaceAll a '[] = '[]
+  ReplaceAll a (x ': xs) = a ': ReplaceAll a xs
