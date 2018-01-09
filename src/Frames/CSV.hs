@@ -24,7 +24,7 @@ import Data.Maybe (isNothing, fromMaybe)
 import Data.Monoid ((<>))
 import Data.Proxy
 import qualified Data.Text as T
-import Data.Vinyl (RElem, Rec)
+import Data.Vinyl (rmap, RElem, Rec)
 import Data.Vinyl.TypeLevel (RecAll, RIndex)
 import Data.Vinyl.Functor (Identity)
 import Frames.Col
@@ -175,14 +175,15 @@ readColHeaders opts = P.evalStateT $
 -- | Parsing each component of a 'RecF' from a list of text chunks,
 -- one chunk per record component.
 class ReadRec (rs :: [*]) where
-  readRec :: [T.Text] -> Rec Maybe rs
+  readRec :: [T.Text] -> Rec (Either T.Text) rs
 
 instance ReadRec '[] where
   readRec _ = Nil
 
 instance (Parseable t, ReadRec ts) => ReadRec (s :-> t ': ts) where
-  readRec [] = frameCons Nothing (readRec [])
-  readRec (h:t) = frameCons (parse' h) (readRec t)
+  readRec [] = frameCons (Left mempty) (readRec [])
+  readRec (h:t) = frameCons (maybe (Left (T.copy h)) Right (parse' h))
+                            (readRec t)
 
 -- | Produce the lines of a latin1 (or ISO8859 Part 1) encoded file as
 -- ’T.Text’ values. Similar to ’PT.readFileLn’ that uses the system
@@ -194,7 +195,7 @@ readFileLatin1Ln fp = Pipes.Safe.Prelude.withFile fp ReadMode $ \h ->
   in Pipes.Group.concats latinLines
 
 -- | Read a 'RecF' from one line of CSV.
-readRow :: ReadRec rs => ParserOptions -> T.Text -> Rec Maybe rs
+readRow :: ReadRec rs => ParserOptions -> T.Text -> Rec (Either T.Text) rs
 readRow = (readRec .) . tokenizeRow
 
 -- | Produce rows where any given entry can fail to parse.
@@ -211,8 +212,19 @@ pipeTableMaybeOpt :: (Monad m, ReadRec rs)
                   -> P.Pipe T.Text (Rec Maybe rs) m ()
 pipeTableMaybeOpt opts = do
   when (isNothing (headerOverride opts)) (() <$ P.await)
-  P.map (readRow opts)
+  P.map (rmap (either (const Nothing) Just) . readRow opts)
 {-# INLINE pipeTableMaybeOpt #-}
+
+-- | Stream lines of CSV data into rows of ’Rec’ values values where
+-- any given entry can fail to parse. In the case of a parse failure, the
+-- raw 'T.Text' of that entry is retained.
+pipeTableEitherOpt :: (Monad m, ReadRec rs)
+                   => ParserOptions
+                   -> P.Pipe T.Text (Rec (Either T.Text) rs) m ()
+pipeTableEitherOpt opts = do
+  when (isNothing (headerOverride opts)) (() <$ P.await)
+  P.map (readRow opts)
+{-# INLINE pipeTableEitherOpt #-}
 
 -- | Produce rows where any given entry can fail to parse.
 readTableMaybe :: (P.MonadSafe m, ReadRec rs)
@@ -225,6 +237,14 @@ readTableMaybe = readTableMaybeOpt defaultParser
 pipeTableMaybe :: (Monad m, ReadRec rs) => P.Pipe T.Text (Rec Maybe rs) m ()
 pipeTableMaybe = pipeTableMaybeOpt defaultParser
 {-# INLINE pipeTableMaybe #-}
+
+-- | Stream lines of CSV data into rows of ’Rec’ values where any
+-- given entry can fail to parse. In the case of a parse failure, the
+-- raw 'T.Text' of that entry is retained.
+pipeTableEither :: (Monad m, ReadRec rs)
+                => P.Pipe T.Text (Rec (Either T.Text) rs) m ()
+pipeTableEither = pipeTableEitherOpt defaultParser
+{-# INLINE pipeTableEither #-}
 
 -- -- | Returns a `MonadPlus` producer of rows for which each column was
 -- -- successfully parsed. This is typically slower than 'readTableOpt'.
