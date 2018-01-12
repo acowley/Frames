@@ -54,14 +54,12 @@ frameSnoc r x = V.rappend r (x V.:& RNil)
 {-# INLINE frameSnoc #-}
 
 pattern Nil :: Rec f '[]
-pattern Nil = V.RNil
+pattern Nil <- V.RNil where
+  Nil = V.RNil
 
 pattern (:&) :: Functor f => f r -> Rec f rs -> Rec f (s :-> r ': rs)
-pattern x :& xs <- (frameUncons -> (x, xs))
-
--- NOTE: A bidirectional pattern synonym would be great, but we'll
--- have to wait for GHC 7.10 to gain wide acceptance before depending
--- upon its availability.
+pattern x :& xs <- (frameUncons -> (x, xs)) where
+  x :& xs = frameCons x xs
 
 class ColumnHeaders (cs::[*]) where
   -- | Return the column names for a record.
