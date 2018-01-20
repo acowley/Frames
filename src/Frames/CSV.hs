@@ -525,7 +525,9 @@ tableTypes' (RowGen {..}) =
 -- * Writing CSV Data
 
 -- | 'P.yield' a header row with column names followed by a line of
--- text for each 'Record' with each field separated by a comma.
+-- text for each 'Record' with each field separated by a comma. If
+-- your source of 'Record' values is a 'P.Producer', consider using
+-- 'pipeToCSV' to keep everything streaming.
 produceCSV :: forall f ts m.
               (ColumnHeaders ts, AsVinyl ts, Foldable f, Monad m,
                RecAll Identity (UnColumn ts) Show)
@@ -533,6 +535,19 @@ produceCSV :: forall f ts m.
 produceCSV recs = do
   P.yield (intercalate "," (columnHeaders (Proxy :: Proxy (Record ts))))
   F.mapM_ (P.yield . intercalate "," . showFields) recs
+
+-- | 'P.yield' a header row with column names followed by a line of
+-- text for each 'Record' with each field separated by a comma. This
+-- is the same as 'produceCSV', but adapated for cases where you have
+-- streaming input that you wish to use to produce streaming output.
+pipeToCSV :: forall ts m.
+             (Monad m, ColumnHeaders ts, AsVinyl ts,
+              RecAll Identity (UnColumn ts) Show)
+          => P.Pipe (Record ts) T.Text m ()
+pipeToCSV = P.yield (T.intercalate "," (map T.pack header)) >> go
+  where header = columnHeaders (Proxy :: Proxy (Record ts))
+        go :: P.Pipe (Record ts) T.Text m ()
+        go = P.map (T.intercalate "," . map T.pack . showFields)
 
 -- | Write a header row with column names followed by a line of text
 -- for each 'Record' to the given file.
