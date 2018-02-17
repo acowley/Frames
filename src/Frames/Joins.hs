@@ -36,16 +36,16 @@ instance (AllCols Grouping rs
          , Grouping r
          ) =>
          Grouping (Record ((s :-> r) : rs)) where
-  grouping = divide (\(a :& as) -> (a, as)) grouping grouping
+  grouping = divide recUncons grouping grouping
 
 instance Grouping (Record '[]) where
- grouping = contramap (\_ -> (1 :: Word64)) grouping
+  grouping = conquer
 
 instance (Grouping a) => Grouping (s :-> a) where
-  grouping = contramap getCol grouping
+   grouping = contramap getCol grouping
 
-instance (Grouping a) => Grouping (Identity a) where
-  grouping = contramap getIdentity grouping
+-- instance (Grouping a) => Grouping (Identity a) where
+--   grouping = contramap getIdentity grouping
 --instance (Grouping a, Data.Vinyl.Functor) => Grouping (f a)
 --instance (Generic a) => Generic (s :-> a)
 
