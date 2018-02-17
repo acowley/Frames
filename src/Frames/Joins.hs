@@ -57,11 +57,11 @@ inner_join :: forall proxy fs rs rs2  rs2'.
     proxy fs ->
     Frame (Record rs) ->
     Frame (Record rs2) ->
-    [(Record (rs ++ rs2'))]
+    Frame (Record (rs ++ rs2'))
     
 inner_join cols a b =
-                --toFrame $
-    foldl (++) []
+    toFrame $
+    foldr (++) [] 
     (inner grouping mergeFun proj1 proj2 (toList a) (toList b))
     where
       mergeFun l r = mergeRec cols l r
