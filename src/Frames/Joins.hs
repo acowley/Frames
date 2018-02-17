@@ -8,14 +8,10 @@ import Data.Discrimination
 import Data.Functor.Contravariant
 import Data.Foldable as F
 import Frames
-import Frames.Melt (Elem(..), Or(..), Not(..), ElemOf(..)
-                   , RDeleteAll(..), Disjoint(..))
-import Frames.InCore (RecVec(..))
+import Frames.Melt (RDeleteAll)
+import Frames.InCore (RecVec)
 import Data.Vinyl.TypeLevel
 import Data.Vinyl.Functor
-import GHC.Exts (Constraint)
-import Data.Functor.Contravariant.Generic 
-import GHC.Generics (Generic(..))
 import Data.Functor.Contravariant.Divisible
 import Data.Word
 
