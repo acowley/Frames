@@ -44,14 +44,6 @@ instance Grouping (Record '[]) where
 instance (Grouping a) => Grouping (s :-> a) where
    grouping = contramap getCol grouping
 
--- instance (Grouping a) => Grouping (Identity a) where
---   grouping = contramap getIdentity grouping
---instance (Grouping a, Data.Vinyl.Functor) => Grouping (f a)
---instance (Generic a) => Generic (s :-> a)
-
---instance Record (Grouping rs) =>
---  Grouping (Record rs)
-
 inner_join :: forall proxy fs rs rs2  rs2'.
   (fs    ⊆ rs
     , fs   ⊆ rs2
@@ -77,20 +69,3 @@ inner_join cols a b =
       proj2 y = rcast y :: Record fs
     
         
-
-
-tableTypes "FL2" "/home/chammill/Documents/2018-01-05_ghcBug/FL6.csv"
-tableTypes "FL3" "/home/chammill/Documents/2018-01-05_ghcBug/FL7.csv"
-
-fl2 :: IO (Frame FL2)
-fl2 = inCoreAoS (readTable "/home/chammill/Documents/2018-01-05_ghcBug/FL6.csv")
-
-fl3 :: IO (Frame FL3)
-fl3 = inCoreAoS (readTable "/home/chammill/Documents/2018-01-05_ghcBug/FL7.csv")
-
--- main :: IO ()
--- main =
---   do
---     f2 <- fl2
---     f3 <- fl3
---     print $ mergeRec [pr1|PolicyID|] (head $ toList f2) (head $ toList f3)
