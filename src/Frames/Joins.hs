@@ -49,20 +49,24 @@ instance Grouping (Record '[]) where
 instance (Grouping a) => Grouping (s :-> a) where
    grouping = contramap getCol grouping
 
+-- | Perform an inner join operation on two frames
+-- matching on 
 inner_join :: forall proxy fs rs rs2  rs2'.
   (fs    ⊆ rs
     , fs   ⊆ rs2
+    , rs ⊆ (rs ++ rs2')
     , rs2' ⊆ rs2 
     , rs2' ~ RDeleteAll fs rs2
     , Grouping (Record fs)
     , RecVec rs
     , RecVec rs2'
     , RecVec (rs ++ rs2')
-    ) =>  
-    proxy fs ->
-    Frame (Record rs) ->
-    Frame (Record rs2) ->
-    Frame (Record (rs ++ rs2'))
+    ) =>
+    proxy fs -> -- ^ A quasiquoter with shared columns to join on,
+                -- usually generated with pr or pr1
+    Frame (Record rs) -> -- ^ The left frame 
+    Frame (Record rs2) -> -- ^ The right frame
+    Frame (Record (rs ++ rs2')) -- ^ The joined frame
     
 inner_join cols a b =
     toFrame $
