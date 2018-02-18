@@ -11,24 +11,29 @@ import Frames
 import Frames.Melt (RDeleteAll)
 import Frames.InCore (RecVec)
 import Data.Vinyl.TypeLevel
+import Data.Vinyl
 import Data.Vinyl.Functor
 import Data.Functor.Contravariant.Divisible
-import Data.Word
 
-mergeRec :: forall proxy fs rs rs2  rs2'.
-  (fs    ⊆ rs2
-  , rs2' ⊆ rs2 
+dropCols :: 
+  (rs' ~ RDeleteAll fs rs
+  , rs' ⊆ rs) =>
+  proxy fs -> Record rs -> Record rs'
+dropCols _ rs = rcast rs
+
+mergeRec :: 
+  (fs ⊆ rs2
+  , rs2' ⊆ rs2
   , rs2' ~ RDeleteAll fs rs2
-  ) =>
+  , rs ⊆ (rs ++ rs2')) =>
   proxy fs ->
   Record rs ->
   Record rs2 ->
   Record (rs ++ rs2')
-mergeRec _ rec1 rec2 =
+mergeRec cols rec1 rec2 =
   rec1 <+> rec2'
   where
-    rec2' = rcast rec2 :: Record rs2'
-
+    rec2' = dropCols cols rec2 
 
 instance (AllCols Grouping rs
          , Grouping (Record rs)
