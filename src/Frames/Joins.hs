@@ -62,11 +62,11 @@ inner_join :: forall proxy fs rs rs2  rs2'.
     , RecVec rs2'
     , RecVec (rs ++ rs2')
     ) =>
-    proxy fs -> -- ^ A quasiquoter with shared columns to join on,
-                -- usually generated with pr or pr1
-    Frame (Record rs) -> -- ^ The left frame 
-    Frame (Record rs2) -> -- ^ The right frame
-    Frame (Record (rs ++ rs2')) -- ^ The joined frame
+    proxy fs -- ^ A quasiquoter with shared columns to join on
+             -- usually generated with pr or pr1.
+  -> Frame (Record rs)  -- ^ The left frame 
+  -> Frame (Record rs2) -- ^ The right frame
+  -> Frame (Record (rs ++ rs2')) -- ^ The joined frame
     
 inner_join cols a b =
     toFrame $
@@ -97,11 +97,11 @@ outer_join :: forall proxy fs rs rs2  rs2'.
     , RecVec rs2'
     , RecVec (rs ++ rs2')
     ) =>
-    proxy fs -> -- ^ A quasiquoter with shared columns to join on,
-                -- usually generated with pr or pr1
-    Frame (Record rs) -> -- ^ The left frame 
-    Frame (Record rs2) -> -- ^ The right frame
-    [(Rec Maybe (rs ++ rs2'))] -- ^ A list of the merged records, now in the Maybe functor
+    proxy fs -- ^ A quasiquoter with shared columns to join on,
+             --  usually generated with pr or pr1 
+    -> Frame (Record rs)  -- ^ The left frame 
+    -> Frame (Record rs2) -- ^ The right frame
+    -> [(Rec Maybe (rs ++ rs2'))] -- ^ A list of the merged records, now in the Maybe functor
     
 outer_join cols a b =
   let
@@ -133,11 +133,11 @@ right_join :: forall proxy fs rs rs2  rs2'.
     , RecVec rs2'
     , RecVec (rs ++ rs2')
     ) =>
-    proxy fs -> -- ^ A quasiquoter with shared columns to join on,
-                -- usually generated with pr or pr1
-    Frame (Record rs) -> -- ^ The left frame 
-    Frame (Record rs2) -> -- ^ The right frame
-    [(Rec Maybe (rs ++ rs2'))] -- ^ A list of the merged records, now in the Maybe functor
+    proxy fs -- ^ A quasiquoter with shared columns to join on,
+             --   usually generated with pr or pr1
+  -> Frame (Record rs)  -- ^ The left frame 
+  -> Frame (Record rs2) -- ^ The right frame
+  -> [(Rec Maybe (rs ++ rs2'))] -- ^ A list of the merged records, now in the Maybe functor
     
 right_join cols a b =
   let
@@ -166,11 +166,11 @@ left_join :: forall proxy fs rs rs2  rs2'.
     , RecVec rs2'
     , RecVec (rs ++ rs2')
     ) =>
-    proxy fs -> -- ^ A quasiquoter with shared columns to join on,
-                -- usually generated with pr or pr1
-    Frame (Record rs) -> -- ^ The left frame 
-    Frame (Record rs2) -> -- ^ The right frame
-    [(Rec Maybe (rs ++ rs2'))] -- ^ A list of the merged records, now in the Maybe functor
+    proxy fs -- ^ A quasiquoter with shared columns to join on,
+             -- usually generated with pr or pr1 
+  -> Frame (Record rs)  -- ^ The left frame 
+  -> Frame (Record rs2) -- ^ The right frame
+  -> [(Rec Maybe (rs ++ rs2'))] -- ^ A list of the merged records, now in the Maybe functor
     
 left_join cols a b =
   let
