@@ -76,5 +76,10 @@ inner_join cols a b =
       mergeFun l r = mergeRec cols l r
       proj1 x = rcast x :: Record fs
       proj2 y = rcast y :: Record fs
+justsFromRec :: Record fs -> Rec Maybe fs
+justsFromRec rs = rmap (\x -> Just (getIdentity x)) rs
+
+nothingsFromRec :: Record fs -> Rec Maybe fs
+nothingsFromRec rs = rmap (\_ -> Nothing) rs
     
         
