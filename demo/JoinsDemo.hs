@@ -17,15 +17,15 @@ lfi = inCoreAoS (readTable "data/left1.csv")
 rfi :: IO (Frame RCols)
 rfi = inCoreAoS (readTable "data/right1.csv")
 
---mergeFrames = inner_join [pr1|PolicyID|] <$> lfi <*> rfi
-
-
 main :: IO ()
 main = do
   lf <- lfi
   rf <- rfi
-  print $ length $ inner_join [pr1|PolicyID|] lf rf 
-  return ()
+  let rf2 = toFrame $ reverse $ toList rf in
+    let x = innerJoin [pr1|PolicyID|] lf rf 
+        y = innerJoin [pr1|PolicyID|] lf rf2 in
+      print (x == y)
+
   
   
 
