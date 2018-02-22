@@ -19,7 +19,7 @@ dropCols ::
   (rs' ~ RDeleteAll fs rs
   , rs' ⊆ rs) =>
   proxy fs -> Record rs -> Record rs'
-dropCols _ rs = rcast rs
+dropCols _ = rcast 
 
 mergeRec :: 
   (fs ⊆ rs2
@@ -51,7 +51,7 @@ instance (Grouping a) => Grouping (s :-> a) where
 
 -- | Perform an inner join operation on two frames
 -- matching on 
-inner_join :: forall proxy fs rs rs2  rs2'.
+innerJoin :: forall proxy fs rs rs2  rs2'.
   (fs    ⊆ rs
     , fs   ⊆ rs2
     , rs ⊆ (rs ++ rs2')
@@ -68,25 +68,25 @@ inner_join :: forall proxy fs rs rs2  rs2'.
   -> Frame (Record rs2) -- ^ The right frame
   -> Frame (Record (rs ++ rs2')) -- ^ The joined frame
     
-inner_join cols a b =
+innerJoin cols a b =
     toFrame $
-    foldr (++) [] 
+    concat
     (inner grouping mergeFun proj1 proj2 (toList a) (toList b))
     where
-      mergeFun l r = mergeRec cols l r
+      mergeFun = mergeRec cols
       proj1 x = rcast x :: Record fs
       proj2 y = rcast y :: Record fs
 
 
 justsFromRec :: Record fs -> Rec Maybe fs
-justsFromRec rs = rmap (\x -> Just (getIdentity x)) rs
+justsFromRec = rmap (Just . getIdentity)
 
 nothingsFromRec :: Record fs -> Rec Maybe fs
-nothingsFromRec rs = rmap (\_ -> Nothing) rs
+nothingsFromRec = rmap (const Nothing)
 
 -- | Perform an outer join operation on two frames
 -- matching on a quasiquoter of column names
-outer_join :: forall proxy fs rs rs2  rs2'.
+outerJoin :: forall proxy fs rs rs2  rs2'.
   (fs    ⊆ rs
     , fs   ⊆ rs2
     , rs ⊆ (rs ++ rs2')
@@ -101,9 +101,9 @@ outer_join :: forall proxy fs rs rs2  rs2'.
              --  usually generated with pr or pr1 
     -> Frame (Record rs)  -- ^ The left frame 
     -> Frame (Record rs2) -- ^ The right frame
-    -> [(Rec Maybe (rs ++ rs2'))] -- ^ A list of the merged records, now in the Maybe functor
+    -> [Rec Maybe (rs ++ rs2')] -- ^ A list of the merged records, now in the Maybe functor
     
-outer_join cols a b =
+outerJoin cols a b =
   let
     as = toList a
     bs = toList b
@@ -111,18 +111,18 @@ outer_join cols a b =
     let
       proj1 x = rcast x :: Record fs
       proj2 y = rcast y :: Record fs
-      mergeFun l r = justsFromRec $ mergeRec cols l r
-      mergeLeftEmpty l = (justsFromRec l) <+> (nothingsFromRec (dropCols cols (head bs)))
-      mergeRightEmpty r = (nothingsFromRec (head as)) <+> (justsFromRec (dropCols cols r))
+      mergeFun r l = justsFromRec $ mergeRec cols r l 
+      mergeLeftEmpty l = justsFromRec l <+> nothingsFromRec (dropCols cols (head bs))
+      mergeRightEmpty r = nothingsFromRec (head as) <+> justsFromRec (dropCols cols r)
     in  
-      foldr' (++) [] 
+      concat
       (outer grouping mergeFun mergeLeftEmpty mergeRightEmpty
        proj1 proj2 (toList a) (toList b))
 
     
 -- | Perform an outer join operation on two frames
 -- matching on a quasiquoter of column names
-right_join :: forall proxy fs rs rs2  rs2'.
+rightJoin :: forall proxy fs rs rs2  rs2'.
   (fs    ⊆ rs
     , fs   ⊆ rs2
     , rs ⊆ (rs ++ rs2')
@@ -137,9 +137,9 @@ right_join :: forall proxy fs rs rs2  rs2'.
              --   usually generated with pr or pr1
   -> Frame (Record rs)  -- ^ The left frame 
   -> Frame (Record rs2) -- ^ The right frame
-  -> [(Rec Maybe (rs ++ rs2'))] -- ^ A list of the merged records, now in the Maybe functor
+  -> [Rec Maybe (rs ++ rs2')] -- ^ A list of the merged records, now in the Maybe functor
     
-right_join cols a b =
+rightJoin cols a b =
   let
     as = toList a
   in
@@ -147,15 +147,15 @@ right_join cols a b =
       proj1 x = rcast x :: Record fs
       proj2 y = rcast y :: Record fs
       mergeFun l r = justsFromRec $ mergeRec cols l r
-      mergeRightEmpty r = (nothingsFromRec (head as)) <+> (justsFromRec (dropCols cols r))
+      mergeRightEmpty r = nothingsFromRec (head as) <+> justsFromRec (dropCols cols r)
     in  
-      foldr' (++) [] 
+      concat
       (rightOuter grouping mergeFun mergeRightEmpty
        proj1 proj2 (toList a) (toList b))
 
 -- | Perform an outer join operation on two frames
 -- matching on a quasiquoter of column names
-left_join :: forall proxy fs rs rs2  rs2'.
+leftJoin :: forall proxy fs rs rs2  rs2'.
   (fs    ⊆ rs
     , fs   ⊆ rs2
     , rs ⊆ (rs ++ rs2')
@@ -170,9 +170,9 @@ left_join :: forall proxy fs rs rs2  rs2'.
              -- usually generated with pr or pr1 
   -> Frame (Record rs)  -- ^ The left frame 
   -> Frame (Record rs2) -- ^ The right frame
-  -> [(Rec Maybe (rs ++ rs2'))] -- ^ A list of the merged records, now in the Maybe functor
+  -> [Rec Maybe (rs ++ rs2')] -- ^ A list of the merged records, now in the Maybe functor
     
-left_join cols a b =
+leftJoin cols a b =
   let
     bs = toList b
   in
@@ -180,8 +180,8 @@ left_join cols a b =
       proj1 x = rcast x :: Record fs
       proj2 y = rcast y :: Record fs
       mergeFun l r = justsFromRec $ mergeRec cols l r
-      mergeLeftEmpty l = (justsFromRec l) <+> (nothingsFromRec (dropCols cols (head bs)))
+      mergeLeftEmpty l = justsFromRec l <+> nothingsFromRec (dropCols cols (head bs))
     in  
-      foldr' (++) [] 
+      concat
       (leftOuter grouping mergeFun mergeLeftEmpty 
        proj1 proj2 (toList a) (toList b))
