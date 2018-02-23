@@ -172,10 +172,12 @@ executable missing
 
 -- Demo the joins feature
 executable joins
-  hs-source-dirs:   demo
+  if !flag(demos)
+    buildable: False
   main-is:          JoinsDemo.hs
-  build-depends:    base, criterion, Frames
-  ghc-options:      -fprof-auto -fprof-cafs -fprof-auto-calls
+  hs-source-dirs:   demo
+  build-depends:    base, Frames
+  ghc-options:      -O2 
   default-language: Haskell2010
 
 -- Benchmark showing tradeoffs of differing processing needs
