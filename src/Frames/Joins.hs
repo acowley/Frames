@@ -14,6 +14,7 @@ import Data.Vinyl.TypeLevel
 import Data.Vinyl
 import Data.Vinyl.Functor
 import Data.Functor.Contravariant.Divisible
+import qualified Data.Text as T
 
 dropCols :: 
   (rs' ~ RDeleteAll fs rs
@@ -48,6 +49,9 @@ instance Grouping (Record '[]) where
 
 instance (Grouping a) => Grouping (s :-> a) where
    grouping = contramap getCol grouping
+
+instance Grouping Text where
+  grouping = contramap T.unpack grouping
 
 -- | Perform an inner join operation on two frames
 -- matching on 
