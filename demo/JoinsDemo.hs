@@ -1,6 +1,7 @@
 {-# LANGUAGE QuasiQuotes,
              DataKinds,
              FlexibleContexts,
+             TypeApplications,
              TemplateHaskell #-}
 
 import Frames
@@ -24,12 +25,12 @@ main = do
   lf <- lfi
   rf <- rfi
   smf <- smfi
-  print $ length $ innerJoin [pr1|PolicyID|] lf rf
-  print $ length $ innerJoin [pr1|PolicyID|] lf smf
-  print $ length $ innerJoin [pr|PolicyID,County|] lf smf
-  print $ length $ outerJoin [pr|PolicyID,County|] lf smf
-  print $ length $ leftJoin  [pr|PolicyID,County|] lf smf
-  print $ length $ rightJoin [pr|PolicyID,County|] lf smf                             
+  print $ length $ innerJoin @'[PolicyID] lf rf
+  print $ length $ innerJoin @'[PolicyID] lf smf
+  print $ length $ innerJoin @'[PolicyID,County] lf smf
+  print $ length $ outerJoin @'[PolicyID,County] lf smf
+  print $ length $ leftJoin  @'[PolicyID,County] lf smf
+  print $ length $ rightJoin @'[PolicyID,County] lf smf                             
 
     
 

@@ -21,25 +21,19 @@ import Data.Vinyl.Functor
 import Data.Functor.Contravariant.Divisible
 import qualified Data.Text as T
 
-dropCols :: 
-  (rs' ~ RDeleteAll fs rs
-  , rs' ⊆ rs) =>
-  proxy fs -> Record rs -> Record rs'
-dropCols _ = rcast 
 
-mergeRec :: 
+mergeRec :: forall fs rs rs2 rs2'.
   (fs ⊆ rs2
   , rs2' ⊆ rs2
   , rs2' ~ RDeleteAll fs rs2
   , rs ⊆ (rs ++ rs2')) =>
-  proxy fs ->
   Record rs ->
   Record rs2 ->
   Record (rs ++ rs2')
-mergeRec cols rec1 rec2 =
+mergeRec rec1 rec2 =
   rec1 <+> rec2'
   where
-    rec2' = dropCols cols rec2 
+    rec2' = rcast @rs2' rec2 
 
 instance (AllCols Grouping rs
          , Grouping (Record rs)
@@ -59,8 +53,7 @@ instance Grouping Text where
   grouping = contramap T.unpack grouping
 
 -- | Perform an inner join operation on two frames
--- matching on 
-innerJoin :: forall proxy fs rs rs2  rs2'.
+innerJoin :: forall fs rs rs2 rs2'.
   (fs    ⊆ rs
     , fs   ⊆ rs2
     , rs ⊆ (rs ++ rs2')
@@ -71,126 +64,110 @@ innerJoin :: forall proxy fs rs rs2  rs2'.
     , RecVec rs2'
     , RecVec (rs ++ rs2')
     ) =>
-    proxy fs -- ^ A quasiquoter with shared columns to join on
-             -- usually generated with pr or pr1.
-  -> Frame (Record rs)  -- ^ The left frame 
+  Frame (Record rs)  -- ^ The left frame 
   -> Frame (Record rs2) -- ^ The right frame
   -> Frame (Record (rs ++ rs2')) -- ^ The joined frame
     
-innerJoin cols a b =
+innerJoin a b =
     toFrame $
     concat
     (inner grouping mergeFun proj1 proj2 (toList a) (toList b))
     where
-      mergeFun = mergeRec cols
-      proj1 x = rcast x :: Record fs
-      proj2 y = rcast y :: Record fs
+      mergeFun = mergeRec @fs
+      proj1 = rcast @fs 
+      proj2 = rcast @fs
 
 
 justsFromRec :: Record fs -> Rec Maybe fs
 justsFromRec = rmap (Just . getIdentity)
 
-nothingsFromRec :: Record fs -> Rec Maybe fs
-nothingsFromRec = rmap (const Nothing)
+mkNothingsRec :: forall fs.
+  (RecApplicative fs) =>
+  Rec Maybe fs
+mkNothingsRec = rpure @fs Nothing
 
 -- | Perform an outer join operation on two frames
--- matching on a quasiquoter of column names
-outerJoin :: forall proxy fs rs rs2  rs2'.
+outerJoin :: forall fs rs rs2  rs2'.
   (fs    ⊆ rs
     , fs   ⊆ rs2
     , rs ⊆ (rs ++ rs2')
     , rs2' ⊆ rs2 
     , rs2' ~ RDeleteAll fs rs2
+    , RecApplicative rs2'
+    , RecApplicative rs
     , Grouping (Record fs)
     , RecVec rs
     , RecVec rs2'
     , RecVec (rs ++ rs2')
     ) =>
-    proxy fs -- ^ A quasiquoter with shared columns to join on,
-             --  usually generated with pr or pr1 
-    -> Frame (Record rs)  -- ^ The left frame 
-    -> Frame (Record rs2) -- ^ The right frame
-    -> [Rec Maybe (rs ++ rs2')] -- ^ A list of the merged records, now in the Maybe functor
-    
-outerJoin cols a b =
-  let
-    as = toList a
-    bs = toList b
-  in
-    let
-      proj1 x = rcast x :: Record fs
-      proj2 y = rcast y :: Record fs
-      mergeFun r l = justsFromRec $ mergeRec cols r l 
-      mergeLeftEmpty l = justsFromRec l <+> nothingsFromRec (dropCols cols (head bs))
-      mergeRightEmpty r = nothingsFromRec (head as) <+> justsFromRec (dropCols cols r)
-    in  
-      concat
-      (outer grouping mergeFun mergeLeftEmpty mergeRightEmpty
-       proj1 proj2 (toList a) (toList b))
-
-    
--- | Perform an outer join operation on two frames
--- matching on a quasiquoter of column names
-rightJoin :: forall proxy fs rs rs2  rs2'.
-  (fs    ⊆ rs
-    , fs   ⊆ rs2
-    , rs ⊆ (rs ++ rs2')
-    , rs2' ⊆ rs2 
-    , rs2' ~ RDeleteAll fs rs2
-    , Grouping (Record fs)
-    , RecVec rs
-    , RecVec rs2'
-    , RecVec (rs ++ rs2')
-    ) =>
-    proxy fs -- ^ A quasiquoter with shared columns to join on,
-             --   usually generated with pr or pr1
-  -> Frame (Record rs)  -- ^ The left frame 
+  Frame (Record rs)  -- ^ The left frame 
   -> Frame (Record rs2) -- ^ The right frame
   -> [Rec Maybe (rs ++ rs2')] -- ^ A list of the merged records, now in the Maybe functor
     
-rightJoin cols a b =
-  let
-    as = toList a
-  in
-    let
-      proj1 x = rcast x :: Record fs
-      proj2 y = rcast y :: Record fs
-      mergeFun l r = justsFromRec $ mergeRec cols l r
-      mergeRightEmpty r = nothingsFromRec (head as) <+> justsFromRec (dropCols cols r)
-    in  
-      concat
-      (rightOuter grouping mergeFun mergeRightEmpty
-       proj1 proj2 (toList a) (toList b))
-
+outerJoin a b =
+  concat
+  (outer grouping mergeFun mergeLeftEmpty mergeRightEmpty
+    proj1 proj2 (toList a) (toList b))
+  where
+    proj1 = rcast @fs
+    proj2 = rcast @fs
+    mergeFun l r = justsFromRec $ mergeRec @fs l r 
+    mergeLeftEmpty l = justsFromRec l <+> mkNothingsRec @rs2'
+    mergeRightEmpty r = mkNothingsRec @rs <+> justsFromRec (rcast @rs2' r)
+     
+      
+    
 -- | Perform an outer join operation on two frames
--- matching on a quasiquoter of column names
-leftJoin :: forall proxy fs rs rs2  rs2'.
+rightJoin :: forall fs rs rs2  rs2'.
   (fs    ⊆ rs
     , fs   ⊆ rs2
     , rs ⊆ (rs ++ rs2')
     , rs2' ⊆ rs2 
     , rs2' ~ RDeleteAll fs rs2
+    , RecApplicative rs
     , Grouping (Record fs)
     , RecVec rs
     , RecVec rs2'
     , RecVec (rs ++ rs2')
     ) =>
-    proxy fs -- ^ A quasiquoter with shared columns to join on,
-             -- usually generated with pr or pr1 
-  -> Frame (Record rs)  -- ^ The left frame 
+  Frame (Record rs)  -- ^ The left frame 
   -> Frame (Record rs2) -- ^ The right frame
   -> [Rec Maybe (rs ++ rs2')] -- ^ A list of the merged records, now in the Maybe functor
     
-leftJoin cols a b =
-  let
-    bs = toList b
-  in
-    let
-      proj1 x = rcast x :: Record fs
-      proj2 y = rcast y :: Record fs
-      mergeFun l r = justsFromRec $ mergeRec cols l r
-      mergeLeftEmpty l = justsFromRec l <+> nothingsFromRec (dropCols cols (head bs))
-    in  
-      concat
-      (leftOuter grouping mergeFun mergeLeftEmpty 
-       proj1 proj2 (toList a) (toList b))
+rightJoin a b =
+  concat
+  (rightOuter grouping mergeFun mergeRightEmpty
+    proj1 proj2 (toList a) (toList b))
+  where
+    proj1 = rcast @fs
+    proj2 = rcast @fs
+    mergeFun l r = justsFromRec $ mergeRec @fs l r
+    mergeRightEmpty r = mkNothingsRec @rs <+> justsFromRec (rcast @rs2' r)  
+
+-- | Perform an outer join operation on two frames
+leftJoin :: forall fs rs rs2  rs2'.
+  (fs    ⊆ rs
+    , fs   ⊆ rs2
+    , rs ⊆ (rs ++ rs2')
+    , rs2' ⊆ rs2 
+    , rs2' ~ RDeleteAll fs rs2
+    , RecApplicative rs2'
+    , Grouping (Record fs)
+    , RecVec rs
+    , RecVec rs2'
+    , RecVec (rs ++ rs2')
+    ) =>
+  Frame (Record rs)  -- ^ The left frame 
+  -> Frame (Record rs2) -- ^ The right frame
+  -> [Rec Maybe (rs ++ rs2')] -- ^ A list of the merged records, now in the Maybe functor
+    
+leftJoin a b =
+  concat
+  (leftOuter grouping mergeFun mergeLeftEmpty 
+    proj1 proj2 (toList a) (toList b))
+  where
+    proj1 = rcast @fs
+    proj2 = rcast @fs
+    mergeFun l r = justsFromRec $ mergeRec @fs l r
+    mergeLeftEmpty l = justsFromRec l <+> mkNothingsRec @rs2'
+    
