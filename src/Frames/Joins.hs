@@ -3,6 +3,12 @@
              ScopedTypeVariables, TypeFamilies, TypeOperators, 
              UndecidableInstances, TemplateHaskell, QuasiQuotes,
              Rank2Types, TypeApplications, AllowAmbiguousTypes #-}
+module Frames.Joins (innerJoin
+                    , outerJoin
+                    , leftJoin
+                    , rightJoin)
+  
+where
 import Data.Discrimination
 import Data.Functor.Contravariant
 import Data.Foldable as F
