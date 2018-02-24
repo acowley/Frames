@@ -1,9 +1,8 @@
 {-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts, FlexibleInstances,
              KindSignatures, MultiParamTypeClasses, PolyKinds,
-             ScopedTypeVariables, TypeFamilies, TypeOperators,
+             ScopedTypeVariables, TypeFamilies, TypeOperators, 
              UndecidableInstances, TemplateHaskell, QuasiQuotes,
-             Rank2Types #-}
-module Frames.Joins where
+             Rank2Types, TypeApplications, AllowAmbiguousTypes #-}
 import Data.Discrimination
 import Data.Functor.Contravariant
 import Data.Foldable as F
