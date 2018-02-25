@@ -3,6 +3,12 @@
              ScopedTypeVariables, TypeFamilies, TypeOperators, 
              UndecidableInstances, TemplateHaskell, QuasiQuotes,
              Rank2Types, TypeApplications, AllowAmbiguousTypes #-}
+
+-- | Functions for performing SQL style table joins on
+-- @Frame@ objects. Uses Data.Discrimination under the hood
+-- for O(n) joins. These have behaviour equivalent to
+-- @INNER JOIN@, @FULL JOIN@, @LEFT JOIN@, and @RIGHT JOIN@ from
+-- SQL.
 module Frames.Joins (innerJoin
                     , outerJoin
                     , leftJoin
@@ -52,7 +58,18 @@ instance (Grouping a) => Grouping (s :-> a) where
 instance Grouping Text where
   grouping = contramap T.unpack grouping
 
--- | Perform an inner join operation on two frames
+-- | Perform an inner join operation on two frames.
+--
+-- Requires the language extension @TypeApplications@ for specifying the columns to
+-- join on.
+--
+-- Joins can be done on on one or more columns provided the matched
+-- columns have a @Grouping@ instance, most simple types do.
+--
+-- Presently join columns must be present and named identically in both left
+-- and right frames.
+--
+-- Basic usage: @innerJoin \@'[joinCol1, ..., joinColN'] leftFrame rightFrame@
 innerJoin :: forall fs rs rs2 rs2'.
   (fs    ⊆ rs
     , fs   ⊆ rs2 
@@ -86,8 +103,24 @@ mkNothingsRec :: forall fs.
   Rec Maybe fs
 mkNothingsRec = rpure @fs Nothing
 
--- | Perform an outer join operation on two frames
-outerJoin :: forall fs rs rs2  rs2'.
+-- | Perform an outer join (@FULL JOIN@) operation on two frames.
+--
+-- Requires the use the  language extension @TypeApplications@ for specifying the
+-- columns to join on.
+--
+-- Joins can be done on on one or more columns provided the
+-- columns have a @Grouping@ instance, most simple types do.
+--
+-- Presently join columns must be present and named identically in both left
+-- and right frames.
+--
+-- Returns a list of Records in the Maybe interpretation functor.
+-- If a key in the left table is missing from the right table, non-key
+-- columns from the right table are filled with @Nothing@.
+-- If a key in the right table is missing from the left table, non-key
+-- columns from the right table are filled with @Nothing@.
+--
+-- Basic usage: @outerJoin \@'[joinCol1, ..., joinColN'] leftFrame rightFrame@
 outerJoin :: forall fs rs rs' rs2  rs2' ors.
   (fs    ⊆ rs
     , fs   ⊆ rs2
@@ -123,8 +156,22 @@ outerJoin a b =
      
       
     
--- | Perform an outer join operation on two frames
-rightJoin :: forall fs rs rs2  rs2'.
+-- | Perform an right join operation on two frames.
+--
+-- Requires the language extension @TypeApplications@ for specifying the
+-- columns to join on.
+--
+-- Joins can be done on on one or more columns provided the
+-- columns have a @Grouping@ instance, most simple types do.
+--
+-- Presently join columns must be present and named identically in both left
+-- and right frames.
+--
+-- Returns a list of Records in the Maybe interpretation functor.
+-- If a key in the right table is missing from the left table, non-key
+-- columns from the right table are filled with @Nothing@.
+--
+-- Basic usage: @rightJoin \@'[joinCol1, ..., joinColN'] leftFrame rightFrame@
 rightJoin :: forall fs rs rs' rs2  rs2' ors.
   (fs    ⊆ rs
     , fs   ⊆ rs2
@@ -157,7 +204,22 @@ rightJoin a b =
     mergeFun l r = justsFromRec $ mergeRec @fs l r
     mergeRightEmpty r = rcast @ors (mkNothingsRec @rs' <+> justsFromRec r)
 
--- | Perform an outer join operation on two frames
+-- | Perform an left join operation on two frames.
+--
+-- Requires the language extension @TypeApplications@ for specifying the
+-- columns to join on.
+-- 
+-- Joins can be done on on one or more columns provided the
+-- columns have a @Grouping@ instance, most simple types do.
+--
+-- Presently join columns must be present and named identically in both left
+-- and right frames.
+--
+-- Returns a list of Records in the Maybe interpretation functor.
+-- If a key in the left table is missing from the right table, non-key
+-- columns from the right table are filled with @Nothing@.
+--
+-- Basic usage: @leftJoin \@'[joinCol1, ..., joinColN'] leftFrame rightFrame@
 leftJoin :: forall fs rs rs2  rs2'.
   (fs    ⊆ rs
     , fs   ⊆ rs2
