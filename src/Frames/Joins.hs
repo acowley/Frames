@@ -55,7 +55,7 @@ instance Grouping Text where
 -- | Perform an inner join operation on two frames
 innerJoin :: forall fs rs rs2 rs2'.
   (fs    ⊆ rs
-    , fs   ⊆ rs2
+    , fs   ⊆ rs2 
     , rs ⊆ (rs ++ rs2')
     , rs2' ⊆ rs2 
     , rs2' ~ RDeleteAll fs rs2
@@ -88,21 +88,27 @@ mkNothingsRec = rpure @fs Nothing
 
 -- | Perform an outer join operation on two frames
 outerJoin :: forall fs rs rs2  rs2'.
+outerJoin :: forall fs rs rs' rs2  rs2' ors.
   (fs    ⊆ rs
     , fs   ⊆ rs2
     , rs ⊆ (rs ++ rs2')
+    , rs' ⊆ rs
+    , rs' ~ RDeleteAll fs rs
     , rs2' ⊆ rs2 
     , rs2' ~ RDeleteAll fs rs2
+    , ors ~ (rs ++ rs2')
+    , ors :~: (rs' ++ rs2)
     , RecApplicative rs2'
     , RecApplicative rs
+    , RecApplicative rs'
     , Grouping (Record fs)
     , RecVec rs
     , RecVec rs2'
-    , RecVec (rs ++ rs2')
+    , RecVec ors 
     ) =>
   Frame (Record rs)  -- ^ The left frame 
   -> Frame (Record rs2) -- ^ The right frame
-  -> [Rec Maybe (rs ++ rs2')] -- ^ A list of the merged records, now in the Maybe functor
+  -> [Rec Maybe ors] -- ^ A list of the merged records, now in the Maybe functor
     
 outerJoin a b =
   concat
@@ -113,26 +119,33 @@ outerJoin a b =
     proj2 = rcast @fs
     mergeFun l r = justsFromRec $ mergeRec @fs l r 
     mergeLeftEmpty l = justsFromRec l <+> mkNothingsRec @rs2'
-    mergeRightEmpty r = mkNothingsRec @rs <+> justsFromRec (rcast @rs2' r)
+    mergeRightEmpty r = rcast @ors (mkNothingsRec @rs' <+> justsFromRec r)
      
       
     
 -- | Perform an outer join operation on two frames
 rightJoin :: forall fs rs rs2  rs2'.
+rightJoin :: forall fs rs rs' rs2  rs2' ors.
   (fs    ⊆ rs
     , fs   ⊆ rs2
     , rs ⊆ (rs ++ rs2')
+    , rs' ⊆ rs
+    , rs' ~ RDeleteAll fs rs
     , rs2' ⊆ rs2 
     , rs2' ~ RDeleteAll fs rs2
+    , ors ~ (rs ++ rs2')
+    , ors :~: (rs' ++ rs2)
+    , RecApplicative rs2'
     , RecApplicative rs
+    , RecApplicative rs'
     , Grouping (Record fs)
     , RecVec rs
     , RecVec rs2'
-    , RecVec (rs ++ rs2')
-    ) =>
+    , RecVec ors
+    ) => 
   Frame (Record rs)  -- ^ The left frame 
   -> Frame (Record rs2) -- ^ The right frame
-  -> [Rec Maybe (rs ++ rs2')] -- ^ A list of the merged records, now in the Maybe functor
+  -> [Rec Maybe ors] -- ^ A list of the merged records, now in the Maybe functor
     
 rightJoin a b =
   concat
@@ -142,7 +155,7 @@ rightJoin a b =
     proj1 = rcast @fs
     proj2 = rcast @fs
     mergeFun l r = justsFromRec $ mergeRec @fs l r
-    mergeRightEmpty r = mkNothingsRec @rs <+> justsFromRec (rcast @rs2' r)  
+    mergeRightEmpty r = rcast @ors (mkNothingsRec @rs' <+> justsFromRec r)
 
 -- | Perform an outer join operation on two frames
 leftJoin :: forall fs rs rs2  rs2'.
