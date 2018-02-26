@@ -69,7 +69,7 @@ instance Grouping Text where
 -- Presently join columns must be present and named identically in both left
 -- and right frames.
 --
--- Basic usage: @innerJoin \@'[JoinCol1, ..., JoinColN'] leftFrame rightFrame@
+-- Basic usage: @innerJoin \@'[JoinCol1, ..., JoinColN] leftFrame rightFrame@
 innerJoin :: forall fs rs rs2 rs2'.
   (fs    ⊆ rs
     , fs   ⊆ rs2 
@@ -120,7 +120,7 @@ mkNothingsRec = rpure @fs Nothing
 -- If a key in the right table is missing from the left table, non-key
 -- columns from the right table are filled with @Nothing@.
 --
--- Basic usage: @outerJoin \@'[JoinCol1, ..., JoinColN'] leftFrame rightFrame@
+-- Basic usage: @outerJoin \@'[JoinCol1, ..., JoinColN] leftFrame rightFrame@
 outerJoin :: forall fs rs rs' rs2  rs2' ors.
   (fs    ⊆ rs
     , fs   ⊆ rs2
@@ -171,7 +171,7 @@ outerJoin a b =
 -- If a key in the right table is missing from the left table, non-key
 -- columns from the right table are filled with @Nothing@.
 --
--- Basic usage: @rightJoin \@'[JoinCol1, ..., JoinColN'] leftFrame rightFrame@
+-- Basic usage: @rightJoin \@'[JoinCol1, ..., JoinColN] leftFrame rightFrame@
 rightJoin :: forall fs rs rs' rs2  rs2' ors.
   (fs    ⊆ rs
     , fs   ⊆ rs2
@@ -219,7 +219,7 @@ rightJoin a b =
 -- If a key in the left table is missing from the right table, non-key
 -- columns from the right table are filled with @Nothing@.
 --
--- Basic usage: @leftJoin \@'[JoinCol1, ..., JoinColN'] leftFrame rightFrame@
+-- Basic usage: @leftJoin \@'[JoinCol1, ..., JoinColN] leftFrame rightFrame@
 leftJoin :: forall fs rs rs2  rs2'.
   (fs    ⊆ rs
     , fs   ⊆ rs2
