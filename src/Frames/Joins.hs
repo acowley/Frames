@@ -16,6 +16,7 @@ module Frames.Joins (innerJoin
   
 where
 import Data.Discrimination
+import Data.Discrimination.Grouping
 import Data.Functor.Contravariant
 import Data.Foldable as F
 import Frames
@@ -25,6 +26,8 @@ import Data.Vinyl.TypeLevel
 import Data.Vinyl
 import Data.Vinyl.Functor
 import Data.Functor.Contravariant.Divisible
+import Data.Word
+import Data.Hashable
 import qualified Data.Text as T
 
 
@@ -36,6 +39,7 @@ mergeRec :: forall fs rs rs2 rs2'.
   Record rs ->
   Record rs2 ->
   Record (rs ++ rs2')
+{-# INLINE mergeRec #-}
 mergeRec rec1 rec2 =
   rec1 <+> rec2'
   where
@@ -56,7 +60,7 @@ instance (Grouping a) => Grouping (s :-> a) where
    grouping = contramap getCol grouping
 
 instance Grouping Text where
-  grouping = contramap T.unpack grouping
+  grouping = contramap hash grouping
 
 -- | Perform an inner join operation on two frames.
 --
@@ -90,17 +94,22 @@ innerJoin a b =
     concat
     (inner grouping mergeFun proj1 proj2 (toList a) (toList b))
     where
+      {-# INLINE mergeFun #-}
       mergeFun = mergeRec @fs
-      proj1 = rcast @fs 
+      {-# INLINE proj1 #-}
+      proj1 = rcast @fs
+      {-# INLINE proj2 #-}      
       proj2 = rcast @fs
 
 
 justsFromRec :: Record fs -> Rec Maybe fs
+{-# INLINE justsFromRec #-}
 justsFromRec = rmap (Just . getIdentity)
 
 mkNothingsRec :: forall fs.
   (RecApplicative fs) =>
   Rec Maybe fs
+{-# INLINE mkNothingsRec #-}
 mkNothingsRec = rpure @fs Nothing
 
 -- | Perform an outer join (@FULL JOIN@) operation on two frames.
@@ -148,14 +157,17 @@ outerJoin a b =
   (outer grouping mergeFun mergeLeftEmpty mergeRightEmpty
     proj1 proj2 (toList a) (toList b))
   where
+    {-# INLINE proj1 #-}
     proj1 = rcast @fs
+    {-# INLINE proj2 #-}
     proj2 = rcast @fs
-    mergeFun l r = justsFromRec $ mergeRec @fs l r 
+    {-# INLINE mergeFun #-}
+    mergeFun l r = justsFromRec $ mergeRec @fs l r
+    {-# INLINE mergeLeftEmpty #-}
     mergeLeftEmpty l = justsFromRec l <+> mkNothingsRec @rs2'
+    {-# INLINE mergeRightEmpty #-}
     mergeRightEmpty r = rcast @ors (mkNothingsRec @rs' <+> justsFromRec r)
-     
-      
-    
+  
 -- | Perform an right join operation on two frames.
 --
 -- Requires the language extension @TypeApplications@ for specifying the
@@ -195,13 +207,17 @@ rightJoin :: forall fs rs rs' rs2  rs2' ors.
   -> [Rec Maybe ors] -- ^ A list of the merged records, now in the Maybe functor
     
 rightJoin a b =
-  concat
-  (rightOuter grouping mergeFun mergeRightEmpty
-    proj1 proj2 (toList a) (toList b))
+  concat  $
+  rightOuter grouping mergeFun mergeRightEmpty
+  proj1 proj2 (toList a) (toList b)
   where
+    {-# INLINE proj1 #-}
     proj1 = rcast @fs
+    {-# INLINE proj2 #-}
     proj2 = rcast @fs
+    {-# INLINE mergeFun #-}
     mergeFun l r = justsFromRec $ mergeRec @fs l r
+    {-# INLINE mergeRightEmpty #-}
     mergeRightEmpty r = rcast @ors (mkNothingsRec @rs' <+> justsFromRec r)
 
 -- | Perform an left join operation on two frames.

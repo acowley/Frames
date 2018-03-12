@@ -6,6 +6,7 @@
 
 import Frames
 import Frames.Joins
+import Criterion.Main
 
 tableTypes "LCols" "data/left1.csv"
 tableTypes "RCols" "data/right1.csv"
@@ -25,13 +26,14 @@ main = do
   lf <- lfi
   rf <- rfi
   smf <- smfi
-  print $ length $ innerJoin @'[PolicyID] lf rf
-  print $ length $ innerJoin @'[PolicyID] lf smf
-  print $ length $ innerJoin @'[PolicyID,County] lf smf
-  print $ length $ outerJoin @'[PolicyID,County] lf smf
-  print $ length $ leftJoin  @'[PolicyID,County] lf smf
-  print $ length $ rightJoin @'[PolicyID,County] lf smf                             
-
+  defaultMain [
+    bench "inner1a"   $ whnf  (innerJoin @'[PolicyID] lf) rf
+    , bench "inner1b" $ whnf  (innerJoin @'[County] lf) smf
+    , bench "inner2"  $ whnf  (innerJoin @'[PolicyID,County] lf) smf
+    , bench "outer2"  $ whnf  (outerJoin @'[PolicyID,County] lf) smf
+    , bench "left2"   $ whnf  (leftJoin  @'[PolicyID,County] lf) smf
+    , bench "left2"   $ whnf  (rightJoin @'[PolicyID,County] lf) smf                             
+    ]
     
 
   
