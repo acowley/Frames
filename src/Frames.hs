@@ -20,6 +20,7 @@ module Frames
   , module Frames.RecF
   , module Frames.RecLens
   , module Frames.TypeLevel
+  , module Frames.Joins
   , module Pipes.Safe, runSafeEffect
   , Text
   ) where
@@ -44,6 +45,8 @@ import Frames.Rec (Record, RecordColumns, (&:), recUncons, recMaybe, showFields)
 import Frames.RecF
 import Frames.RecLens
 import Frames.TypeLevel
+import Frames.Joins
+import Frames.ExtraInstances()
 import qualified Pipes as P
 import Pipes.Safe (MonadSafe, runSafeT, runSafeP, SafeT)
 import qualified Pipes.Safe as PS

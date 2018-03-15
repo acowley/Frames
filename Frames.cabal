@@ -47,6 +47,7 @@ library
                        Frames.RecLens
                        Frames.TypeLevel
                        Frames.Joins
+                       Frames.ExtraInstances
   other-extensions:    DataKinds, GADTs, KindSignatures, TypeFamilies,
                        TypeOperators, ConstraintKinds, StandaloneDeriving,
                        UndecidableInstances, ScopedTypeVariables,
@@ -68,7 +69,8 @@ library
                        vinyl >= 0.7 && < 0.8,
                        discrimination,
                        contravariant,
-                       hashable
+                       hashable,
+                       deepseq >= 1.4.3.0
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -Wall
