@@ -27,12 +27,12 @@ main = do
   rf <- rfi
   smf <- smfi
   defaultMain [
-    bench "inner1a"   $ whnf  (innerJoin @'[PolicyID] lf) rf
-    , bench "inner1b" $ whnf  (innerJoin @'[County] lf) smf
-    , bench "inner2"  $ whnf  (innerJoin @'[PolicyID,County] lf) smf
-    , bench "outer2"  $ whnf  (outerJoin @'[PolicyID,County] lf) smf
-    , bench "left2"   $ whnf  (leftJoin  @'[PolicyID,County] lf) smf
-    , bench "left2"   $ whnf  (rightJoin @'[PolicyID,County] lf) smf                             
+    bench "inner1a"   $ nf (innerJoin @'[PolicyID] lf) rf
+    , bench "inner1b" $ nf (innerJoin @'[County] lf) smf
+    , bench "inner2"  $ nf (innerJoin @'[PolicyID,County] lf) smf
+    , bench "outer2"  $ nf (outerJoin @'[PolicyID,County] lf) smf
+    , bench "left2"   $ nf (leftJoin  @'[PolicyID,County] lf) smf
+    , bench "left2"   $ nf (rightJoin @'[PolicyID,County] lf) smf                             
     ]
     
 
