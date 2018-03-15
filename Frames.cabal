@@ -66,7 +66,7 @@ library
                        pipes-parse >= 3.0 && < 3.1,
                        pipes-safe >= 2.2.6 && < 2.3,
                        pipes-text >= 0.0.2.5 && < 0.1,
-                       vinyl >= 0.7 && < 0.8,
+                       vinyl >= 0.7 && < 0.9,
                        discrimination,
                        contravariant,
                        hashable,
@@ -158,9 +158,7 @@ executable benchdemo
   hs-source-dirs:   benchmarks
   default-language: Haskell2010
   -- ghc-options:      -O2
-
-  -- Use opt and llc found on PATH rather than the GHC settings file
-  ghc-options:      -O2 -pgmlo opt -pgmlc llc -fllvm
+  ghc-options: -O2 -fllvm
 
 -- A demonstration of dealing with missing data. Provided for source
 -- code and experimentation rather than a useful executable.
@@ -179,7 +177,7 @@ benchmark joins
   main-is:          JoinsBench.hs
   hs-source-dirs:   benchmarks
   build-depends:    base, Frames, criterion
-  ghc-options:      -O2 
+  ghc-options:      -O2
   default-language: Haskell2010
 
 -- Benchmark showing tradeoffs of differing processing needs
