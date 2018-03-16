@@ -7,11 +7,10 @@
 import Frames
 import Frames.Joins
 import Criterion.Main
-import TH.RelativePaths (pathRelativeToCabalPackage)
 
-pathRelativeToCabalPackage "data/left1.csv" >>= tableTypes "LCols"
-pathRelativeToCabalPackage "data/right1.csv" >>= tableTypes "RCols"
-pathRelativeToCabalPackage "data/left_summary.csv" >>= tableTypes "SmCols"
+tableTypes "LCols" "data/left1.csv"
+tableTypes "RCols" "data/right1.csv"
+tableTypes "SmCols" "data/left_summary.csv"
 
 lfi :: IO (Frame LCols)
 lfi = inCoreAoS (readTable "data/left1.csv")
