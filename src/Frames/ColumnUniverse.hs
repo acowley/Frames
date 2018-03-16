@@ -25,6 +25,7 @@ import Language.Haskell.TH
 import Data.Monoid
 #endif
 import Data.Proxy
+import Data.Semigroup (Semigroup((<>)))
 import qualified Data.Text as T
 import Data.Typeable (Typeable, showsTypeRep, typeRep)
 import Data.Vinyl
@@ -135,6 +136,14 @@ instance (T.Text ∈ ts) => Monoid (CoRec ColInfo ts) where
         Just LT -> y
         Just EQ -> x
         Nothing -> mempty
+
+instance (T.Text ∈ ts) => Semigroup (CoRec ColInfo ts) where
+  x@(CoRec (ColInfo (_, trX))) <> y@(CoRec (ColInfo (_, trY))) =
+    case lubTypeReps (fmap getConst trX) (fmap getConst trY) of
+      Just GT -> x
+      Just LT -> y
+      Just EQ -> x
+      Nothing -> CoRec (ColInfo ([t|T.Text|], Possibly mkTyped) :: ColInfo T.Text)
 
 -- | Find the best (i.e. smallest) 'CoRec' variant to represent a
 -- parsed value. For inspection in GHCi after loading this module,
