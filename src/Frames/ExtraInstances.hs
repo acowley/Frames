@@ -1,8 +1,9 @@
-{-# LANGUAGE ConstraintKinds, DataKinds, FlexibleContexts, FlexibleInstances,
-             KindSignatures, MultiParamTypeClasses, PolyKinds,
-             ScopedTypeVariables, TypeFamilies, TypeOperators, 
-             UndecidableInstances, TemplateHaskell, QuasiQuotes,
-             Rank2Types, TypeApplications, AllowAmbiguousTypes #-}
+{-# LANGUAGE ConstraintKinds, CPP, DataKinds, FlexibleContexts,
+             FlexibleInstances, KindSignatures, MultiParamTypeClasses,
+             PolyKinds, ScopedTypeVariables, TypeFamilies,
+             TypeOperators, UndecidableInstances, TemplateHaskell,
+             QuasiQuotes, Rank2Types, TypeApplications,
+             AllowAmbiguousTypes #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 
 module Frames.ExtraInstances where
@@ -17,7 +18,7 @@ import Frames.Rec
 import Frames.Frame
 import Frames.RecF (AllCols)
 import Data.Vinyl.Functor as VF
-import Data.Vinyl 
+import Data.Vinyl
 import Data.Text (Text)
 
 -- Grouping instances
@@ -30,7 +31,7 @@ instance (AllCols Grouping rs
   grouping = divide recUncons grouping grouping
 
 instance Grouping (Record '[]) where
-  grouping = conquer 
+  grouping = conquer
 
 instance (Grouping a) => Grouping (s :-> a) where
    grouping = contramap getCol grouping
@@ -40,6 +41,7 @@ instance Grouping Text where
 
 
 -- NFData* instances
+#if MIN_VERSION_deepseq(1,4,3)
 instance (NFData a) =>
          NFData (VF.Identity a) where
   rnf = rnf1
@@ -56,13 +58,13 @@ instance (AllCols NFData rs
          NFData (Rec f ((s :-> r) : rs)) where
   rnf (r :& rs) = rnf1 r `seq` rnf rs
 
+instance (NFData1 f) => NFData (Rec f '[]) where
+  rnf = rwhnf
+#endif
+
 instance (NFData a) =>
          NFData (Frame a) where
   rnf = foldr (\x acc -> rnf x `seq` acc) ()
 
-instance (NFData1 f) => NFData (Rec f '[]) where
-  rnf = rwhnf
-
 instance (NFData a) => NFData (s :-> a) where
   rnf = rnf . getCol
-
