@@ -7,10 +7,11 @@
 import Frames
 import Frames.Joins
 import Criterion.Main
+import TH.RelativePaths (pathRelativeToCabalPackage)
 
-tableTypes "LCols" "data/left1.csv"
-tableTypes "RCols" "data/right1.csv"
-tableTypes "SmCols" "data/left_summary.csv"
+pathRelativeToCabalPackage "data/left1.csv" >>= tableTypes "LCols"
+pathRelativeToCabalPackage "data/right1.csv" >>= tableTypes "RCols"
+pathRelativeToCabalPackage "data/left_summary.csv" >>= tableTypes "SmCols"
 
 lfi :: IO (Frame LCols)
 lfi = inCoreAoS (readTable "data/left1.csv")
@@ -32,8 +33,5 @@ main = do
     , bench "inner2"  $ nf (innerJoin @'[PolicyID,County] lf) smf
     , bench "outer2"  $ nf (outerJoin @'[PolicyID,County] lf) smf
     , bench "left2"   $ nf (leftJoin  @'[PolicyID,County] lf) smf
-    , bench "left2"   $ nf (rightJoin @'[PolicyID,County] lf) smf                             
+    , bench "left2"   $ nf (rightJoin @'[PolicyID,County] lf) smf
     ]
-    
-
-  

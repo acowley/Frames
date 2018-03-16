@@ -3,7 +3,7 @@
 , pipes-bytestring, pipes-group, pipes-parse, pipes-safe
 , pipes-text, pretty, primitive, readable, regex-applicative
 , stdenv, template-haskell, temporary, text, transformers
-, unordered-containers, vector, vinyl
+, unordered-containers, vector, vinyl, th-utilities
 , Chart, Chart-diagrams, diagrams-lib, diagrams-rasterific
 , foldl, http-client, list-t, microlens, statistics, zip-archive
 , llvmPackages
@@ -24,9 +24,11 @@ mkDerivation {
     template-haskell temporary text unordered-containers vinyl
     Chart Chart-diagrams diagrams-lib diagrams-rasterific
     foldl http-client list-t microlens statistics zip-archive
-    llvmPackages.llvm
   ];
-  benchmarkHaskellDepends = [ base criterion pipes transformers llvmPackages.llvm ];
+  doBenchmark = true;
+  benchmarkHaskellDepends = [
+    base criterion pipes transformers llvmPackages.llvm th-utilities
+  ];
   description = "Data frames For working with tabular data files";
   license = stdenv.lib.licenses.bsd3;
 }
