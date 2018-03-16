@@ -76,8 +76,11 @@ instance Eq Code where
 main :: IO ()
 main = do
   hspec $
-    do describe "Haskell type generation" $
+    do
+#if __GLASGOW_HASKELL__ < 804
+       describe "Haskell type generation" $
          mapM_ (\(CsvExample k _ g, g') -> it k (Code g' `shouldBe` Code g)) csvTests
+#endif
        -- describe "Multiple tables" $
        --    do _g <- H.runIO $
        --             generatedFrom "test/examples.toml" "managers_employees"
