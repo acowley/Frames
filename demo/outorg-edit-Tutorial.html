@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- 2017-12-19 Tue 21:35 -->
+<!-- 2018-03-19 Mon 15:49 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Frames Tutorial</title>
@@ -179,13 +179,13 @@
   /*]]>*/-->
 </style>
 <style type="text/css">
- pre.src {background-color: #212121; color: #E0E0E0; overflow: scroll;} body { max-width: 600pt; margin: auto} </style>
+ pre.src {background-color: #424242; color: #E0E0E0; overflow: scroll;} body { max-width: 600pt; margin: auto} </style>
 <script type="text/javascript">
 /*
 @licstart  The following is the entire license notice for the
 JavaScript code in this tag.
 
-Copyright (C) 2012-2017 Free Software Foundation, Inc.
+Copyright (C) 2012-2018 Free Software Foundation, Inc.
 
 The JavaScript code in this tag is free software: you can
 redistribute it and/or modify it under the terms of the GNU
@@ -234,28 +234,28 @@ for the JavaScript code in this tag.
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#orgff0e9f6">1. Data Import</a>
+<li><a href="#org0a97957">1. Data Import</a>
 <ul>
-<li><a href="#org4c33848">1.1. Streaming Cores?</a></li>
-<li><a href="#org404009c">1.2. Sanity Check</a></li>
+<li><a href="#org9fef981">1.1. Streaming Cores?</a></li>
+<li><a href="#org2632d8f">1.2. Sanity Check</a></li>
 </ul>
 </li>
-<li><a href="#org0bb76d2">2. Subsetting</a>
+<li><a href="#orgd6eb4de">2. Subsetting</a>
 <ul>
-<li><a href="#org73d6dea">2.1. Row Subset</a></li>
-<li><a href="#org3b73452">2.2. Column Subset</a></li>
-<li><a href="#org567e6b2">2.3. Query / Conditional Subset</a></li>
-<li><a href="#org33a1862">2.4. Column Subset Update</a></li>
-<li><a href="#org37d28d1">2.5. Mostly-Uniform Data</a></li>
+<li><a href="#org7a475a7">2.1. Row Subset</a></li>
+<li><a href="#orgef69958">2.2. Column Subset</a></li>
+<li><a href="#orge52a8eb">2.3. Query / Conditional Subset</a></li>
+<li><a href="#org5cdf84f">2.4. Column Subset Update</a></li>
+<li><a href="#org3c53e33">2.5. Mostly-Uniform Data</a></li>
 </ul>
 </li>
-<li><a href="#orgc44a02d">3. Escape Hatch</a></li>
-<li><a href="#org0f56bfb">4. Better Types</a></li>
-<li><a href="#orge111858">5. Appendix</a>
+<li><a href="#org8c6f79f">3. Escape Hatch</a></li>
+<li><a href="#org34c3525">4. Better Types</a></li>
+<li><a href="#orga2af597">5. Appendix</a>
 <ul>
-<li><a href="#org88265ae">5.1. User Types</a></li>
-<li><a href="#orgdd6f84e">5.2. Splice Dump</a></li>
-<li><a href="#org3fe93c7">5.3. Thanks</a></li>
+<li><a href="#orgf68079e">5.1. User Types</a></li>
+<li><a href="#orgbc7ce04">5.2. Splice Dump</a></li>
+<li><a href="#orgeb933a6">5.3. Thanks</a></li>
 </ul>
 </li>
 </ul>
@@ -318,7 +318,7 @@ smaller test program than this!
 </div>
 
 <p>
-A few other imports will be used for highly customized parsing <a href="#org0f56bfb">later</a>.
+A few other imports will be used for highly customized parsing <a href="#org34c3525">later</a>.
 </p>
 
 <div class="org-src-container">
@@ -327,8 +327,8 @@ A few other imports will be used for highly customized parsing <a href="#org0f56
 </pre>
 </div>
 
-<div id="outline-container-orgff0e9f6" class="outline-2">
-<h2 id="orgff0e9f6"><span class="section-number-2">1</span> Data Import</h2>
+<div id="outline-container-org0a97957" class="outline-2">
+<h2 id="org0a97957"><span class="section-number-2">1</span> Data Import</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 We usually package column names with the data to keep things a bit
@@ -338,11 +338,10 @@ commas, generating the types needed to import a data set is as simple
 as,
 </p>
 
-<p>
-&#x2013; #+BEGIN<sub>SRC</sub> haskell
-tableTypes "User" "data/ml-100k/u.user"
-#+END<sub>SRC</sub>
-</p>
+<div class="org-src-container">
+<pre class="src src-haskell"><span style="color: #64B5F6;">tableTypes</span> <span style="color: #C5E1A5;">"User"</span> <span style="color: #C5E1A5;">"data/ml-100k/u.user"</span>
+</pre>
+</div>
 
 <p>
 The data set <i>this</i> example considers is rather far from the sweet
@@ -366,7 +365,7 @@ This template haskell splice explicitly specifies the name for the
 inferred record type, column names, a separator string, and the
 data file from which to infer the record type (i.e. what type
 should be used to represent each column). The result of this splice
-is included in an <a href="#orgdd6f84e">appendix</a> below so you can flip
+is included in an <a href="#orgbc7ce04">appendix</a> below so you can flip
 between the generated code and how it is used.
 </p>
 
@@ -421,8 +420,8 @@ memory) array of structures (AoS) representation.
 </div>
 </div>
 
-<div id="outline-container-org4c33848" class="outline-3">
-<h3 id="org4c33848"><span class="section-number-3">1.1</span> Streaming Cores?</h3>
+<div id="outline-container-org9fef981" class="outline-3">
+<h3 id="org9fef981"><span class="section-number-3">1.1</span> Streaming Cores?</h3>
 <div class="outline-text-3" id="text-1-1">
 <p>
 A <code>Frame</code> is an in-memory representation of your data. The <code>Frames</code>
@@ -464,8 +463,8 @@ the answer to both of those questions is,
 </div>
 </div>
 
-<div id="outline-container-org404009c" class="outline-3">
-<h3 id="org404009c"><span class="section-number-3">1.2</span> Sanity Check</h3>
+<div id="outline-container-org2632d8f" class="outline-3">
+<h3 id="org2632d8f"><span class="section-number-3">1.2</span> Sanity Check</h3>
 <div class="outline-text-3" id="text-1-2">
 <p>
 We can compute some easy statistics to see how things look.
@@ -502,12 +501,12 @@ computing the minimum and maximum <code>age</code> across all rows.
 </div>
 </div>
 
-<div id="outline-container-org0bb76d2" class="outline-2">
-<h2 id="org0bb76d2"><span class="section-number-2">2</span> Subsetting</h2>
+<div id="outline-container-orgd6eb4de" class="outline-2">
+<h2 id="orgd6eb4de"><span class="section-number-2">2</span> Subsetting</h2>
 <div class="outline-text-2" id="text-2">
 </div>
-<div id="outline-container-org73d6dea" class="outline-3">
-<h3 id="org73d6dea"><span class="section-number-3">2.1</span> Row Subset</h3>
+<div id="outline-container-org7a475a7" class="outline-3">
+<h3 id="org7a475a7"><span class="section-number-3">2.1</span> Row Subset</h3>
 <div class="outline-text-3" id="text-2-1">
 <p>
 Data may be inspected using either Haskell's traditional list API&#x2026;
@@ -548,8 +547,8 @@ This lets us view a subset of rows,
 </div>
 </div>
 
-<div id="outline-container-org3b73452" class="outline-3">
-<h3 id="org3b73452"><span class="section-number-3">2.2</span> Column Subset</h3>
+<div id="outline-container-orgef69958" class="outline-3">
+<h3 id="orgef69958"><span class="section-number-3">2.2</span> Column Subset</h3>
 <div class="outline-text-3" id="text-2-2">
 <p>
 We can consider a single column.
@@ -593,8 +592,8 @@ the types in-line by using the <code>rcast</code> function.
 </div>
 </div>
 
-<div id="outline-container-org567e6b2" class="outline-3">
-<h3 id="org567e6b2"><span class="section-number-3">2.3</span> Query / Conditional Subset</h3>
+<div id="outline-container-orge52a8eb" class="outline-3">
+<h3 id="orge52a8eb"><span class="section-number-3">2.3</span> Query / Conditional Subset</h3>
 <div class="outline-text-3" id="text-2-3">
 <p>
 Filtering our frame is rather nicely done using the
@@ -634,8 +633,8 @@ to eventually apply to a large data set.
 </div>
 </div>
 
-<div id="outline-container-org33a1862" class="outline-3">
-<h3 id="org33a1862"><span class="section-number-3">2.4</span> Column Subset Update</h3>
+<div id="outline-container-org5cdf84f" class="outline-3">
+<h3 id="org5cdf84f"><span class="section-number-3">2.4</span> Column Subset Update</h3>
 <div class="outline-text-3" id="text-2-4">
 <p>
 We can also apply a function to a subset of columns of each row! Here,
@@ -670,8 +669,8 @@ various text fields, for example.
 </div>
 </div>
 
-<div id="outline-container-org37d28d1" class="outline-3">
-<h3 id="org37d28d1"><span class="section-number-3">2.5</span> Mostly-Uniform Data</h3>
+<div id="outline-container-org3c53e33" class="outline-3">
+<h3 id="org3c53e33"><span class="section-number-3">2.5</span> Mostly-Uniform Data</h3>
 <div class="outline-text-3" id="text-2-5">
 <p>
 <i>(Warning: This section veers into types that are likely of more
@@ -798,8 +797,8 @@ improved in the future!
 </div>
 </div>
 
-<div id="outline-container-orgc44a02d" class="outline-2">
-<h2 id="orgc44a02d"><span class="section-number-2">3</span> Escape Hatch</h2>
+<div id="outline-container-org8c6f79f" class="outline-2">
+<h2 id="org8c6f79f"><span class="section-number-2">3</span> Escape Hatch</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 When you're done with <code>Frames</code> and want to get back to more
@@ -820,8 +819,8 @@ familiar monomorphic pastures, you can bundle your data up.
 </div>
 </div>
 
-<div id="outline-container-org0f56bfb" class="outline-2">
-<h2 id="org0f56bfb"><span class="section-number-2">4</span> Better Types</h2>
+<div id="outline-container-org34c3525" class="outline-2">
+<h2 id="org34c3525"><span class="section-number-2">4</span> Better Types</h2>
 <div class="outline-text-2" id="text-4">
 <p>
 A common disappointment of parsing general data sets is the
@@ -840,74 +839,30 @@ standard numeric US zip codes. Let's go ahead and define our own
 universe of column types.
 </p>
 
-<p>
-&#x2013; #+begin<sub>src</sub> haskell
-data ZipT = ZipUS Int Int Int Int Int
-</p>
-<table>
+<div class="org-src-container">
+<pre class="src src-haskell"><span style="color: #E1BEE7;">data</span> <span style="color: #FFCC80;">ZipT</span> <span style="color: #80CBC4;">=</span> <span style="color: #FFCC80;">ZipUS</span> <span style="color: #FFCC80;">Int</span> <span style="color: #FFCC80;">Int</span> <span style="color: #FFCC80;">Int</span> <span style="color: #FFCC80;">Int</span> <span style="color: #FFCC80;">Int</span>
+          <span style="color: #80CBC4;">|</span> <span style="color: #FFCC80;">ZipWorld</span> <span style="color: #FFCC80;">Char</span> <span style="color: #FFCC80;">Char</span> <span style="color: #FFCC80;">Char</span> <span style="color: #FFCC80;">Char</span> <span style="color: #FFCC80;">Char</span>
+  <span style="color: #E1BEE7;">deriving</span> (<span style="color: #FFCC80;">Eq</span>, <span style="color: #FFCC80;">Ord</span>, <span style="color: #FFCC80;">Show</span>, <span style="color: #FFCC80;">Typeable</span>)
 
+<span style="color: #E1BEE7;">type</span> <span style="color: #E1BEE7;">instance</span> <span style="color: #FFCC80;">VectorFor</span> <span style="color: #FFCC80;">ZipT</span> <span style="color: #80CBC4;">=</span> <span style="color: #FFCC80;">V.Vector</span>
 
-<colgroup>
-<col  class="org-left">
-</colgroup>
-<tbody>
-<tr>
-<td class="org-left">ZipWorld Char Char Char Char Char</td>
-</tr>
-</tbody>
-</table>
-<p>
-deriving (Eq, Ord, Show, Typeable)
-</p>
-
-<p>
-type instance VectorFor ZipT = V.Vector
-</p>
-
-<p>
-instance Readable ZipT  where
+<span style="color: #E1BEE7;">instance</span> <span style="color: #FFCC80;">Readable</span> <span style="color: #FFCC80;">ZipT</span>  <span style="color: #E1BEE7;">where</span>
   fromText t
-</p>
-<table>
+      <span style="color: #80CBC4;">|</span> T.length t <span style="color: #80CBC4;">==</span> 5 <span style="color: #80CBC4;">=</span> <span style="color: #E1BEE7;">let</span> cs<span style="color: #80CBC4;">@</span>[v,w,x,y,z] <span style="color: #80CBC4;">=</span> T.unpack t
+                              [a,b,c,d,e] <span style="color: #80CBC4;">=</span> map C.digitToInt cs
+                          <span style="color: #E1BEE7;">in</span> <span style="color: #E1BEE7;">if</span> all C.isDigit cs
+                             <span style="color: #E1BEE7;">then</span> return <span style="color: #80CBC4;">$</span> <span style="color: #FFCC80;">ZipUS</span> a b c d e
+                             <span style="color: #E1BEE7;">else</span> return <span style="color: #80CBC4;">$</span> <span style="color: #FFCC80;">ZipWorld</span> v w x y z
+      <span style="color: #80CBC4;">|</span> otherwise <span style="color: #80CBC4;">=</span> mzero
 
-
-<colgroup>
-<col  class="org-left">
-</colgroup>
-<tbody>
-<tr>
-<td class="org-left">T.length t == 5 = let cs@[v,w,x,y,z] = T.unpack t</td>
-</tr>
-</tbody>
-</table>
-<p>
-    [a,b,c,d,e] = map C.digitToInt cs
-in if all C.isDigit cs
-   then return $ ZipUS a b c d e
-   else return $ ZipWorld v w x y z
-</p>
-<table>
-
-
-<colgroup>
-<col  class="org-left">
-</colgroup>
-<tbody>
-<tr>
-<td class="org-left">otherwise = mzero</td>
-</tr>
-</tbody>
-</table>
-
-<p>
-type MyColumns = ZipT ': CommonColumns
-#+end<sub>src</sub>
-</p>
+<span style="color: #E1BEE7;">type</span> <span style="color: #FFCC80;">MyColumns</span> <span style="color: #80CBC4;">=</span> <span style="color: #FFCC80;">ZipT</span> <span style="color: #E57373;">'</span><span style="color: #C5E1A5;">: CommonColumns</span>
+</pre>
+</div>
 
 <p>
 Note that these definitions must be imported from a separate module
 to satisfy GHC's stage restrictions related to Template
-Haskell. The full code for the custom type may be found in an <a href="#org88265ae">appendix</a>.
+Haskell. The full code for the custom type may be found in an <a href="#orgf68079e">appendix</a>.
 </p>
 
 <p>
@@ -995,12 +950,12 @@ code</b>. Just recompile against the new data set, and you're good to go.
 </div>
 </div>
 
-<div id="outline-container-orge111858" class="outline-2">
-<h2 id="orge111858"><span class="section-number-2">5</span> Appendix</h2>
+<div id="outline-container-orga2af597" class="outline-2">
+<h2 id="orga2af597"><span class="section-number-2">5</span> Appendix</h2>
 <div class="outline-text-2" id="text-5">
 </div>
-<div id="outline-container-org88265ae" class="outline-3">
-<h3 id="org88265ae"><span class="section-number-3">5.1</span> User Types</h3>
+<div id="outline-container-orgf68079e" class="outline-3">
+<h3 id="orgf68079e"><span class="section-number-3">5.1</span> User Types</h3>
 <div class="outline-text-3" id="text-5-1">
 <p>
 Here are the definitions needed to define the <code>MyColumns</code> type with
@@ -1021,87 +976,41 @@ is in keeping with the overall goal of <code>Frames</code>: it's easy to take
 off, and the sky's the limit.
 </p>
 
-<p>
-&#x2013; #+begin<sub>src</sub> haskell
-{-# LANGUAGE DataKinds, DeriveDataTypeable, TypeFamilies, TypeOperators #-}
-module TutorialZipCode where
-import Control.Monad (mzero)
-import qualified Data.Char as C
-import Data.Readable (Readable(fromText))
-import qualified Data.Text as T
-import Data.Typeable
-import qualified Data.Vector as V
-import Frames.InCore (VectorFor)
-import Frames
-</p>
+<div class="org-src-container">
+<pre class="src src-haskell"><span style="color: #42A5F5;">{-# LANGUAGE DataKinds, DeriveDataTypeable, TypeFamilies, TypeOperators #-}</span>
+<span style="color: #E1BEE7;">module</span> <span style="color: #FFCC80;">TutorialZipCode</span> <span style="color: #E1BEE7;">where</span>
+<span style="color: #E1BEE7;">import</span> <span style="color: #FFCC80;">Control.Monad</span> (mzero)
+<span style="color: #E1BEE7;">import</span> <span style="color: #E1BEE7;">qualified</span> <span style="color: #FFCC80;">Data.Char</span> <span style="color: #E1BEE7;">as</span> <span style="color: #FFCC80;">C</span>
+<span style="color: #E1BEE7;">import</span> <span style="color: #FFCC80;">Data.Readable</span> (<span style="color: #FFCC80;">Readable</span>(fromText))
+<span style="color: #E1BEE7;">import</span> <span style="color: #E1BEE7;">qualified</span> <span style="color: #FFCC80;">Data.Text</span> <span style="color: #E1BEE7;">as</span> <span style="color: #FFCC80;">T</span>
+<span style="color: #E1BEE7;">import</span> <span style="color: #FFCC80;">Data.Typeable</span>
+<span style="color: #E1BEE7;">import</span> <span style="color: #E1BEE7;">qualified</span> <span style="color: #FFCC80;">Data.Vector</span> <span style="color: #E1BEE7;">as</span> <span style="color: #FFCC80;">V</span>
+<span style="color: #E1BEE7;">import</span> <span style="color: #FFCC80;">Frames.InCore</span> (<span style="color: #FFCC80;">VectorFor</span>)
+<span style="color: #E1BEE7;">import</span> <span style="color: #FFCC80;">Frames</span>
 
-<p>
-data ZipT = ZipUS Int Int Int Int Int
-</p>
-<table>
+<span style="color: #E1BEE7;">data</span> <span style="color: #FFCC80;">ZipT</span> <span style="color: #80CBC4;">=</span> <span style="color: #FFCC80;">ZipUS</span> <span style="color: #FFCC80;">Int</span> <span style="color: #FFCC80;">Int</span> <span style="color: #FFCC80;">Int</span> <span style="color: #FFCC80;">Int</span> <span style="color: #FFCC80;">Int</span>
+          <span style="color: #80CBC4;">|</span> <span style="color: #FFCC80;">ZipWorld</span> <span style="color: #FFCC80;">Char</span> <span style="color: #FFCC80;">Char</span> <span style="color: #FFCC80;">Char</span> <span style="color: #FFCC80;">Char</span> <span style="color: #FFCC80;">Char</span>
+  <span style="color: #E1BEE7;">deriving</span> (<span style="color: #FFCC80;">Eq</span>, <span style="color: #FFCC80;">Ord</span>, <span style="color: #FFCC80;">Show</span>, <span style="color: #FFCC80;">Typeable</span>)
 
+<span style="color: #E1BEE7;">type</span> <span style="color: #E1BEE7;">instance</span> <span style="color: #FFCC80;">VectorFor</span> <span style="color: #FFCC80;">ZipT</span> <span style="color: #80CBC4;">=</span> <span style="color: #FFCC80;">V.Vector</span>
 
-<colgroup>
-<col  class="org-left">
-</colgroup>
-<tbody>
-<tr>
-<td class="org-left">ZipWorld Char Char Char Char Char</td>
-</tr>
-</tbody>
-</table>
-<p>
-deriving (Eq, Ord, Show, Typeable)
-</p>
-
-<p>
-type instance VectorFor ZipT = V.Vector
-</p>
-
-<p>
-instance Readable ZipT  where
+<span style="color: #E1BEE7;">instance</span> <span style="color: #FFCC80;">Readable</span> <span style="color: #FFCC80;">ZipT</span>  <span style="color: #E1BEE7;">where</span>
   fromText t
-</p>
-<table>
+      <span style="color: #80CBC4;">|</span> T.length t <span style="color: #80CBC4;">==</span> 5 <span style="color: #80CBC4;">=</span> <span style="color: #E1BEE7;">let</span> cs<span style="color: #80CBC4;">@</span>[v,w,x,y,z] <span style="color: #80CBC4;">=</span> T.unpack t
+                              [a,b,c,d,e] <span style="color: #80CBC4;">=</span> map C.digitToInt cs
+                          <span style="color: #E1BEE7;">in</span> <span style="color: #E1BEE7;">if</span> all C.isDigit cs
+                             <span style="color: #E1BEE7;">then</span> return <span style="color: #80CBC4;">$</span> <span style="color: #FFCC80;">ZipUS</span> a b c d e
+                             <span style="color: #E1BEE7;">else</span> return <span style="color: #80CBC4;">$</span> <span style="color: #FFCC80;">ZipWorld</span> v w x y z
+      <span style="color: #80CBC4;">|</span> otherwise <span style="color: #80CBC4;">=</span> mzero
 
-
-<colgroup>
-<col  class="org-left">
-</colgroup>
-<tbody>
-<tr>
-<td class="org-left">T.length t == 5 = let cs@[v,w,x,y,z] = T.unpack t</td>
-</tr>
-</tbody>
-</table>
-<p>
-    [a,b,c,d,e] = map C.digitToInt cs
-in if all C.isDigit cs
-   then return $ ZipUS a b c d e
-   else return $ ZipWorld v w x y z
-</p>
-<table>
-
-
-<colgroup>
-<col  class="org-left">
-</colgroup>
-<tbody>
-<tr>
-<td class="org-left">otherwise = mzero</td>
-</tr>
-</tbody>
-</table>
-
-<p>
-type MyColumns = ZipT ': CommonColumns
-#+end<sub>src</sub>
-</p>
+<span style="color: #E1BEE7;">type</span> <span style="color: #FFCC80;">MyColumns</span> <span style="color: #80CBC4;">=</span> <span style="color: #FFCC80;">ZipT</span> <span style="color: #E57373;">'</span><span style="color: #C5E1A5;">: CommonColumns</span>
+</pre>
+</div>
 </div>
 </div>
 
-<div id="outline-container-orgdd6f84e" class="outline-3">
-<h3 id="orgdd6f84e"><span class="section-number-3">5.2</span> Splice Dump</h3>
+<div id="outline-container-orgbc7ce04" class="outline-3">
+<h3 id="orgbc7ce04"><span class="section-number-3">5.2</span> Splice Dump</h3>
 <div class="outline-text-3" id="text-5-2">
 <p>
 The Template Haskell splices we use produce quite a lot of
@@ -1129,145 +1038,112 @@ write in your code need not include the column names or separator
 character.
 </p>
 
-<p>
-&#x2013; #+begin<sub>src</sub> haskell
-  tableTypes'
-    (rowGen "data/ml-100k/u.user")
-    {rowTypeName = "User",
-     columnNames = ["user id", "age", "gender", "occupation",
-                    "zip code"],
-     separator = "|"})
-======&gt;
-  type User =
-      Record ["user id" :-&gt; Int, "age" :-&gt; Int, "gender" :-&gt; Text, "occupation" :-&gt; Text, "zip code" :-&gt; Text]
-</p>
+<div class="org-src-container">
+<pre class="src src-haskell">  tableTypes'
+    (rowGen <span style="color: #C5E1A5;">"data/ml-100k/u.user"</span>)
+    {rowTypeName <span style="color: #80CBC4;">=</span> <span style="color: #C5E1A5;">"User"</span>,
+     columnNames <span style="color: #80CBC4;">=</span> [<span style="color: #C5E1A5;">"user id"</span>, <span style="color: #C5E1A5;">"age"</span>, <span style="color: #C5E1A5;">"gender"</span>, <span style="color: #C5E1A5;">"occupation"</span>,
+                    <span style="color: #C5E1A5;">"zip code"</span>],
+     separator <span style="color: #80CBC4;">=</span> <span style="color: #C5E1A5;">"|"</span>})
+<span style="color: #80CBC4;">======&gt;</span>
+  <span style="color: #E1BEE7;">type</span> <span style="color: #FFCC80;">User</span> <span style="color: #80CBC4;">=</span>
+      <span style="color: #FFCC80;">Record</span> [<span style="color: #C5E1A5;">"user id"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Int</span>, <span style="color: #C5E1A5;">"age"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Int</span>, <span style="color: #C5E1A5;">"gender"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Text</span>, <span style="color: #C5E1A5;">"occupation"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Text</span>, <span style="color: #C5E1A5;">"zip code"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Text</span>]
 
-<p>
-userParser :: ParserOptions
-userParser
-  = ParserOptions
-      (Just
-         (map
-            T.pack
-            ["user id", "age", "gender", "occupation", "zip code"]))
-      (T.pack "|")
-</p>
+  userParser <span style="color: #80CBC4;">::</span> <span style="color: #FFCC80;">ParserOptions</span>
+  userParser
+    <span style="color: #80CBC4;">=</span> <span style="color: #FFCC80;">ParserOptions</span>
+        (<span style="color: #FFCC80;">Just</span>
+           (map
+              T.pack
+              [<span style="color: #C5E1A5;">"user id"</span>, <span style="color: #C5E1A5;">"age"</span>, <span style="color: #C5E1A5;">"gender"</span>, <span style="color: #C5E1A5;">"occupation"</span>, <span style="color: #C5E1A5;">"zip code"</span>]))
+        (T.pack <span style="color: #C5E1A5;">"|"</span>)
 
-<p>
-type UserId = "user id" :-&gt; Int
-</p>
+  <span style="color: #E1BEE7;">type</span> <span style="color: #FFCC80;">UserId</span> <span style="color: #80CBC4;">=</span> <span style="color: #C5E1A5;">"user id"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Int</span>
 
-<p>
-userId ::
-  forall f<sub>adkB</sub> rs<sub>adkC</sub>. (Functor f<sub>adkB</sub>,
-                          RElem UserId rs<sub>adkC</sub> (RIndex UserId rs<sub>adkC</sub>)) =&gt;
-  (Int -&gt; f<sub>adkB</sub> Int) -&gt; Record rs<sub>adkC</sub> -&gt; f<sub>adkB</sub> (Record rs<sub>adkC</sub>)
-userId = rlens (Proxy :: Proxy UserId)
-</p>
+  userId <span style="color: #80CBC4;">::</span>
+    <span style="color: #E1BEE7;">forall</span> f_adkB rs_adkC<span style="color: #80CBC4;">.</span> (<span style="color: #FFCC80;">Functor</span> f_adkB,
+                            <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">UserId</span> rs_adkC (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">UserId</span> rs_adkC)) <span style="color: #80CBC4;">=&gt;</span>
+    (<span style="color: #FFCC80;">Int</span> <span style="color: #80CBC4;">-&gt;</span> f_adkB <span style="color: #FFCC80;">Int</span>) <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Record</span> rs_adkC <span style="color: #80CBC4;">-&gt;</span> f_adkB (<span style="color: #FFCC80;">Record</span> rs_adkC)
+  userId <span style="color: #80CBC4;">=</span> rlens (<span style="color: #FFCC80;">Proxy</span> <span style="color: #80CBC4;">::</span> <span style="color: #FFCC80;">Proxy</span> <span style="color: #FFCC80;">UserId</span>)
 
-<p>
-userId' ::
-  forall g<sub>adkD</sub> f<sub>adkE</sub> rs<sub>adkF</sub>. (Functor f<sub>adkE</sub>,
-                                 Functor g<sub>adkD</sub>,
-                                 RElem UserId rs<sub>adkF</sub> (RIndex UserId rs<sub>adkF</sub>)) =&gt;
-  (g<sub>adkD</sub> UserId -&gt; f<sub>adkE</sub> (g<sub>adkD</sub> UserId))
-  -&gt; Rec g<sub>adkD</sub> rs<sub>adkF</sub> -&gt; f<sub>adkE</sub> (Rec g<sub>adkD</sub> rs<sub>adkF</sub>)
-userId' = rlens' (Proxy :: Proxy UserId)
-</p>
+  userId' <span style="color: #80CBC4;">::</span>
+    <span style="color: #E1BEE7;">forall</span> g_adkD f_adkE rs_adkF<span style="color: #80CBC4;">.</span> (<span style="color: #FFCC80;">Functor</span> f_adkE,
+                                   <span style="color: #FFCC80;">Functor</span> g_adkD,
+                                   <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">UserId</span> rs_adkF (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">UserId</span> rs_adkF)) <span style="color: #80CBC4;">=&gt;</span>
+    (g_adkD <span style="color: #FFCC80;">UserId</span> <span style="color: #80CBC4;">-&gt;</span> f_adkE (g_adkD <span style="color: #FFCC80;">UserId</span>))
+    <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Rec</span> g_adkD rs_adkF <span style="color: #80CBC4;">-&gt;</span> f_adkE (<span style="color: #FFCC80;">Rec</span> g_adkD rs_adkF)
+  userId' <span style="color: #80CBC4;">=</span> rlens' (<span style="color: #FFCC80;">Proxy</span> <span style="color: #80CBC4;">::</span> <span style="color: #FFCC80;">Proxy</span> <span style="color: #FFCC80;">UserId</span>)
 
-<p>
-type Age = "age" :-&gt; Int
-</p>
+  <span style="color: #E1BEE7;">type</span> <span style="color: #FFCC80;">Age</span> <span style="color: #80CBC4;">=</span> <span style="color: #C5E1A5;">"age"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Int</span>
 
-<p>
-age ::
-  forall f<sub>adkG</sub> rs<sub>adkH</sub>. (Functor f<sub>adkG</sub>,
-                          RElem Age rs<sub>adkH</sub> (RIndex Age rs<sub>adkH</sub>)) =&gt;
-  (Int -&gt; f<sub>adkG</sub> Int) -&gt; Record rs<sub>adkH</sub> -&gt; f<sub>adkG</sub> (Record rs<sub>adkH</sub>)
-age = rlens (Proxy :: Proxy Age)
-</p>
+  age <span style="color: #80CBC4;">::</span>
+    <span style="color: #E1BEE7;">forall</span> f_adkG rs_adkH<span style="color: #80CBC4;">.</span> (<span style="color: #FFCC80;">Functor</span> f_adkG,
+                            <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">Age</span> rs_adkH (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">Age</span> rs_adkH)) <span style="color: #80CBC4;">=&gt;</span>
+    (<span style="color: #FFCC80;">Int</span> <span style="color: #80CBC4;">-&gt;</span> f_adkG <span style="color: #FFCC80;">Int</span>) <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Record</span> rs_adkH <span style="color: #80CBC4;">-&gt;</span> f_adkG (<span style="color: #FFCC80;">Record</span> rs_adkH)
+  age <span style="color: #80CBC4;">=</span> rlens (<span style="color: #FFCC80;">Proxy</span> <span style="color: #80CBC4;">::</span> <span style="color: #FFCC80;">Proxy</span> <span style="color: #FFCC80;">Age</span>)
 
-<p>
-age' ::
-  forall g<sub>adkI</sub> f<sub>adkJ</sub> rs<sub>adkK</sub>. (Functor f<sub>adkJ</sub>,
-                                 Functor g<sub>adkI</sub>,
-                                 RElem Age rs<sub>adkK</sub> (RIndex Age rs<sub>adkK</sub>)) =&gt;
-  (g<sub>adkI</sub> Age -&gt; f<sub>adkJ</sub> (g<sub>adkI</sub> Age))
-  -&gt; Rec g<sub>adkI</sub> rs<sub>adkK</sub> -&gt; f<sub>adkJ</sub> (Rec g<sub>adkI</sub> rs<sub>adkK</sub>)
-age' = rlens' (Proxy :: Proxy Age)
-</p>
+  age' <span style="color: #80CBC4;">::</span>
+    <span style="color: #E1BEE7;">forall</span> g_adkI f_adkJ rs_adkK<span style="color: #80CBC4;">.</span> (<span style="color: #FFCC80;">Functor</span> f_adkJ,
+                                   <span style="color: #FFCC80;">Functor</span> g_adkI,
+                                   <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">Age</span> rs_adkK (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">Age</span> rs_adkK)) <span style="color: #80CBC4;">=&gt;</span>
+    (g_adkI <span style="color: #FFCC80;">Age</span> <span style="color: #80CBC4;">-&gt;</span> f_adkJ (g_adkI <span style="color: #FFCC80;">Age</span>))
+    <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Rec</span> g_adkI rs_adkK <span style="color: #80CBC4;">-&gt;</span> f_adkJ (<span style="color: #FFCC80;">Rec</span> g_adkI rs_adkK)
+  age' <span style="color: #80CBC4;">=</span> rlens' (<span style="color: #FFCC80;">Proxy</span> <span style="color: #80CBC4;">::</span> <span style="color: #FFCC80;">Proxy</span> <span style="color: #FFCC80;">Age</span>)
 
-<p>
-type Gender = "gender" :-&gt; Text
-</p>
+  <span style="color: #E1BEE7;">type</span> <span style="color: #FFCC80;">Gender</span> <span style="color: #80CBC4;">=</span> <span style="color: #C5E1A5;">"gender"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Text</span>
 
-<p>
-gender ::
-  forall f<sub>adkL</sub> rs<sub>adkM</sub>. (Functor f<sub>adkL</sub>,
-                          RElem Gender rs<sub>adkM</sub> (RIndex Gender rs<sub>adkM</sub>)) =&gt;
-  (Text -&gt; f<sub>adkL</sub> Text) -&gt; Record rs<sub>adkM</sub> -&gt; f<sub>adkL</sub> (Record rs<sub>adkM</sub>)
-gender = rlens (Proxy :: Proxy Gender)
-</p>
+  gender <span style="color: #80CBC4;">::</span>
+    <span style="color: #E1BEE7;">forall</span> f_adkL rs_adkM<span style="color: #80CBC4;">.</span> (<span style="color: #FFCC80;">Functor</span> f_adkL,
+                            <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">Gender</span> rs_adkM (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">Gender</span> rs_adkM)) <span style="color: #80CBC4;">=&gt;</span>
+    (<span style="color: #FFCC80;">Text</span> <span style="color: #80CBC4;">-&gt;</span> f_adkL <span style="color: #FFCC80;">Text</span>) <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Record</span> rs_adkM <span style="color: #80CBC4;">-&gt;</span> f_adkL (<span style="color: #FFCC80;">Record</span> rs_adkM)
+  gender <span style="color: #80CBC4;">=</span> rlens (<span style="color: #FFCC80;">Proxy</span> <span style="color: #80CBC4;">::</span> <span style="color: #FFCC80;">Proxy</span> <span style="color: #FFCC80;">Gender</span>)
 
-<p>
-gender' ::
-  forall g<sub>adkN</sub> f<sub>adkO</sub> rs<sub>adkP</sub>. (Functor f<sub>adkO</sub>,
-                                 Functor g<sub>adkN</sub>,
-                                 RElem Gender rs<sub>adkP</sub> (RIndex Gender rs<sub>adkP</sub>)) =&gt;
-  (g<sub>adkN</sub> Gender -&gt; f<sub>adkO</sub> (g<sub>adkN</sub> Gender))
-  -&gt; Rec g<sub>adkN</sub> rs<sub>adkP</sub> -&gt; f<sub>adkO</sub> (Rec g<sub>adkN</sub> rs<sub>adkP</sub>)
-gender' = rlens' (Proxy :: Proxy Gender)
-</p>
+  gender' <span style="color: #80CBC4;">::</span>
+    <span style="color: #E1BEE7;">forall</span> g_adkN f_adkO rs_adkP<span style="color: #80CBC4;">.</span> (<span style="color: #FFCC80;">Functor</span> f_adkO,
+                                   <span style="color: #FFCC80;">Functor</span> g_adkN,
+                                   <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">Gender</span> rs_adkP (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">Gender</span> rs_adkP)) <span style="color: #80CBC4;">=&gt;</span>
+    (g_adkN <span style="color: #FFCC80;">Gender</span> <span style="color: #80CBC4;">-&gt;</span> f_adkO (g_adkN <span style="color: #FFCC80;">Gender</span>))
+    <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Rec</span> g_adkN rs_adkP <span style="color: #80CBC4;">-&gt;</span> f_adkO (<span style="color: #FFCC80;">Rec</span> g_adkN rs_adkP)
+  gender' <span style="color: #80CBC4;">=</span> rlens' (<span style="color: #FFCC80;">Proxy</span> <span style="color: #80CBC4;">::</span> <span style="color: #FFCC80;">Proxy</span> <span style="color: #FFCC80;">Gender</span>)
 
-<p>
-type Occupation = "occupation" :-&gt; Text
-</p>
+  <span style="color: #E1BEE7;">type</span> <span style="color: #FFCC80;">Occupation</span> <span style="color: #80CBC4;">=</span> <span style="color: #C5E1A5;">"occupation"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Text</span>
 
-<p>
-occupation ::
-  forall f<sub>adkQ</sub> rs<sub>adkR</sub>. (Functor f<sub>adkQ</sub>,
-                          RElem Occupation rs<sub>adkR</sub> (RIndex Occupation rs<sub>adkR</sub>)) =&gt;
-  (Text -&gt; f<sub>adkQ</sub> Text) -&gt; Record rs<sub>adkR</sub> -&gt; f<sub>adkQ</sub> (Record rs<sub>adkR</sub>)
-occupation = rlens (Proxy :: Proxy Occupation)
-</p>
+  occupation <span style="color: #80CBC4;">::</span>
+    <span style="color: #E1BEE7;">forall</span> f_adkQ rs_adkR<span style="color: #80CBC4;">.</span> (<span style="color: #FFCC80;">Functor</span> f_adkQ,
+                            <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">Occupation</span> rs_adkR (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">Occupation</span> rs_adkR)) <span style="color: #80CBC4;">=&gt;</span>
+    (<span style="color: #FFCC80;">Text</span> <span style="color: #80CBC4;">-&gt;</span> f_adkQ <span style="color: #FFCC80;">Text</span>) <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Record</span> rs_adkR <span style="color: #80CBC4;">-&gt;</span> f_adkQ (<span style="color: #FFCC80;">Record</span> rs_adkR)
+  occupation <span style="color: #80CBC4;">=</span> rlens (<span style="color: #FFCC80;">Proxy</span> <span style="color: #80CBC4;">::</span> <span style="color: #FFCC80;">Proxy</span> <span style="color: #FFCC80;">Occupation</span>)
 
-<p>
-occupation' ::
-  forall g<sub>adkS</sub> f<sub>adkT</sub> rs<sub>adkU</sub>. (Functor f<sub>adkT</sub>,
-                                 Functor g<sub>adkS</sub>,
-                                 RElem Occupation rs<sub>adkU</sub> (RIndex Occupation rs<sub>adkU</sub>)) =&gt;
-  (g<sub>adkS</sub> Occupation -&gt; f<sub>adkT</sub> (g<sub>adkS</sub> Occupation))
-  -&gt; Rec g<sub>adkS</sub> rs<sub>adkU</sub> -&gt; f<sub>adkT</sub> (Rec g<sub>adkS</sub> rs<sub>adkU</sub>)
-occupation' = rlens' (Proxy :: Proxy Occupation)
-</p>
+  occupation' <span style="color: #80CBC4;">::</span>
+    <span style="color: #E1BEE7;">forall</span> g_adkS f_adkT rs_adkU<span style="color: #80CBC4;">.</span> (<span style="color: #FFCC80;">Functor</span> f_adkT,
+                                   <span style="color: #FFCC80;">Functor</span> g_adkS,
+                                   <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">Occupation</span> rs_adkU (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">Occupation</span> rs_adkU)) <span style="color: #80CBC4;">=&gt;</span>
+    (g_adkS <span style="color: #FFCC80;">Occupation</span> <span style="color: #80CBC4;">-&gt;</span> f_adkT (g_adkS <span style="color: #FFCC80;">Occupation</span>))
+    <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Rec</span> g_adkS rs_adkU <span style="color: #80CBC4;">-&gt;</span> f_adkT (<span style="color: #FFCC80;">Rec</span> g_adkS rs_adkU)
+  occupation' <span style="color: #80CBC4;">=</span> rlens' (<span style="color: #FFCC80;">Proxy</span> <span style="color: #80CBC4;">::</span> <span style="color: #FFCC80;">Proxy</span> <span style="color: #FFCC80;">Occupation</span>)
 
-<p>
-type ZipCode = "zip code" :-&gt; Text
-</p>
+  <span style="color: #E1BEE7;">type</span> <span style="color: #FFCC80;">ZipCode</span> <span style="color: #80CBC4;">=</span> <span style="color: #C5E1A5;">"zip code"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Text</span>
 
-<p>
-zipCode ::
-  forall f<sub>adkV</sub> rs<sub>adkW</sub>. (Functor f<sub>adkV</sub>,
-                          RElem ZipCode rs<sub>adkW</sub> (RIndex ZipCode rs<sub>adkW</sub>)) =&gt;
-  (Text -&gt; f<sub>adkV</sub> Text) -&gt; Record rs<sub>adkW</sub> -&gt; f<sub>adkV</sub> (Record rs<sub>adkW</sub>)
-zipCode = rlens (Proxy :: Proxy ZipCode)
-</p>
+  zipCode <span style="color: #80CBC4;">::</span>
+    <span style="color: #E1BEE7;">forall</span> f_adkV rs_adkW<span style="color: #80CBC4;">.</span> (<span style="color: #FFCC80;">Functor</span> f_adkV,
+                            <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">ZipCode</span> rs_adkW (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">ZipCode</span> rs_adkW)) <span style="color: #80CBC4;">=&gt;</span>
+    (<span style="color: #FFCC80;">Text</span> <span style="color: #80CBC4;">-&gt;</span> f_adkV <span style="color: #FFCC80;">Text</span>) <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Record</span> rs_adkW <span style="color: #80CBC4;">-&gt;</span> f_adkV (<span style="color: #FFCC80;">Record</span> rs_adkW)
+  zipCode <span style="color: #80CBC4;">=</span> rlens (<span style="color: #FFCC80;">Proxy</span> <span style="color: #80CBC4;">::</span> <span style="color: #FFCC80;">Proxy</span> <span style="color: #FFCC80;">ZipCode</span>)
 
-<p>
-  zipCode' ::
-    forall g<sub>adkX</sub> f<sub>adkY</sub> rs<sub>adkZ</sub>. (Functor f<sub>adkY</sub>,
-                                   Functor g<sub>adkX</sub>,
-                                   RElem ZipCode rs<sub>adkZ</sub> (RIndex ZipCode rs<sub>adkZ</sub>)) =&gt;
-    (g<sub>adkX</sub> ZipCode -&gt; f<sub>adkY</sub> (g<sub>adkX</sub> ZipCode))
-    -&gt; Rec g<sub>adkX</sub> rs<sub>adkZ</sub> -&gt; f<sub>adkY</sub> (Rec g<sub>adkX</sub> rs<sub>adkZ</sub>)
-  zipCode' = rlens' (Proxy :: Proxy ZipCode)
-#+end<sub>src</sub>
-</p>
+  zipCode' <span style="color: #80CBC4;">::</span>
+    <span style="color: #E1BEE7;">forall</span> g_adkX f_adkY rs_adkZ<span style="color: #80CBC4;">.</span> (<span style="color: #FFCC80;">Functor</span> f_adkY,
+                                   <span style="color: #FFCC80;">Functor</span> g_adkX,
+                                   <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">ZipCode</span> rs_adkZ (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">ZipCode</span> rs_adkZ)) <span style="color: #80CBC4;">=&gt;</span>
+    (g_adkX <span style="color: #FFCC80;">ZipCode</span> <span style="color: #80CBC4;">-&gt;</span> f_adkY (g_adkX <span style="color: #FFCC80;">ZipCode</span>))
+    <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Rec</span> g_adkX rs_adkZ <span style="color: #80CBC4;">-&gt;</span> f_adkY (<span style="color: #FFCC80;">Rec</span> g_adkX rs_adkZ)
+  zipCode' <span style="color: #80CBC4;">=</span> rlens' (<span style="color: #FFCC80;">Proxy</span> <span style="color: #80CBC4;">::</span> <span style="color: #FFCC80;">Proxy</span> <span style="color: #FFCC80;">ZipCode</span>)
+</pre>
+</div>
 </div>
 </div>
 
-<div id="outline-container-org3fe93c7" class="outline-3">
-<h3 id="org3fe93c7"><span class="section-number-3">5.3</span> Thanks</h3>
+<div id="outline-container-orgeb933a6" class="outline-3">
+<h3 id="orgeb933a6"><span class="section-number-3">5.3</span> Thanks</h3>
 <div class="outline-text-3" id="text-5-3">
 <p>
 Thanks to Greg Hale and Ben Gamari for reviewing early drafts of this document.
