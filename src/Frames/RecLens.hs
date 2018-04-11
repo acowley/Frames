@@ -1,12 +1,7 @@
-{-# LANGUAGE ConstraintKinds,
-             DataKinds,
-             FlexibleContexts,
-             FlexibleInstances,
-             MultiParamTypeClasses,
-             RankNTypes,
-             ScopedTypeVariables,
-             TypeFamilies,
-             TypeOperators #-}
+{-# LANGUAGE AllowAmbiguousTypes, ConstraintKinds, DataKinds,
+             FlexibleContexts, FlexibleInstances,
+             MultiParamTypeClasses, RankNTypes, ScopedTypeVariables,
+             TypeApplications, TypeFamilies, TypeOperators #-}
 -- | Lens utilities for working with 'Record's.
 module Frames.RecLens where
 import Control.Applicative
@@ -16,9 +11,9 @@ import Data.Vinyl.TypeLevel
 import Frames.Col ((:->)(..))
 import Frames.Rec (Record)
 
-rlens' :: (i ~ RIndex r rs, V.RElem r rs i, Functor f)
-       => sing r
-       -> (g r -> f (g r))
+rlens' :: forall r rs f g i.
+          (i ~ RIndex r rs, V.RElem r rs i, Functor f)
+       => (g r -> f (g r))
        -> V.Rec g rs
        -> f (V.Rec g rs)
 rlens' = V.rlens
@@ -42,10 +37,14 @@ rput' l y = getIdentity . l (\_ -> Identity (fmap Col y))
 
 -- * Plain records
 
--- | Create a lens for accessing a field of a 'Record'.
-rlens :: (Functor f, V.RElem (s :-> a) rs (RIndex (s :-> a) rs))
-      => proxy (s :-> a) -> (a -> f a) -> Record rs -> f (Record rs)
-rlens k f = rlens' k (fmap Identity . getIdentity . fmap f')
+-- | Create a lens for accessing a field of a 'Record'. The first
+-- explicit type parameter is used to help with visible type
+-- applications using the @TypeApplications@ language
+-- extension. Typical usage might be, @rlens \@("name" :-> String)@.
+rlens :: forall q s a rs f.
+         (q ~ (s :-> a), Functor f, V.RElem (s :-> a) rs (RIndex (s :-> a) rs))
+      => (a -> f a) -> Record rs -> f (Record rs)
+rlens f = rlens' @(s :-> a) (fmap Identity . getIdentity . fmap f')
   where f' (Col x) = fmap Col (f x)
 {-# INLINE rlens #-}
 

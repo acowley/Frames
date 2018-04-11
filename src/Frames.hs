@@ -29,7 +29,7 @@ import Control.Monad.Primitive
 import Data.Text (Text)
 import Data.Vinyl ((<+>), Rec, rcast, rsubset)
 import Data.Vinyl.CoRec (Field, onField, onCoRec)
-import Data.Vinyl.Lens hiding (rlens, rget, rput)
+import Data.Vinyl.Lens hiding (rlens, rlens', rget, rput, rput')
 import Data.Vinyl.TypeLevel (AllConstrained, AllSatisfied, AllAllSat,
                              RDelete, RecAll)
 import Frames.Col ((:->)(..))

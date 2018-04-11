@@ -23,13 +23,8 @@ import Frames.InCore (toFrame)
 import Frames.Melt (RDeleteAll)
 import Frames.InCore (RecVec)
 import Data.Vinyl.TypeLevel
-import Data.Vinyl hiding (rcast)
-import qualified Data.Vinyl
+import Data.Vinyl
 import Data.Vinyl.Functor
-
--- Easier argument ordering for type applications.
-rcast :: forall rs ss f. rs ⊆ ss => Rec f ss -> Rec f rs
-rcast = Data.Vinyl.rcast @Rec
 
 mergeRec :: forall fs rs rs2 rs2'.
   (fs ⊆ rs2

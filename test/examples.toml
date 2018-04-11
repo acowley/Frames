@@ -13,40 +13,40 @@ rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
 type Id = "id" :-> Int
 id :: forall f_0 rs_1 . (Functor f_0, Id ∈ rs_1) =>
                         (Int -> f_0 Int) -> Record rs_1 -> f_0 (Record rs_1)
-id = rlens (Proxy :: Proxy Id)
+id = rlens @Id
 id' :: forall f_2 g_3 rs_4 . (Functor f_2, Functor g_3, Id ∈ rs_4) =>
                              (g_3 Id -> f_2 (g_3 Id)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
-id' = rlens' (Proxy :: Proxy Id)
+id' = rlens' @Id
 
 type Manager = "manager" :-> T.Text
 manager :: forall f_5 rs_6 . (Functor f_5, Manager ∈ rs_6) =>
                              (T.Text -> f_5 T.Text) -> Record rs_6 -> f_5 (Record rs_6)
-manager = rlens (Proxy :: Proxy Manager)
+manager = rlens @Manager
 manager' :: forall f_7 g_8 rs_9 . (Functor f_7,
                                    Functor g_8,
                                    Manager ∈ rs_9) =>
                                   (g_8 Manager -> f_7 (g_8 Manager)) -> Rec g_8 rs_9 -> f_7 (Rec g_8 rs_9)
-manager' = rlens' (Proxy :: Proxy Manager)
+manager' = rlens' @Manager
 
 type Age = "age" :-> Int
 age :: forall f_10 rs_11 . (Functor f_10, Age ∈ rs_11) =>
                            (Int -> f_10 Int) -> Record rs_11 -> f_10 (Record rs_11)
-age = rlens (Proxy :: Proxy Age)
+age = rlens @Age
 age' :: forall f_12 g_13 rs_14 . (Functor f_12,
                                   Functor g_13,
                                   Age ∈ rs_14) =>
                                  (g_13 Age -> f_12 (g_13 Age)) -> Rec g_13 rs_14 -> f_12 (Rec g_13 rs_14)
-age' = rlens' (Proxy :: Proxy Age)
+age' = rlens' @Age
 
 type Pay = "pay" :-> Double
 pay :: forall f_15 rs_16 . (Functor f_15, Pay ∈ rs_16) =>
                            (Double -> f_15 Double) -> Record rs_16 -> f_15 (Record rs_16)
-pay = rlens (Proxy :: Proxy Pay)
+pay = rlens @Pay
 pay' :: forall f_17 g_18 rs_19 . (Functor f_17,
                                   Functor g_18,
                                   Pay ∈ rs_19) =>
                                  (g_18 Pay -> f_17 (g_18 Pay)) -> Rec g_18 rs_19 -> f_17 (Rec g_18 rs_19)
-pay' = rlens' (Proxy :: Proxy Pay)"""
+pay' = rlens' @Pay"""
 
 [employees]
 csv = """
@@ -63,51 +63,51 @@ rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
 type Id = "id" :-> Int
 id :: forall f_0 rs_1 . (Functor f_0, Id ∈ rs_1) =>
                         (Int -> f_0 Int) -> Record rs_1 -> f_0 (Record rs_1)
-id = rlens (Proxy :: Proxy Id)
+id = rlens @Id
 id' :: forall f_2 g_3 rs_4 . (Functor f_2, Functor g_3, Id ∈ rs_4) =>
                              (g_3 Id -> f_2 (g_3 Id)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
-id' = rlens' (Proxy :: Proxy Id)
+id' = rlens' @Id
 
 type Employee = "employee" :-> T.Text
 employee :: forall f_5 rs_6 . (Functor f_5, Employee ∈ rs_6) =>
                               (T.Text -> f_5 T.Text) -> Record rs_6 -> f_5 (Record rs_6)
-employee = rlens (Proxy :: Proxy Employee)
+employee = rlens @Employee
 employee' :: forall f_7 g_8 rs_9 . (Functor f_7,
                                     Functor g_8,
                                     Employee ∈ rs_9) =>
                                    (g_8 Employee -> f_7 (g_8 Employee)) -> Rec g_8 rs_9 -> f_7 (Rec g_8 rs_9)
-employee' = rlens' (Proxy :: Proxy Employee)
+employee' = rlens' @Employee
 
 type Age = "age" :-> Int
 age :: forall f_10 rs_11 . (Functor f_10, Age ∈ rs_11) =>
                            (Int -> f_10 Int) -> Record rs_11 -> f_10 (Record rs_11)
-age = rlens (Proxy :: Proxy Age)
+age = rlens @Age
 age' :: forall f_12 g_13 rs_14 . (Functor f_12,
                                   Functor g_13,
                                   Age ∈ rs_14) =>
                                  (g_13 Age -> f_12 (g_13 Age)) -> Rec g_13 rs_14 -> f_12 (Rec g_13 rs_14)
-age' = rlens' (Proxy :: Proxy Age)
+age' = rlens' @Age
 
 type Pay = "pay" :-> Double
 pay :: forall f_15 rs_16 . (Functor f_15, Pay ∈ rs_16) =>
                            (Double -> f_15 Double) -> Record rs_16 -> f_15 (Record rs_16)
-pay = rlens (Proxy :: Proxy Pay)
+pay = rlens @Pay
 pay' :: forall f_17 g_18 rs_19 . (Functor f_17,
                                   Functor g_18,
                                   Pay ∈ rs_19) =>
                                  (g_18 Pay -> f_17 (g_18 Pay)) -> Rec g_18 rs_19 -> f_17 (Rec g_18 rs_19)
-pay' = rlens' (Proxy :: Proxy Pay)
+pay' = rlens' @Pay
 
 type ManagerId = "manager_id" :-> Int
 managerId :: forall f_20 rs_21 . (Functor f_20, ManagerId ∈ rs_21) =>
                                  (Int -> f_20 Int) -> Record rs_21 -> f_20 (Record rs_21)
-managerId = rlens (Proxy :: Proxy ManagerId)
+managerId = rlens @ManagerId
 managerId' :: forall f_22 g_23 rs_24 . (Functor f_22,
                                         Functor g_23,
                                         ManagerId ∈ rs_24) =>
                                        (g_23 ManagerId -> f_22 (g_23 ManagerId)) ->
                                        Rec g_23 rs_24 -> f_22 (Rec g_23 rs_24)
-managerId' = rlens' (Proxy :: Proxy ManagerId)"""
+managerId' = rlens' @ManagerId"""
 
 [managers_employees]
 generated = """
@@ -118,40 +118,40 @@ managerRecParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting
 type Id = "id" :-> Int
 id :: forall f_0 rs_1 . (Functor f_0, Id ∈ rs_1) =>
                         (Int -> f_0 Bool) -> Record rs_1 -> f_0 (Record rs_1)
-id = rlens (Proxy :: Proxy Id)
+id = rlens @Id
 id' :: forall f_2 g_3 rs_4 . (Functor f_2, Functor g_3, Id ∈ rs_4) =>
                              (g_3 Id -> f_2 (g_3 Id)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
-id' = rlens' (Proxy :: Proxy Id)
+id' = rlens' @Id
 
 type Manager = "manager" :-> T.Text
 manager :: forall f_5 rs_6 . (Functor f_5, Manager ∈ rs_6) =>
                              (T.Text -> f_5 T.Text) -> Record rs_6 -> f_5 (Record rs_6)
-manager = rlens (Proxy :: Proxy Manager)
+manager = rlens @Manager
 manager' :: forall f_7 g_8 rs_9 . (Functor f_7,
                                    Functor g_8,
                                    Manager ∈ rs_9) =>
                                   (g_8 Manager -> f_7 (g_8 Manager)) -> Rec g_8 rs_9 -> f_7 (Rec g_8 rs_9)
-manager' = rlens' (Proxy :: Proxy Manager)
+manager' = rlens' @Manager
 
 type Age = "age" :-> Int
 age :: forall f_10 rs_11 . (Functor f_10, Age ∈ rs_11) =>
                            (Int -> f_10 Int) -> Record rs_11 -> f_10 (Record rs_11)
-age = rlens (Proxy :: Proxy Age)
+age = rlens @Age
 age' :: forall f_12 g_13 rs_14 . (Functor f_12,
                                   Functor g_13,
                                   Age ∈ rs_14) =>
                                  (g_13 Age -> f_12 (g_13 Age)) -> Rec g_13 rs_14 -> f_12 (Rec g_13 rs_14)
-age' = rlens' (Proxy :: Proxy Age)
+age' = rlens' @Age
 
 type Pay = "pay" :-> Double
 pay :: forall f_15 rs_16 . (Functor f_15, Pay ∈ rs_16) =>
                            (Double -> f_15 Double) -> Record rs_16 -> f_15 (Record rs_16)
-pay = rlens (Proxy :: Proxy Pay)
+pay = rlens @Pay
 pay' :: forall f_17 g_18 rs_19 . (Functor f_17,
                                   Functor g_18,
                                   Pay ∈ rs_19) =>
                                  (g_18 Pay -> f_17 (g_18 Pay)) -> Rec g_18 rs_19 -> f_17 (Rec g_18 rs_19)
-pay' = rlens' (Proxy :: Proxy Pay)
+pay' = rlens' @Pay
 
 type EmployeeRec = Record ["id" :-> Int, "employee" :-> T.Text, "age" :-> Int, "pay" :-> Double, "manager_id" :-> Int]
 employeeRecParser :: ParserOptions
@@ -160,25 +160,25 @@ employeeRecParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quotin
 type Employee = "employee" :-> T.Text
 employee :: forall f_5 rs_6 . (Functor f_5, Employee ∈ rs_6) =>
                               (T.Text -> f_5 T.Text) -> Record rs_6 -> f_5 (Record rs_6)
-employee = rlens (Proxy :: Proxy Employee)
+employee = rlens @Employee
 employee' :: forall f_7 g_8 rs_9 . (Functor f_7,
                                     Functor g_8,
                                     Employee ∈ rs_9) =>
                                    (g_8 Employee -> f_7 (g_8 Employee)) -> Rec g_8 rs_9 -> f_7 (Rec g_8 rs_9)
-employee' = rlens' (Proxy :: Proxy Employee)
+employee' = rlens' @Employee
 
 type Age = "age" :-> Int
 
 type ManagerId = "manager_id" :-> Int
 managerId :: forall f_20 rs_21 . (Functor f_20, ManagerId ∈ rs_21) =>
                                  (Int -> f_20 Int) -> Record rs_21 -> f_20 (Record rs_21)
-managerId = rlens (Proxy :: Proxy ManagerId)
+managerId = rlens @ManagerId
 managerId' :: forall f_22 g_23 rs_24 . (Functor f_22,
                                         Functor g_23,
                                         ManagerId ∈ rs_24) =>
                                        (g_23 ManagerId -> f_22 (g_23 ManagerId)) ->
                                        Rec g_23 rs_24 -> f_22 (Rec g_23 rs_24)
-managerId' = rlens' (Proxy :: Proxy ManagerId)
+managerId' = rlens' @ManagerId
 """
 
 [double_gt_bool]
@@ -198,32 +198,32 @@ rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
 type ColA = "col_a" :-> Int
 colA :: forall f_0 rs_1 . (Functor f_0, ColA ∈ rs_1) =>
                           (Int -> f_0 Int) -> Record rs_1 -> f_0 (Record rs_1)
-colA = rlens (Proxy :: Proxy ColA)
+colA = rlens @ColA
 colA' :: forall f_2 g_3 rs_4 . (Functor f_2,
                                 Functor g_3,
                                 ColA ∈ rs_4) =>
                                (g_3 ColA -> f_2 (g_3 ColA)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
-colA' = rlens' (Proxy :: Proxy ColA)
+colA' = rlens' @ColA
 
 type ColB = "col_b" :-> Int
 colB :: forall f_5 rs_6 . (Functor f_5, ColB ∈ rs_6) =>
                           (Int -> f_5 Int) -> Record rs_6 -> f_5 (Record rs_6)
-colB = rlens (Proxy :: Proxy ColB)
+colB = rlens @ColB
 colB' :: forall f_7 g_8 rs_9 . (Functor f_7,
                                 Functor g_8,
                                 ColB ∈ rs_9) =>
                                (g_8 ColB -> f_7 (g_8 ColB)) -> Rec g_8 rs_9 -> f_7 (Rec g_8 rs_9)
-colB' = rlens' (Proxy :: Proxy ColB)
+colB' = rlens' @ColB
 
 type ColC = "col_c" :-> Double
 colC :: forall f_10 rs_11 . (Functor f_10, ColC ∈ rs_11) =>
                             (Double -> f_10 Double) -> Record rs_11 -> f_10 (Record rs_11)
-colC = rlens (Proxy :: Proxy ColC)
+colC = rlens @ColC
 colC' :: forall f_12 g_13 rs_14 . (Functor f_12,
                                    Functor g_13,
                                    ColC ∈ rs_14) =>
                                   (g_13 ColC -> f_12 (g_13 ColC)) -> Rec g_13 rs_14 -> f_12 (Rec g_13 rs_14)
-colC' = rlens' (Proxy :: Proxy ColC)"""
+colC' = rlens' @ColC"""
 
 [text_gt_bool]
 csv = """
@@ -243,12 +243,12 @@ rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
 type ColA = "col_a" :-> T.Text
 colA :: forall f_0 rs_1 . (Functor f_0, ColA ∈ rs_1) =>
                           (T.Text -> f_0 T.Text) -> Record rs_1 -> f_0 (Record rs_1)
-colA = rlens (Proxy :: Proxy ColA)
+colA = rlens @ColA
 colA' :: forall f_2 g_3 rs_4 . (Functor f_2,
                                 Functor g_3,
                                 ColA ∈ rs_4) =>
                                (g_3 ColA -> f_2 (g_3 ColA)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
-colA' = rlens' (Proxy :: Proxy ColA)"""
+colA' = rlens' @ColA"""
 
 [missing_data]
 csv = """
@@ -268,22 +268,22 @@ rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
 type ColA = "col_a" :-> Int
 colA :: forall f_0 rs_1 . (Functor f_0, ColA ∈ rs_1) =>
                           (Int -> f_0 Int) -> Record rs_1 -> f_0 (Record rs_1)
-colA = rlens (Proxy :: Proxy ColA)
+colA = rlens @ColA
 colA' :: forall f_2 g_3 rs_4 . (Functor f_2,
                                 Functor g_3,
                                 ColA ∈ rs_4) =>
                                (g_3 ColA -> f_2 (g_3 ColA)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
-colA' = rlens' (Proxy :: Proxy ColA)
+colA' = rlens' @ColA
 
 type ColB = "col_b" :-> T.Text
 colB :: forall f_5 rs_6 . (Functor f_5, ColB ∈ rs_6) =>
                           (T.Text -> f_5 T.Text) -> Record rs_6 -> f_5 (Record rs_6)
-colB = rlens (Proxy :: Proxy ColB)
+colB = rlens @ColB
 colB' :: forall f_7 g_8 rs_9 . (Functor f_7,
                                 Functor g_8,
                                 ColB ∈ rs_9) =>
                                (g_8 ColB -> f_7 (g_8 ColB)) -> Rec g_8 rs_9 -> f_7 (Rec g_8 rs_9)
-colB' = rlens' (Proxy :: Proxy ColB)"""
+colB' = rlens' @ColB"""
 
 [NoTruncate]
 csv = """
@@ -302,20 +302,20 @@ rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
 type Id = "id" :-> Int
 id :: forall f_0 rs_1 . (Functor f_0, Id ∈ rs_1) =>
                         (Int -> f_0 Int) -> Record rs_1 -> f_0 (Record rs_1)
-id = rlens (Proxy :: Proxy Id)
+id = rlens @Id
 id' :: forall f_2 g_3 rs_4 . (Functor f_2, Functor g_3, Id ∈ rs_4) =>
                              (g_3 Id -> f_2 (g_3 Id)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
-id' = rlens' (Proxy :: Proxy Id)
+id' = rlens' @Id
 
 type Foo = "foo" :-> Int
 foo :: forall f_5 rs_6 . (Functor f_5, Foo ∈ rs_6) =>
                              (Int -> f_5 Int) -> Record rs_6 -> f_5 (Record rs_6)
-foo = rlens (Proxy :: Proxy Foo)
+foo = rlens @Foo
 foo' :: forall f_7 g_8 rs_9 . (Functor f_7,
                                    Functor g_8,
                                    Foo ∈ rs_9) =>
                                   (g_8 Foo -> f_7 (g_8 Foo)) -> Rec g_8 rs_9 -> f_7 (Rec g_8 rs_9)
-foo' = rlens' (Proxy :: Proxy Foo)"""
+foo' = rlens' @Foo"""
 
 [NoTruncateNA]
 csv = """
@@ -336,20 +336,20 @@ rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
 type Id = "id" :-> Int
 id :: forall f_0 rs_1 . (Functor f_0, Id ∈ rs_1) =>
                         (Int -> f_0 Int) -> Record rs_1 -> f_0 (Record rs_1)
-id = rlens (Proxy :: Proxy Id)
+id = rlens @Id
 id' :: forall f_2 g_3 rs_4 . (Functor f_2, Functor g_3, Id ∈ rs_4) =>
                              (g_3 Id -> f_2 (g_3 Id)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
-id' = rlens' (Proxy :: Proxy Id)
+id' = rlens' @Id
 
 type Foo = "foo" :-> Int
 foo :: forall f_5 rs_6 . (Functor f_5, Foo ∈ rs_6) =>
                              (Int -> f_5 Int) -> Record rs_6 -> f_5 (Record rs_6)
-foo = rlens (Proxy :: Proxy Foo)
+foo = rlens @Foo
 foo' :: forall f_7 g_8 rs_9 . (Functor f_7,
                                    Functor g_8,
                                    Foo ∈ rs_9) =>
                                   (g_8 Foo -> f_7 (g_8 Foo)) -> Rec g_8 rs_9 -> f_7 (Rec g_8 rs_9)
-foo' = rlens' (Proxy :: Proxy Foo)"""
+foo' = rlens' @Foo"""
 
 [DataHaskellSurvey]
 csv = """
@@ -370,7 +370,7 @@ rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
 type Label = "Label" :-> T.Text
 label :: forall f_0 rs_1 . (Functor f_0, Label ∈ rs_1) =>
          (T.Text -> f_0 T.Text) -> Record rs_1 -> f_0 (Record rs_1)
-label = rlens (Proxy :: Proxy Label)
+label = rlens @Label
 label' :: forall f_2 g_3 rs_4 . (Functor f_2,
                                  Functor g_3,
                                  Label ∈ rs_4) =>
@@ -380,10 +380,10 @@ label' = rlens' (Proxy :: Proxy Label)
 type Count = "Count" :-> Int
 count :: forall f_5 rs_6 . (Functor f_5, Count ∈ rs_6) =>
          (Int -> f_5 Int) -> Record rs_6 -> f_5 (Record rs_6)
-count = rlens (Proxy :: Proxy Count)
+count = rlens @Count
 count' :: forall f_7 g_8 rs_9 . (Functor f_7,
                                  Functor g_8,
                                  Count ∈ rs_9) =>
           (g_8 Count -> f_7 (g_8 Count)) -> Rec g_8 rs_9 -> f_7 (Rec g_8 rs_9)
-count' = rlens' (Proxy :: Proxy Count)
+count' = rlens' @Count
 """
