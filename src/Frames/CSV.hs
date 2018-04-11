@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE BangPatterns, CPP, DataKinds, FlexibleInstances,
              KindSignatures, LambdaCase, MultiParamTypeClasses,
              OverloadedStrings, QuasiQuotes, RankNTypes,
@@ -352,10 +353,10 @@ mkColPDec colTName colTy colPName = sequenceA [tySig, val, tySig', val']
                           -> f (Rec g rs)
                           |]
         val = valD (varP nm)
-                   (normalB [e|rlens (Proxy :: Proxy $(conT colTName))|])
+                   (normalB [e|rlens @($(conT colTName))|])
                    []
         val' = valD (varP nm')
-                    (normalB [e|rlens' (Proxy :: Proxy $(conT colTName))|])
+                    (normalB [e|rlens' @($(conT colTName))|])
                     []
 
 lowerHead :: T.Text -> Maybe T.Text
@@ -432,8 +433,8 @@ tableType n fp = tableType' (rowGen fp) { rowTypeName = n }
 -- | Like 'tableType', but additionally generates a type synonym for
 -- each column, and a proxy value of that type. If the CSV file has
 -- column names \"foo\", \"bar\", and \"baz\", then this will declare
--- @type Foo = "foo" :-> Int@, for example, @foo = rlens (Proxy :: Proxy
--- Foo)@, and @foo' = rlens' (Proxy :: Proxy Foo)@.
+-- @type Foo = "foo" :-> Int@, for example, @foo = rlens \@Foo@, and
+-- @foo' = rlens' \@Foo@.
 tableTypes :: String -> FilePath -> DecsQ
 tableTypes n fp = tableTypes' (rowGen fp) { rowTypeName = n }
 
@@ -494,8 +495,8 @@ tableTypesText' (RowGen {..}) =
 -- | Like 'tableType'', but additionally generates a type synonym for
 -- each column, and a proxy value of that type. If the CSV file has
 -- column names \"foo\", \"bar\", and \"baz\", then this will declare
--- @type Foo = "foo" :-> Int@, for example, @foo = rlens (Proxy ::
--- Proxy Foo)@, and @foo' = rlens' (Proxy :: Proxy Foo)@.
+-- @type Foo = "foo" :-> Int@, for example, @foo = rlens \@Foo@, and
+-- @foo' = rlens' \@Foo@.
 tableTypes' :: forall a. (ColumnTypeable a, Monoid a)
             => RowGen a -> DecsQ
 tableTypes' (RowGen {..}) =
