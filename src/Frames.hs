@@ -1,4 +1,4 @@
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE PatternSynonyms, TypeFamilies, TypeOperators #-}
 -- | User-friendly, type safe, runtime efficient tooling for working
 -- with tabular data deserialized from comma-separated values (CSV)
 -- files. The type of each row of data is inferred from data, which
@@ -6,6 +6,8 @@
 module Frames
   ( module Data.Vinyl
   , module Data.Vinyl.CoRec
+  , module Data.Vinyl.Derived
+  , module Data.Vinyl.Functor
   , module Data.Vinyl.Lens
   , module Data.Vinyl.TypeLevel
   , module Frames.Col
@@ -18,7 +20,6 @@ module Frames
   , module Frames.Melt
   , module Frames.Rec
   , module Frames.RecF
-  , module Frames.RecLens
   , module Frames.TypeLevel
   , module Frames.Joins
   , module Pipes.Safe, runSafeEffect
@@ -27,12 +28,15 @@ module Frames
 import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Primitive
 import Data.Text (Text)
-import Data.Vinyl ((<+>), Rec, rcast, rsubset)
+import Data.Vinyl ((<+>), Rec, rcast, rsubset, ElField)
 import Data.Vinyl.CoRec (Field, onField, onCoRec)
-import Data.Vinyl.Lens hiding (rlens, rlens', rget, rput, rput')
+import Data.Vinyl.Derived (rfield)
+import Data.Vinyl.Functor ((:.))
+-- import Data.Vinyl.Lens hiding (rlens, rlens', rget, rput, rput')
+import Data.Vinyl.Lens hiding (rget, rput)
 import Data.Vinyl.TypeLevel (AllConstrained, AllSatisfied, AllAllSat,
                              RDelete, RecAll)
-import Frames.Col ((:->)(..))
+import Frames.Col ((:->), pattern Col)
 import Frames.ColumnUniverse
 import Frames.CSV (readTable, readTableMaybe, declareColumn,
                    pipeTable, pipeTableMaybe,
@@ -42,8 +46,8 @@ import Frames.Frame
 import qualified Frames.InCore as I
 import Frames.Melt (melt, meltRow)
 import Frames.Rec (Record, RecordColumns, (&:), recUncons, recMaybe, showFields)
+import Frames.Rec (rget, rput)
 import Frames.RecF
-import Frames.RecLens
 import Frames.TypeLevel
 import Frames.Joins
 import Frames.ExtraInstances()
@@ -72,7 +76,7 @@ inCoreAoS = runSafeT . I.inCoreAoS
 -- | Like 'inCoreAoS', but applies the provided function to the record
 -- of columns before building the 'Frame'.
 inCoreAoS' :: (PrimMonad m, MonadIO m, PS.MonadMask m, I.RecVec rs)
-           => (Rec ((->) Int) rs -> Rec ((->) Int) ss)
+           => (Rec ((->) Int :. ElField) rs -> Rec ((->) Int :. ElField) ss)
            -> P.Producer (Record rs) (SafeT m) () -> m (FrameRec ss)
 inCoreAoS' f = runSafeT . I.inCoreAoS' f
 
@@ -94,5 +98,5 @@ inCore = runSafeT . I.inCore
 -- which provides an easier-to-use function that indexes into the
 -- table in a row-major fashion.
 inCoreSoA :: (PrimMonad m, MonadIO m, PS.MonadMask m, I.RecVec rs)
-          => P.Producer (Record rs) (SafeT m) () -> m (Int, Rec ((->) Int) rs)
+          => P.Producer (Record rs) (SafeT m) () -> m (Int, Rec ((->) Int :. ElField) rs)
 inCoreSoA = runSafeT . I.inCoreSoA

@@ -13,17 +13,16 @@ rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
 type Id = "id" :-> Int
 id :: forall f_0 rs_1 . (Functor f_0, Id ∈ rs_1) =>
                         (Int -> f_0 Int) -> Record rs_1 -> f_0 (Record rs_1)
-id = rlens @Id
-id' :: forall f_2 g_3 rs_4 . (Functor f_2, Functor g_3, Id ∈ rs_4) =>
+id = rlens @Id . rfield
+id' :: forall f_2 g_3 rs_4 . (Functor f_2, Id ∈ rs_4) =>
                              (g_3 Id -> f_2 (g_3 Id)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
 id' = rlens' @Id
 
 type Manager = "manager" :-> T.Text
 manager :: forall f_5 rs_6 . (Functor f_5, Manager ∈ rs_6) =>
                              (T.Text -> f_5 T.Text) -> Record rs_6 -> f_5 (Record rs_6)
-manager = rlens @Manager
+manager = rlens @Manager . rfield
 manager' :: forall f_7 g_8 rs_9 . (Functor f_7,
-                                   Functor g_8,
                                    Manager ∈ rs_9) =>
                                   (g_8 Manager -> f_7 (g_8 Manager)) -> Rec g_8 rs_9 -> f_7 (Rec g_8 rs_9)
 manager' = rlens' @Manager
@@ -31,9 +30,8 @@ manager' = rlens' @Manager
 type Age = "age" :-> Int
 age :: forall f_10 rs_11 . (Functor f_10, Age ∈ rs_11) =>
                            (Int -> f_10 Int) -> Record rs_11 -> f_10 (Record rs_11)
-age = rlens @Age
+age = rlens @Age . rfield
 age' :: forall f_12 g_13 rs_14 . (Functor f_12,
-                                  Functor g_13,
                                   Age ∈ rs_14) =>
                                  (g_13 Age -> f_12 (g_13 Age)) -> Rec g_13 rs_14 -> f_12 (Rec g_13 rs_14)
 age' = rlens' @Age
@@ -41,9 +39,8 @@ age' = rlens' @Age
 type Pay = "pay" :-> Double
 pay :: forall f_15 rs_16 . (Functor f_15, Pay ∈ rs_16) =>
                            (Double -> f_15 Double) -> Record rs_16 -> f_15 (Record rs_16)
-pay = rlens @Pay
+pay = rlens @Pay . rfield
 pay' :: forall f_17 g_18 rs_19 . (Functor f_17,
-                                  Functor g_18,
                                   Pay ∈ rs_19) =>
                                  (g_18 Pay -> f_17 (g_18 Pay)) -> Rec g_18 rs_19 -> f_17 (Rec g_18 rs_19)
 pay' = rlens' @Pay"""
@@ -63,17 +60,16 @@ rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
 type Id = "id" :-> Int
 id :: forall f_0 rs_1 . (Functor f_0, Id ∈ rs_1) =>
                         (Int -> f_0 Int) -> Record rs_1 -> f_0 (Record rs_1)
-id = rlens @Id
-id' :: forall f_2 g_3 rs_4 . (Functor f_2, Functor g_3, Id ∈ rs_4) =>
+id = rlens @Id . rfield
+id' :: forall f_2 g_3 rs_4 . (Functor f_2, Id ∈ rs_4) =>
                              (g_3 Id -> f_2 (g_3 Id)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
 id' = rlens' @Id
 
 type Employee = "employee" :-> T.Text
 employee :: forall f_5 rs_6 . (Functor f_5, Employee ∈ rs_6) =>
                               (T.Text -> f_5 T.Text) -> Record rs_6 -> f_5 (Record rs_6)
-employee = rlens @Employee
+employee = rlens @Employee . rfield
 employee' :: forall f_7 g_8 rs_9 . (Functor f_7,
-                                    Functor g_8,
                                     Employee ∈ rs_9) =>
                                    (g_8 Employee -> f_7 (g_8 Employee)) -> Rec g_8 rs_9 -> f_7 (Rec g_8 rs_9)
 employee' = rlens' @Employee
@@ -81,9 +77,8 @@ employee' = rlens' @Employee
 type Age = "age" :-> Int
 age :: forall f_10 rs_11 . (Functor f_10, Age ∈ rs_11) =>
                            (Int -> f_10 Int) -> Record rs_11 -> f_10 (Record rs_11)
-age = rlens @Age
+age = rlens @Age . rfield
 age' :: forall f_12 g_13 rs_14 . (Functor f_12,
-                                  Functor g_13,
                                   Age ∈ rs_14) =>
                                  (g_13 Age -> f_12 (g_13 Age)) -> Rec g_13 rs_14 -> f_12 (Rec g_13 rs_14)
 age' = rlens' @Age
@@ -91,9 +86,8 @@ age' = rlens' @Age
 type Pay = "pay" :-> Double
 pay :: forall f_15 rs_16 . (Functor f_15, Pay ∈ rs_16) =>
                            (Double -> f_15 Double) -> Record rs_16 -> f_15 (Record rs_16)
-pay = rlens @Pay
+pay = rlens @Pay . rfield
 pay' :: forall f_17 g_18 rs_19 . (Functor f_17,
-                                  Functor g_18,
                                   Pay ∈ rs_19) =>
                                  (g_18 Pay -> f_17 (g_18 Pay)) -> Rec g_18 rs_19 -> f_17 (Rec g_18 rs_19)
 pay' = rlens' @Pay
@@ -101,9 +95,8 @@ pay' = rlens' @Pay
 type ManagerId = "manager_id" :-> Int
 managerId :: forall f_20 rs_21 . (Functor f_20, ManagerId ∈ rs_21) =>
                                  (Int -> f_20 Int) -> Record rs_21 -> f_20 (Record rs_21)
-managerId = rlens @ManagerId
+managerId = rlens @ManagerId . rfield
 managerId' :: forall f_22 g_23 rs_24 . (Functor f_22,
-                                        Functor g_23,
                                         ManagerId ∈ rs_24) =>
                                        (g_23 ManagerId -> f_22 (g_23 ManagerId)) ->
                                        Rec g_23 rs_24 -> f_22 (Rec g_23 rs_24)
@@ -118,7 +111,7 @@ managerRecParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting
 type Id = "id" :-> Int
 id :: forall f_0 rs_1 . (Functor f_0, Id ∈ rs_1) =>
                         (Int -> f_0 Bool) -> Record rs_1 -> f_0 (Record rs_1)
-id = rlens @Id
+id = rlens @Id . rfield
 id' :: forall f_2 g_3 rs_4 . (Functor f_2, Functor g_3, Id ∈ rs_4) =>
                              (g_3 Id -> f_2 (g_3 Id)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
 id' = rlens' @Id
@@ -126,9 +119,8 @@ id' = rlens' @Id
 type Manager = "manager" :-> T.Text
 manager :: forall f_5 rs_6 . (Functor f_5, Manager ∈ rs_6) =>
                              (T.Text -> f_5 T.Text) -> Record rs_6 -> f_5 (Record rs_6)
-manager = rlens @Manager
+manager = rlens @Manager . rfield
 manager' :: forall f_7 g_8 rs_9 . (Functor f_7,
-                                   Functor g_8,
                                    Manager ∈ rs_9) =>
                                   (g_8 Manager -> f_7 (g_8 Manager)) -> Rec g_8 rs_9 -> f_7 (Rec g_8 rs_9)
 manager' = rlens' @Manager
@@ -136,9 +128,8 @@ manager' = rlens' @Manager
 type Age = "age" :-> Int
 age :: forall f_10 rs_11 . (Functor f_10, Age ∈ rs_11) =>
                            (Int -> f_10 Int) -> Record rs_11 -> f_10 (Record rs_11)
-age = rlens @Age
+age = rlens @Age . rfield
 age' :: forall f_12 g_13 rs_14 . (Functor f_12,
-                                  Functor g_13,
                                   Age ∈ rs_14) =>
                                  (g_13 Age -> f_12 (g_13 Age)) -> Rec g_13 rs_14 -> f_12 (Rec g_13 rs_14)
 age' = rlens' @Age
@@ -146,9 +137,8 @@ age' = rlens' @Age
 type Pay = "pay" :-> Double
 pay :: forall f_15 rs_16 . (Functor f_15, Pay ∈ rs_16) =>
                            (Double -> f_15 Double) -> Record rs_16 -> f_15 (Record rs_16)
-pay = rlens @Pay
+pay = rlens @Pay . rfield
 pay' :: forall f_17 g_18 rs_19 . (Functor f_17,
-                                  Functor g_18,
                                   Pay ∈ rs_19) =>
                                  (g_18 Pay -> f_17 (g_18 Pay)) -> Rec g_18 rs_19 -> f_17 (Rec g_18 rs_19)
 pay' = rlens' @Pay
@@ -160,9 +150,8 @@ employeeRecParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quotin
 type Employee = "employee" :-> T.Text
 employee :: forall f_5 rs_6 . (Functor f_5, Employee ∈ rs_6) =>
                               (T.Text -> f_5 T.Text) -> Record rs_6 -> f_5 (Record rs_6)
-employee = rlens @Employee
+employee = rlens @Employee . rfield
 employee' :: forall f_7 g_8 rs_9 . (Functor f_7,
-                                    Functor g_8,
                                     Employee ∈ rs_9) =>
                                    (g_8 Employee -> f_7 (g_8 Employee)) -> Rec g_8 rs_9 -> f_7 (Rec g_8 rs_9)
 employee' = rlens' @Employee
@@ -172,9 +161,8 @@ type Age = "age" :-> Int
 type ManagerId = "manager_id" :-> Int
 managerId :: forall f_20 rs_21 . (Functor f_20, ManagerId ∈ rs_21) =>
                                  (Int -> f_20 Int) -> Record rs_21 -> f_20 (Record rs_21)
-managerId = rlens @ManagerId
+managerId = rlens @ManagerId . rfield
 managerId' :: forall f_22 g_23 rs_24 . (Functor f_22,
-                                        Functor g_23,
                                         ManagerId ∈ rs_24) =>
                                        (g_23 ManagerId -> f_22 (g_23 ManagerId)) ->
                                        Rec g_23 rs_24 -> f_22 (Rec g_23 rs_24)
@@ -198,9 +186,8 @@ rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
 type ColA = "col_a" :-> Int
 colA :: forall f_0 rs_1 . (Functor f_0, ColA ∈ rs_1) =>
                           (Int -> f_0 Int) -> Record rs_1 -> f_0 (Record rs_1)
-colA = rlens @ColA
+colA = rlens @ColA . rfield
 colA' :: forall f_2 g_3 rs_4 . (Functor f_2,
-                                Functor g_3,
                                 ColA ∈ rs_4) =>
                                (g_3 ColA -> f_2 (g_3 ColA)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
 colA' = rlens' @ColA
@@ -208,9 +195,8 @@ colA' = rlens' @ColA
 type ColB = "col_b" :-> Int
 colB :: forall f_5 rs_6 . (Functor f_5, ColB ∈ rs_6) =>
                           (Int -> f_5 Int) -> Record rs_6 -> f_5 (Record rs_6)
-colB = rlens @ColB
+colB = rlens @ColB . rfield
 colB' :: forall f_7 g_8 rs_9 . (Functor f_7,
-                                Functor g_8,
                                 ColB ∈ rs_9) =>
                                (g_8 ColB -> f_7 (g_8 ColB)) -> Rec g_8 rs_9 -> f_7 (Rec g_8 rs_9)
 colB' = rlens' @ColB
@@ -218,9 +204,8 @@ colB' = rlens' @ColB
 type ColC = "col_c" :-> Double
 colC :: forall f_10 rs_11 . (Functor f_10, ColC ∈ rs_11) =>
                             (Double -> f_10 Double) -> Record rs_11 -> f_10 (Record rs_11)
-colC = rlens @ColC
+colC = rlens @ColC . rfield
 colC' :: forall f_12 g_13 rs_14 . (Functor f_12,
-                                   Functor g_13,
                                    ColC ∈ rs_14) =>
                                   (g_13 ColC -> f_12 (g_13 ColC)) -> Rec g_13 rs_14 -> f_12 (Rec g_13 rs_14)
 colC' = rlens' @ColC"""
@@ -243,9 +228,8 @@ rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
 type ColA = "col_a" :-> T.Text
 colA :: forall f_0 rs_1 . (Functor f_0, ColA ∈ rs_1) =>
                           (T.Text -> f_0 T.Text) -> Record rs_1 -> f_0 (Record rs_1)
-colA = rlens @ColA
+colA = rlens @ColA . rfield
 colA' :: forall f_2 g_3 rs_4 . (Functor f_2,
-                                Functor g_3,
                                 ColA ∈ rs_4) =>
                                (g_3 ColA -> f_2 (g_3 ColA)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
 colA' = rlens' @ColA"""
@@ -268,9 +252,8 @@ rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
 type ColA = "col_a" :-> Int
 colA :: forall f_0 rs_1 . (Functor f_0, ColA ∈ rs_1) =>
                           (Int -> f_0 Int) -> Record rs_1 -> f_0 (Record rs_1)
-colA = rlens @ColA
+colA = rlens @ColA . rfield
 colA' :: forall f_2 g_3 rs_4 . (Functor f_2,
-                                Functor g_3,
                                 ColA ∈ rs_4) =>
                                (g_3 ColA -> f_2 (g_3 ColA)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
 colA' = rlens' @ColA
@@ -278,9 +261,8 @@ colA' = rlens' @ColA
 type ColB = "col_b" :-> T.Text
 colB :: forall f_5 rs_6 . (Functor f_5, ColB ∈ rs_6) =>
                           (T.Text -> f_5 T.Text) -> Record rs_6 -> f_5 (Record rs_6)
-colB = rlens @ColB
+colB = rlens @ColB . rfield
 colB' :: forall f_7 g_8 rs_9 . (Functor f_7,
-                                Functor g_8,
                                 ColB ∈ rs_9) =>
                                (g_8 ColB -> f_7 (g_8 ColB)) -> Rec g_8 rs_9 -> f_7 (Rec g_8 rs_9)
 colB' = rlens' @ColB"""
@@ -302,17 +284,16 @@ rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
 type Id = "id" :-> Int
 id :: forall f_0 rs_1 . (Functor f_0, Id ∈ rs_1) =>
                         (Int -> f_0 Int) -> Record rs_1 -> f_0 (Record rs_1)
-id = rlens @Id
-id' :: forall f_2 g_3 rs_4 . (Functor f_2, Functor g_3, Id ∈ rs_4) =>
+id = rlens @Id . rfield
+id' :: forall f_2 g_3 rs_4 . (Functor f_2, Id ∈ rs_4) =>
                              (g_3 Id -> f_2 (g_3 Id)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
 id' = rlens' @Id
 
 type Foo = "foo" :-> Int
 foo :: forall f_5 rs_6 . (Functor f_5, Foo ∈ rs_6) =>
                              (Int -> f_5 Int) -> Record rs_6 -> f_5 (Record rs_6)
-foo = rlens @Foo
+foo = rlens @Foo . rfield
 foo' :: forall f_7 g_8 rs_9 . (Functor f_7,
-                                   Functor g_8,
                                    Foo ∈ rs_9) =>
                                   (g_8 Foo -> f_7 (g_8 Foo)) -> Rec g_8 rs_9 -> f_7 (Rec g_8 rs_9)
 foo' = rlens' @Foo"""
@@ -336,17 +317,16 @@ rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
 type Id = "id" :-> Int
 id :: forall f_0 rs_1 . (Functor f_0, Id ∈ rs_1) =>
                         (Int -> f_0 Int) -> Record rs_1 -> f_0 (Record rs_1)
-id = rlens @Id
-id' :: forall f_2 g_3 rs_4 . (Functor f_2, Functor g_3, Id ∈ rs_4) =>
+id = rlens @Id . rfield
+id' :: forall f_2 g_3 rs_4 . (Functor f_2, Id ∈ rs_4) =>
                              (g_3 Id -> f_2 (g_3 Id)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
 id' = rlens' @Id
 
 type Foo = "foo" :-> Int
 foo :: forall f_5 rs_6 . (Functor f_5, Foo ∈ rs_6) =>
                              (Int -> f_5 Int) -> Record rs_6 -> f_5 (Record rs_6)
-foo = rlens @Foo
+foo = rlens @Foo . rfield
 foo' :: forall f_7 g_8 rs_9 . (Functor f_7,
-                                   Functor g_8,
                                    Foo ∈ rs_9) =>
                                   (g_8 Foo -> f_7 (g_8 Foo)) -> Rec g_8 rs_9 -> f_7 (Rec g_8 rs_9)
 foo' = rlens' @Foo"""

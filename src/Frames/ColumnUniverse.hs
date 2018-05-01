@@ -1,3 +1,4 @@
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE BangPatterns,
              ConstraintKinds,
              CPP,
@@ -73,7 +74,7 @@ tryParseAll :: forall ts. (RecApplicative ts, AllConstrained Parseable ts)
             => T.Text -> Rec (Maybe :. (Parsed :. Proxy)) ts
 tryParseAll = rtraverse getCompose funs
   where funs :: Rec (((->) T.Text) :. (Maybe :. (Parsed :. Proxy))) ts
-        funs = reifyDict (Proxy::Proxy Parseable) inferParseable'
+        funs = reifyDict @Parseable inferParseable'
 
 -- | Preserving the outermost two functor layers, replace each element with
 -- its TypeRep.

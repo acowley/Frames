@@ -62,7 +62,11 @@ Can't we handle /any/ infix operator? If the identifier in the
 function position of an application is parenthesized and begins with a
 colon, it's an operator.
 
-* Debugging inference in the REPL
+** DONE Change ~Record~ to be ~FieldRec~
+** DONE See about using an ~HKD~ type family in ~vinyl~
+To eliminate ~Compose~, ~ElField~, and ~Identity~ syntax noise.
+
+* Debugging inference in the REPLp
 Some handy examples,
 
 #+BEGIN_SRC haskell

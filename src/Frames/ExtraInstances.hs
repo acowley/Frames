@@ -24,7 +24,7 @@ import Data.Text (Text)
 -- Grouping instances
 instance (AllCols Grouping rs
          , Grouping (Record rs)
-         , Grouping (s :-> r)
+         , Grouping (ElField (s :-> r))
          , Grouping r
          ) =>
          Grouping (Record ((s :-> r) : rs)) where
@@ -33,7 +33,7 @@ instance (AllCols Grouping rs
 instance Grouping (Record '[]) where
   grouping = conquer
 
-instance (Grouping a) => Grouping (s :-> a) where
+instance (Grouping a) => Grouping (ElField (s :-> a)) where
    grouping = contramap getCol grouping
 
 instance Grouping Text where
@@ -49,14 +49,14 @@ instance (NFData a) =>
 instance NFData1 VF.Identity where
   liftRnf r = r . getIdentity
 
-instance (AllCols NFData rs
-         , NFData1 f
-         , Functor f
-         , NFData (Rec f rs)
-         , NFData (s :-> r)
-         , NFData r) =>
-         NFData (Rec f ((s :-> r) : rs)) where
-  rnf (r :& rs) = rnf1 r `seq` rnf rs
+-- instance (AllCols NFData rs
+--          , NFData1 f
+--          , Functor f
+--          -- , NFData (Rec f rs)
+--          , NFData (ElField (s :-> r))
+--          , NFData r) =>
+--          NFData (Rec (f :. ElField) ((s :-> r) : rs)) where
+--   rnf (r :& rs) = rnf1 r `seq` rnf rs
 
 instance (NFData1 f) => NFData (Rec f '[]) where
   rnf = rwhnf
@@ -66,5 +66,5 @@ instance (NFData a) =>
          NFData (Frame a) where
   rnf = foldr (\x acc -> rnf x `seq` acc) ()
 
-instance (NFData a) => NFData (s :-> a) where
+instance (NFData a) => NFData (ElField (s :-> a)) where
   rnf = rnf . getCol

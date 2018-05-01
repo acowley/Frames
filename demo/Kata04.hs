@@ -8,7 +8,7 @@ import qualified Data.Foldable as F
 import Data.Ord (comparing)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
-import Data.Vinyl.Functor (Identity(..))
+import Data.Vinyl (Rec(..), ElField(..))
 import Data.Vinyl.TypeLevel (Nat(..))
 import Frames
 
@@ -19,11 +19,11 @@ import Frames
 tableTypes "Row" "data/weather.csv"
 
 getTemperatureRange :: (MxT ∈ rs, MnT ∈ rs) => Record rs -> Double
-getTemperatureRange row = rget mxT row - rget mnT row
+getTemperatureRange row = rget @MxT row - rget @MnT row
 
 partOne :: IO T.Text
 partOne = do tbl <- inCoreAoS (readTable "data/weather.csv") :: IO (Frame Row)
-             return $ rget dy (F.maximumBy (comparing getTemperatureRange) tbl)
+             return $ rget @Dy (F.maximumBy (comparing getTemperatureRange) tbl)
 
 
 -- shapr: Fight the dying of the light!
@@ -36,7 +36,7 @@ class GetFieldByIndex i rs where
   getFieldByIndex :: Record rs -> Find i rs
 
 instance GetFieldByIndex 'Z ((s :-> r) ': rs) where
-  getFieldByIndex (Identity x :& _) = x
+  getFieldByIndex (Field x :& _) = x
 
 instance GetFieldByIndex i rs => GetFieldByIndex ('S i) ((s :-> r) ': rs) where
   getFieldByIndex (_ :& xs) = getFieldByIndex @i xs
