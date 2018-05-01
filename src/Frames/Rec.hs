@@ -1,3 +1,5 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE ConstraintKinds,
              DataKinds,
              EmptyCase,
@@ -15,21 +17,21 @@
              UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Frames.Rec where
-import Data.Proxy
-import Data.Vinyl (recordToList, rmap, reifyConstraint, Dict(..), Rec)
-import Data.Vinyl.TypeLevel (RecAll)
-import Data.Vinyl.Functor (Identity(..), Const(..), Compose(..), (:.))
+import Data.Vinyl hiding (rget)
+import qualified Data.Vinyl as V
+import Data.Vinyl.Functor (Const(..), Compose(..), (:.))
+import Data.Vinyl.Class.Method (PayloadType)
 import Frames.Col
-import Frames.RecF
+import GHC.TypeLits (KnownSymbol)
 
 -- | A record with unadorned values. This is @Vinyl@'s 'Rec'
--- 'Identity'. We give this type a name as it is used pervasively for
+-- 'ElField'. We give this type a name as it is used pervasively for
 -- records in 'Frames'.
-type Record = Rec Identity
+type Record = FieldRec
 
 -- | A @cons@ function for building 'Record' values.
-(&:) :: a -> Record rs -> Record (s :-> a ': rs)
-x &: xs = frameCons (Identity x) xs
+(&:) :: KnownSymbol s => a -> Record rs -> Record (s :-> a ': rs)
+x &: xs = Field x :& xs
 infixr 5 &:
 
 type family RecordColumns t where
@@ -37,20 +39,29 @@ type family RecordColumns t where
 
 -- | Separate the first element of a 'Record' from the rest of the row.
 recUncons :: Record (s :-> a ': rs) -> (a, Record rs)
-recUncons (Identity x :& xs) = (x, xs)
-recUncons x = case x of
+recUncons (Field x :& xs) = (x, xs)
+-- recUncons x = case x of _ -> error "recUncons impossible case"
 
 -- | Undistribute 'Maybe' from a 'Rec' 'Maybe'. This is just a
 -- specific usage of 'rtraverse', but it is quite common.
-recMaybe :: Rec Maybe cs -> Maybe (Record cs)
-recMaybe = rtraverse (fmap Identity)
+recMaybe :: Rec (Maybe :. ElField) cs -> Maybe (Record cs)
+recMaybe = rtraverse getCompose
 {-# INLINE recMaybe #-}
 
 -- | Show each field of a 'Record' /without/ its column name.
-showFields :: (RecAll Identity (UnColumn ts) Show, AsVinyl ts)
-           => Record ts -> [String]
-showFields = recordToList . rmap aux . reifyConstraint p . toVinyl
-  where p = Proxy :: Proxy Show
-        aux :: (Dict Show :. Identity) a -> Const String a
-        aux (Compose (Dict x)) = Const (show x)
+showFields :: (RecMapMethod Show ElField ts) => Record ts -> [String]
+showFields = recordToList . rmapMethod @Show aux
+  where aux :: (Show (PayloadType ElField a)) => ElField a -> Const String a
+        aux (Field x) = Const (show x)
 {-# INLINABLE showFields #-}
+
+-- | Get the value of a field of a 'Record'.
+rget :: forall t s a rs. (t ~ '(s,a), t ∈ rs) => Record rs -> a
+rget = getField . V.rget @t
+{-# INLINE rget #-}
+
+-- | Replace the value of a field of a 'Record'.
+rput :: forall t s a rs. (t ~ '(s,a), t ∈ rs, KnownSymbol s)
+     => a -> Record rs -> Record rs
+rput = V.rput @t . Field
+{-# INLINE rput #-}

@@ -6,12 +6,11 @@ module Frames.Melt where
 import Data.Proxy
 import Data.Vinyl
 import Data.Vinyl.CoRec (CoRec(..))
-import Data.Vinyl.Functor (Identity(..))
 import Data.Vinyl.TypeLevel
 import Frames.Col
 import Frames.Frame (Frame(..), FrameRec)
 import Frames.Rec
-import Frames.RecF (ColumnHeaders(..), frameCons)
+import Frames.RecF (ColumnHeaders(..))
 
 type family Elem t ts :: Bool where
   Elem t '[] = 'False
@@ -50,8 +49,8 @@ meltAux :: forall vs ss ts.
            (vs ⊆ ts, ss ⊆ ts, Disjoint ss ts ~ 'True, ts ≅ (vs ++ ss),
            ColumnHeaders vs, RowToColumn vs vs)
         => Record ts
-        -> [Record ("value" :-> CoRec Identity vs ': ss)]
-meltAux r = map (\val -> frameCons (Identity val) ids) (rowToColumn vals)
+        -> [Record ("value" :-> CoRec ElField vs ': ss)]
+meltAux r = map (\val -> Field val :& ids) (rowToColumn vals)
   where ids = rcast r :: Record ss
         vals = rcast r :: Record vs
 
@@ -66,7 +65,7 @@ meltRow' :: forall proxy vs ts ss. (vs ⊆ ts, ss ⊆ ts, vs ~ RDeleteAll ss ts,
             ColumnHeaders vs, RowToColumn vs vs)
          => proxy ss
          -> Record ts
-         -> [Record ("value" :-> CoRec Identity vs ': ss)]
+         -> [Record ("value" :-> CoRec ElField vs ': ss)]
 meltRow' _ = meltAux
 
 -- | Turn a cons into a snoc after the fact.
@@ -91,7 +90,7 @@ meltRow :: (vs ⊆ ts, ss ⊆ ts, vs ~ RDeleteAll ss ts,
             ColumnHeaders vs, RowToColumn vs vs)
         => proxy ss
         -> Record ts
-        -> [Record (ss ++ '["value" :-> CoRec Identity vs])]
+        -> [Record (ss ++ '["value" :-> CoRec ElField vs])]
 meltRow = (map retroSnoc .) . meltRow'
 
 class HasLength (ts :: [k]) where
@@ -108,7 +107,7 @@ melt :: forall vs ts ss proxy.
          ColumnHeaders vs, RowToColumn vs vs)
      => proxy ss
      -> FrameRec ts
-     -> FrameRec (ss ++ '["value" :-> CoRec Identity vs])
+     -> FrameRec (ss ++ '["value" :-> CoRec ElField vs])
 melt p (Frame n v) = Frame (n*numVs) go
   where numVs = hasLength (Proxy :: Proxy vs)
         go i = let (j,k) = i `quotRem` numVs

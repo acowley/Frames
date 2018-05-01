@@ -45,7 +45,6 @@ library
                        Frames.Melt
                        Frames.Rec
                        Frames.RecF
-                       Frames.RecLens
                        Frames.TypeLevel
                        Frames.Joins
                        Frames.ExtraInstances

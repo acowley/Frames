@@ -1,5 +1,11 @@
-{-# LANGUAGE ConstraintKinds, FlexibleContexts, GADTs, TemplateHaskell,
-             TypeOperators #-}
+{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE FlexibleInstances #-}
+{-# LANGUAGE MultiParamTypeClasses #-}
+{-# LANGUAGE KindSignatures #-}
+{-# LANGUAGE DataKinds #-}
+{-# LANGUAGE ConstraintKinds, FlexibleContexts, GADTs, ScopedTypeVariables,
+             TemplateHaskell, TypeOperators #-}
 
 -- | Functions useful for interactively exploring and experimenting
 -- with a data set.
@@ -8,10 +14,10 @@ module Frames.Exploration (pipePreview, select, lenses, recToList,
 import Data.Char (isSpace, isUpper)
 import Data.Proxy
 import qualified Data.Vinyl as V
-import Data.Vinyl.Functor (Identity(..))
+import qualified Data.Vinyl.Class.Method as V
+import Data.Vinyl.Functor (ElField(Field), Const(..))
 import Frames.Rec
-import Frames.RecF (AsVinyl(toVinyl), UnColumn)
-import Frames.TypeLevel (AllAre)
+import GHC.TypeLits (Symbol)
 import Language.Haskell.TH
 import Language.Haskell.TH.Quote
 import Pipes hiding (Proxy)
@@ -80,11 +86,10 @@ pr1 = QuasiQuoter mkProxy undefined undefined undefined
 
 -- * ToList
 
-recToList :: (AsVinyl rs, AllAre a (UnColumn rs)) => Record rs -> [a]
-recToList = go . toVinyl
-  where go :: AllAre a rs => V.Rec Identity rs -> [a]
-        go V.RNil = []
-        go (Identity x V.:& xs) = x : go xs
+recToList :: forall a (rs :: [(Symbol,*)]). (V.RecMapMethod ((~) a) ElField rs) => Record rs -> [a]
+recToList = V.recordToList . V.rmapMethod @((~) a) aux
+  where aux :: a ~ (V.PayloadType ElField t)  => V.ElField t -> Const a t
+        aux (Field x) = Const x
 
 -- * Helpers
 
