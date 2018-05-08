@@ -1,5 +1,7 @@
 # 0.4.0
 
+- Added table joins in `Data.Vinyl.Joins` (Chris Hammill)
+
 - Changed types of `mapMethod` and `mapMethodV`
 
 These now rely on explicit `TypeApplications` rather than `Proxy` values.
