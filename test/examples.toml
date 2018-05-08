@@ -330,3 +330,36 @@ foo' :: forall f_7 g_8 rs_9 . (Functor f_7,
                                    Foo ∈ rs_9) =>
                                   (g_8 Foo -> f_7 (g_8 Foo)) -> Rec g_8 rs_9 -> f_7 (Rec g_8 rs_9)
 foo' = rlens' @Foo"""
+
+[DataHaskellSurvey]
+csv = """
+Label,Count
+"Beginner : read(ing) tutorial material/solved some coding exercises",11
+"Beginning : wrote less than 2 libraries or applications/unpublished",30
+"Intermediate : wrote and published on Hackage 3 or more libraries/applications",16
+"Advanced intermediate : wrote multiple libraries/applications - co-maintain various packages",13
+"Advanced : contribute regularly patches to GHC - among other things",0
+"Expert : proposed or commented on one or more language extensions",0
+"""
+
+generated = """
+type Row = Record ["Label" :-> T.Text, "Count" :-> Int]
+rowParser :: ParserOptions
+rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
+
+type Label = "Label" :-> T.Text
+label :: forall f_0 rs_1 . (Functor f_0, Label ∈ rs_1) =>
+         (T.Text -> f_0 T.Text) -> Record rs_1 -> f_0 (Record rs_1)
+label = rlens @Label . rfield
+label' :: forall f_2 g_3 rs_4 . (Functor f_2, Label ∈ rs_4) =>
+          (g_3 Label -> f_2 (g_3 Label)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
+label' = rlens' @Label
+
+type Count = "Count" :-> Int
+count :: forall f_5 rs_6 . (Functor f_5, Count ∈ rs_6) =>
+         (Int -> f_5 Int) -> Record rs_6 -> f_5 (Record rs_6)
+count = rlens @Count . rfield
+count' :: forall f_7 g_8 rs_9 . (Functor f_7, Count ∈ rs_9) =>
+          (g_8 Count -> f_7 (g_8 Count)) -> Rec g_8 rs_9 -> f_7 (Rec g_8 rs_9)
+count' = rlens' @Count
+"""
