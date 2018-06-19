@@ -52,7 +52,7 @@ library
   other-extensions:    DataKinds, GADTs, KindSignatures, TypeFamilies,
                        TypeOperators, ConstraintKinds, StandaloneDeriving,
                        UndecidableInstances, ScopedTypeVariables,
-                       OverloadedStrings
+                       OverloadedStrings, TypeApplications
   build-depends:       base >=4.8 && <4.12,
                        ghc-prim >=0.3 && <0.6,
                        primitive >= 0.6 && < 0.7,
