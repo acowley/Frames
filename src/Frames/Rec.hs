@@ -49,7 +49,8 @@ recMaybe = rtraverse getCompose
 {-# INLINE recMaybe #-}
 
 -- | Show each field of a 'Record' /without/ its column name.
-showFields :: (RecMapMethod Show ElField ts) => Record ts -> [String]
+showFields :: (RecMapMethod Show ElField ts, RecordToList ts)
+           => Record ts -> [String]
 showFields = recordToList . rmapMethod @Show aux
   where aux :: (Show (PayloadType ElField a)) => ElField a -> Const String a
         aux (Field x) = Const (show x)

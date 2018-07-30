@@ -26,7 +26,7 @@ import Data.Maybe (isNothing, fromMaybe)
 import Data.Monoid ((<>))
 import Data.Proxy
 import qualified Data.Text as T
-import Data.Vinyl (RecMapMethod, rmap, RElem, Rec(..), ElField(..))
+import Data.Vinyl (RecMapMethod, rmap, RElem, Rec(..), ElField(..), RecordToList, RMap)
 import Data.Vinyl.TypeLevel (RIndex)
 import Data.Vinyl.Functor ((:.), Compose(..))
 import Frames.Col
@@ -202,15 +202,17 @@ readRow :: ReadRec rs => ParserOptions -> T.Text -> Rec (Either T.Text :. ElFiel
 readRow = (readRec .) . tokenizeRow
 
 -- | Produce rows where any given entry can fail to parse.
-readTableMaybeOpt :: (P.MonadSafe m, ReadRec rs)
-                  => ParserOptions -> FilePath -> P.Producer (Rec (Maybe :. ElField) rs) m ()
+readTableMaybeOpt :: (P.MonadSafe m, ReadRec rs, RMap rs)
+                  => ParserOptions
+                  -> FilePath
+                  -> P.Producer (Rec (Maybe :. ElField) rs) m ()
 readTableMaybeOpt opts csvFile =
   PT.readFileLn csvFile >-> pipeTableMaybeOpt opts
 {-# INLINE readTableMaybeOpt #-}
 
 -- | Stream lines of CSV data into rows of ’Rec’ values values where
 -- any given entry can fail to parse.
-pipeTableMaybeOpt :: (Monad m, ReadRec rs)
+pipeTableMaybeOpt :: (Monad m, ReadRec rs, RMap rs)
                   => ParserOptions
                   -> P.Pipe T.Text (Rec (Maybe :. ElField) rs) m ()
 pipeTableMaybeOpt opts = do
@@ -230,14 +232,15 @@ pipeTableEitherOpt opts = do
 {-# INLINE pipeTableEitherOpt #-}
 
 -- | Produce rows where any given entry can fail to parse.
-readTableMaybe :: (P.MonadSafe m, ReadRec rs)
+readTableMaybe :: (P.MonadSafe m, ReadRec rs, RMap rs)
                => FilePath -> P.Producer (Rec (Maybe :. ElField) rs) m ()
 readTableMaybe = readTableMaybeOpt defaultParser
 {-# INLINE readTableMaybe #-}
 
 -- | Stream lines of CSV data into rows of ’Rec’ values where any
 -- given entry can fail to parse.
-pipeTableMaybe :: (Monad m, ReadRec rs) => P.Pipe T.Text (Rec (Maybe :. ElField) rs) m ()
+pipeTableMaybe :: (Monad m, ReadRec rs, RMap rs)
+               => P.Pipe T.Text (Rec (Maybe :. ElField) rs) m ()
 pipeTableMaybe = pipeTableMaybeOpt defaultParser
 {-# INLINE pipeTableMaybe #-}
 
@@ -276,7 +279,7 @@ pipeTableEither = pipeTableEitherOpt defaultParser
 -- | Returns a producer of rows for which each column was successfully
 -- parsed.
 readTableOpt :: forall m rs.
-                (P.MonadSafe m, ReadRec rs)
+                (P.MonadSafe m, ReadRec rs, RMap rs)
              => ParserOptions -> FilePath -> P.Producer (Record rs) m ()
 readTableOpt opts csvFile = readTableMaybeOpt opts csvFile P.>-> go
   where go = P.await >>= maybe go (\x -> P.yield x >> go) . recMaybe
@@ -284,21 +287,22 @@ readTableOpt opts csvFile = readTableMaybeOpt opts csvFile P.>-> go
 
 -- | Pipe lines of CSV text into rows for which each column was
 -- successfully parsed.
-pipeTableOpt :: (ReadRec rs, Monad m)
+pipeTableOpt :: (ReadRec rs, RMap rs, Monad m)
              => ParserOptions -> P.Pipe T.Text (Record rs) m ()
 pipeTableOpt opts = pipeTableMaybeOpt opts >-> P.map recMaybe >-> P.concat
 {-# INLINE pipeTableOpt #-}
 
 -- | Returns a producer of rows for which each column was successfully
 -- parsed.
-readTable :: forall m rs. (P.MonadSafe m, ReadRec rs)
+readTable :: forall m rs. (P.MonadSafe m, ReadRec rs, RMap rs)
           => FilePath -> P.Producer (Record rs) m ()
 readTable = readTableOpt defaultParser
 {-# INLINE readTable #-}
 
 -- | Pipe lines of CSV text into rows for which each column was
 -- successfully parsed.
-pipeTable :: (ReadRec rs, Monad m) => P.Pipe T.Text (Record rs) m ()
+pipeTable :: (ReadRec rs, RMap rs, Monad m)
+          => P.Pipe T.Text (Record rs) m ()
 pipeTable = pipeTableOpt defaultParser
 {-# INLINE pipeTable #-}
 
@@ -532,7 +536,7 @@ tableTypes' (RowGen {..}) =
 -- your source of 'Record' values is a 'P.Producer', consider using
 -- 'pipeToCSV' to keep everything streaming.
 produceCSV :: forall f ts m.
-              (ColumnHeaders ts, Foldable f, Monad m,
+              (ColumnHeaders ts, Foldable f, Monad m, RecordToList ts,
               RecMapMethod Show ElField ts)
            => f (Record ts) -> P.Producer String m ()
 produceCSV recs = do
@@ -544,7 +548,7 @@ produceCSV recs = do
 -- is the same as 'produceCSV', but adapated for cases where you have
 -- streaming input that you wish to use to produce streaming output.
 pipeToCSV :: forall ts m.
-             (Monad m, ColumnHeaders ts,
+             (Monad m, ColumnHeaders ts, RecordToList ts,
               RecMapMethod Show ElField ts)
           => P.Pipe (Record ts) T.Text m ()
 pipeToCSV = P.yield (T.intercalate "," (map T.pack header)) >> go
@@ -554,7 +558,7 @@ pipeToCSV = P.yield (T.intercalate "," (map T.pack header)) >> go
 
 -- | Write a header row with column names followed by a line of text
 -- for each 'Record' to the given file.
-writeCSV :: (ColumnHeaders ts, Foldable f,
+writeCSV :: (ColumnHeaders ts, Foldable f, RecordToList ts,
              RecMapMethod Show ElField ts)
          => FilePath -> f (Record ts) -> IO ()
 writeCSV fp recs = P.runSafeT . P.runEffect $

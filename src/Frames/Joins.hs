@@ -81,7 +81,7 @@ innerJoin a b =
       proj2 = rcast @fs
 
 
-justsFromRec :: Record fs -> Rec (Maybe :. ElField) fs
+justsFromRec :: RMap fs => Record fs -> Rec (Maybe :. ElField) fs
 {-# INLINE justsFromRec #-}
 justsFromRec = rmap (Compose . Just)
 
@@ -123,6 +123,9 @@ outerJoin :: forall fs rs rs' rs2  rs2' ors.
     , RecApplicative rs
     , RecApplicative rs'
     , Grouping (Record fs)
+    , RMap rs
+    , RMap rs2
+    , RMap ors
     , RecVec rs
     , RecVec rs2'
     , RecVec ors
@@ -177,6 +180,8 @@ rightJoin :: forall fs rs rs' rs2  rs2' ors.
     , RecApplicative rs
     , RecApplicative rs'
     , Grouping (Record fs)
+    , RMap rs2
+    , RMap ors
     , RecVec rs
     , RecVec rs2'
     , RecVec ors
@@ -221,6 +226,8 @@ leftJoin :: forall fs rs rs2  rs2'.
     , rs ⊆ (rs ++ rs2')
     , rs2' ⊆ rs2
     , rs2' ~ RDeleteAll fs rs2
+    , RMap rs
+    , RMap (rs ++ rs2')
     , RecApplicative rs2'
     , Grouping (Record fs)
     , RecVec rs

@@ -86,7 +86,9 @@ pr1 = QuasiQuoter mkProxy undefined undefined undefined
 
 -- * ToList
 
-recToList :: forall a (rs :: [(Symbol,*)]). (V.RecMapMethod ((~) a) ElField rs) => Record rs -> [a]
+recToList :: forall a (rs :: [(Symbol,*)]).
+             (V.RecMapMethod ((~) a) ElField rs, V.RecordToList rs)
+          => Record rs -> [a]
 recToList = V.recordToList . V.rmapMethod @((~) a) aux
   where aux :: a ~ (V.PayloadType ElField t)  => V.ElField t -> Const a t
         aux (Field x) = Const x
