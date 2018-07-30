@@ -6,7 +6,7 @@
 , unordered-containers, vector, vinyl
 , Chart, Chart-diagrams, diagrams-lib, diagrams-rasterific
 , foldl, http-client, list-t, microlens, statistics, zip-archive
-, llvmPackages
+, llvmPackages, attoparsec
 }:
 mkDerivation {
   pname = "Frames";
@@ -22,7 +22,7 @@ mkDerivation {
   testHaskellDepends = [
     base directory hspec htoml HUnit pipes pretty regex-applicative
     template-haskell temporary text unordered-containers vinyl
-    Chart Chart-diagrams diagrams-lib diagrams-rasterific
+    Chart Chart-diagrams diagrams-lib diagrams-rasterific attoparsec
     foldl http-client list-t microlens statistics zip-archive
   ];
   doBenchmark = true;

@@ -21,6 +21,7 @@ import Test.Hspec as H
 import Test.HUnit.Lang (assertFailure)
 
 import qualified LatinTest as Latin
+import qualified Issue114 as Issue114
 
 -- | Extract all example @(CSV, generatedCode)@ pairs from
 -- @test/examples.toml@
@@ -139,3 +140,7 @@ main = do
                            inCoreAoS (readTable fp) :: IO (Frame NoTruncateRow)
          it "Doesn't truncate after missing data" $
            F.length frameMissing `shouldBe` 4
+       describe "Parses Issue 114 Data" $ do
+         fnames <- H.runIO Issue114.testNames
+         it "Extracts facility_name" $
+           fnames `shouldBe` ["LILLIAN B. SMITH, ET AL", "MUSSER, B W \"B\""]
