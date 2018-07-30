@@ -122,12 +122,12 @@ reassembleRFC4180QuotedParts sep quoteChar = go
           | otherwise = T.strip part : go parts
 
         prefixQuoted t =
-          T.head t == quoteChar &&
-          T.length (T.takeWhile (== quoteChar) t) `rem` 2 == 1
+          T.head t == quoteChar--  &&
+          -- T.length (T.takeWhile (== quoteChar) t) `rem` 2 == 1
 
         suffixQuoted t =
-          quoteText `T.isSuffixOf` t &&
-          T.length (T.takeWhileEnd (== quoteChar) t) `rem` 2 == 1
+          quoteText `T.isSuffixOf` t--  &&
+          -- T.length (T.takeWhileEnd (== quoteChar) t) `rem` 2 == 1
 
         quoteText = T.singleton quoteChar
 
