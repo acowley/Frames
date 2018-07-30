@@ -20,7 +20,8 @@ extra-source-files:  benchmarks/*.hs benchmarks/*.py
                      test/examples.toml
                      test/data/managers.csv test/data/employees.csv
                      test/data/mpg.csv test/data/issue114.csv
-                     test/data/latinManagers.csv data/left1.csv
+                     test/data/latinManagers.csv
+                     data/left1.csv data/right1.csv data/left_summary.csv
 cabal-version:       >=1.10
 tested-with:         GHC == 8.2.2, GHC == 8.4.3
 
