@@ -49,18 +49,20 @@ instance (NFData a) =>
 instance NFData1 VF.Identity where
   liftRnf r = r . getIdentity
 
--- instance (AllCols NFData rs
---          , NFData1 f
---          , Functor f
---          -- , NFData (Rec f rs)
---          , NFData (ElField (s :-> r))
---          , NFData r) =>
---          NFData (Rec (f :. ElField) ((s :-> r) : rs)) where
---   rnf (r :& rs) = rnf1 r `seq` rnf rs
+instance (NFData (f r), NFData (Rec f rs)) => NFData (Rec f (r ': rs)) where
+  rnf (x :& xs) = rnf x `seq` rnf xs
 
-instance (NFData1 f) => NFData (Rec f '[]) where
-  rnf = rwhnf
+instance NFData (Rec f '[]) where
+  rnf RNil = ()
+
+instance (NFData1 f, NFData1 g) => NFData1 (Compose f g) where
+  liftRnf f = liftRnf (liftRnf f) . getCompose
+
+instance NFData (f (g a)) => NFData (Compose f g a) where
+  rnf (Compose x) = rnf x
+
 #endif
+
 
 instance (NFData a) =>
          NFData (Frame a) where
