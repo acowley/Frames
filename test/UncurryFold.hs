@@ -1,18 +1,20 @@
 {-# LANGUAGE DataKinds, FlexibleContexts, QuasiQuotes, TemplateHaskell #-}
+module UncurryFold where
 import qualified Control.Foldl as L
 import Data.Vinyl (rcast)
+import Data.Vinyl.Curry (runcurryFields)
 import Frames
 
 -- Data set from http://vincentarelbundock.github.io/Rdatasets/datasets.html
-tableTypes "Row" "data/prestige.csv"
+tableTypes "Row" "test/data/prestige.csv"
 
 loadRows :: IO (Frame Row)
-loadRows = inCoreAoS (readTable "data/prestige.csv")
+loadRows = inCoreAoS (readTable "test/data/prestige.csv")
 
 -- | Compute the ratio of income to prestige for a record containing
 -- only those fields.
 ratio :: Record '[Income, Prestige] -> Double
-ratio = runcurry' (\i p -> fromIntegral i / p)
+ratio = runcurryFields (\i p -> fromIntegral i / p)
 
 averageRatio :: IO Double
 averageRatio = L.fold (L.premap (ratio . rcast) avg) <$> loadRows

@@ -24,6 +24,10 @@ import qualified LatinTest as Latin
 import qualified Issue114 as Issue114
 import qualified NoHeader
 
+import qualified UncurryFold
+import qualified UncurryFoldNoHeader
+import qualified UncurryFoldPartialData
+
 -- | Extract all example @(CSV, generatedCode)@ pairs from
 -- @test/examples.toml@
 csvTests :: [(CsvExample, String)]
@@ -164,3 +168,13 @@ main = do
            fst <$> res9 `shouldBe` Just "mining.engineers"
          it "Extracts schooling from row 9" $
            maybe 99 snd res9 `shouldBeWithinEpsilon` 14.64
+         resWithHeader <- H.runIO UncurryFold.averageRatio
+         resNoHeader <- H.runIO UncurryFoldNoHeader.averageRatio
+         it "Produces identical numerics independent of column names" $
+           resWithHeader `shouldBe` resNoHeader
+       describe "Can read into Maybe values" $ do
+         (n,avg) <- H.runIO UncurryFoldPartialData.incomeOfUnknownPrestige
+         it "Found the expected number of partial rows" $
+           n `shouldBe` 4
+         it "Computed the average income correctly" $
+           avg `shouldBe` 3344.5

@@ -32,8 +32,7 @@ import Data.Vinyl ((<+>), Rec, rcast, rsubset, ElField)
 import Data.Vinyl.CoRec (Field, onField, onCoRec)
 import Data.Vinyl.Derived (rfield)
 import Data.Vinyl.Functor ((:.))
--- import Data.Vinyl.Lens hiding (rlens, rlens', rget, rput, rput')
-import Data.Vinyl.Lens hiding (rget, rput)
+import Data.Vinyl.Lens
 import Data.Vinyl.TypeLevel (AllConstrained, AllSatisfied, AllAllSat,
                              RDelete, RecAll)
 import Frames.Col ((:->), pattern Col)
@@ -46,7 +45,7 @@ import Frames.Frame
 import qualified Frames.InCore as I
 import Frames.Melt (melt, meltRow)
 import Frames.Rec (Record, RecordColumns, (&:), recUncons, recMaybe, showFields)
-import Frames.Rec (rget, rput)
+import Frames.Rec (rgetField, rputField)
 import Frames.RecF
 import Frames.TypeLevel
 import Frames.Joins

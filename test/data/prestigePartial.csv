@@ -1,3 +1,4 @@
+"","education","income","women","prestige","census","type"
 "gov.administrators",13.11,12351,11.16,68.8,1113,"prof"
 "general.managers",12.26,25879,4.02,69.1,1130,"prof"
 "accountants",12.77,9271,15.7,63.4,1171,"prof"
@@ -31,7 +32,7 @@
 "medical.technicians",12.79,5180,76.04,67.5,3156,"wc"
 "commercial.artists",11.09,6197,21.03,57.2,3314,"prof"
 "radio.tv.announcers",12.71,7562,11.15,57.6,3337,"wc"
-"athletes",11.44,8206,8.13,54.1,3373,NA
+"athletes",11.44,8206,8.13,,3373,NA
 "secretaries",11.59,4036,97.51,46,4111,"wc"
 "typists",11.49,3148,95.97,41.9,4113,"wc"
 "bookkeepers",11.32,4348,68.24,49.4,4131,"wc"
@@ -50,7 +51,7 @@
 "sales.supervisors",9.84,7482,17.04,41.5,5130,"wc"
 "commercial.travellers",11.13,8780,3.16,40.2,5133,"wc"
 "sales.clerks",10.05,2594,67.82,26.5,5137,"wc"
-"newsboys",9.62,918,7,14.8,5143,NA
+"newsboys",9.62,918,7,,5143,NA
 "service.station.attendant",9.93,2370,3.69,23.3,5145,"bc"
 "insurance.agents",11.6,8131,13.09,47.3,5171,"wc"
 "real.estate.salesmen",11.09,6992,24.44,47.1,5172,"wc"
@@ -60,11 +61,11 @@
 "cooks",7.74,3116,52,29.7,6121,"bc"
 "bartenders",8.5,3930,15.51,20.2,6123,"bc"
 "funeral.directors",10.57,7869,6.01,54.9,6141,"bc"
-"babysitters",9.46,611,96.53,25.9,6147,NA
+"babysitters",9.46,611,96.53,,6147,NA
 "launderers",7.33,3000,69.31,20.8,6162,"bc"
 "janitors",7.11,3472,33.57,17.3,6191,"bc"
 "elevator.operators",7.58,3582,30.08,20.1,6193,"bc"
-"farmers",6.84,3643,3.6,44.1,7112,NA
+"farmers",6.84,3643,3.6,,7112,NA
 "farm.workers",8.6,1656,27.75,21.5,7182,"bc"
 "rotary.well.drillers",8.88,6860,0,35.3,7711,"bc"
 "bakers",7.54,4199,33.3,38.9,8213,"bc"

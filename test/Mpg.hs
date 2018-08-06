@@ -9,13 +9,13 @@ import Frames
 tableTypes "Mpg" "test/data/mpg.csv"
 
 drvCol :: (Drv ∈ rs) => Record rs -> Text
-drvCol = rget @Drv
+drvCol = rgetField @Drv
 
 cylCol :: (Cyl ∈ rs) => Record rs -> Int
-cylCol = rget @Cyl
+cylCol = rgetField @Cyl
 
 dispCol :: (Displ ∈ rs) => Record rs -> Double
-dispCol = rget @Displ
+dispCol = rgetField @Displ
 
 main :: IO ()
 main = return ()

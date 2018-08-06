@@ -56,13 +56,17 @@ showFields = recordToList . rmapMethod @Show aux
         aux (Field x) = Const (show x)
 {-# INLINABLE showFields #-}
 
--- | Get the value of a field of a 'Record'.
-rget :: forall t s a rs. (t ~ '(s,a), t ∈ rs) => Record rs -> a
-rget = getField . V.rget @t
-{-# INLINE rget #-}
+-- | Get the value of a field of a 'Record'. This is intended for use
+-- with @TypeApplications@, as compared to 'rgetv' that is intended
+-- for use with @OverloadedLabels@.
+rgetField :: forall t s a rs. (t ~ '(s,a), t ∈ rs) => Record rs -> a
+rgetField = getField . V.rget @t
+{-# INLINE rgetField #-}
 
--- | Replace the value of a field of a 'Record'.
-rput :: forall t s a rs. (t ~ '(s,a), t ∈ rs, KnownSymbol s)
-     => a -> Record rs -> Record rs
-rput = V.rput @t . Field
-{-# INLINE rput #-}
+-- | Replace the value of a field of a 'Record'. This is intended for
+-- use with @TypeApplications@, as compared to 'rputf' that is
+-- intended for use with @OverloadedLabels@.
+rputField :: forall t s a rs. (t ~ '(s,a), t ∈ rs, KnownSymbol s)
+          => a -> Record rs -> Record rs
+rputField = V.rput @t . Field
+{-# INLINE rputField #-}

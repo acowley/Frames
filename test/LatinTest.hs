@@ -31,4 +31,4 @@ manStreamM = readFileLatin1Ln "test/data/latinManagers.csv" >-> pipeTableMaybe
 managers :: IO [Text]
 managers =
   runSafeEffect . P.toListM $
-  manStreamM >-> P.map recMaybe >-> P.concat >-> P.map (rget @Manager)
+  manStreamM >-> P.map recMaybe >-> P.concat >-> P.map (rgetField @Manager)

@@ -1,5 +1,5 @@
 name:                Frames
-version:             0.4.1
+version:             0.5.0
 synopsis:            Data frames For working with tabular data files
 description:         User-friendly, type safe, runtime efficient tooling for
                      working with tabular data deserialized from
@@ -21,6 +21,9 @@ extra-source-files:  benchmarks/*.hs benchmarks/*.py
                      test/data/managers.csv test/data/employees.csv
                      test/data/mpg.csv test/data/issue114.csv
                      test/data/latinManagers.csv
+                     test/data/prestige.csv
+                     test/data/prestigeNoHeader.csv
+                     test/data/prestigePartial.csv
                      data/left1.csv data/right1.csv data/left_summary.csv
                      data/FL2.csv
 cabal-version:       >=1.10
@@ -207,6 +210,7 @@ test-suite spec
   hs-source-dirs:      test
   main-is:             Spec.hs
   other-modules:       DataCSV PrettyTH Temp LatinTest Issue114 NoHeader
+                       UncurryFold UncurryFoldNoHeader UncurryFoldPartialData
   build-depends:       base, text, hspec, Frames, template-haskell,
                        temporary, directory, htoml, regex-applicative, pretty,
                        unordered-containers, pipes, HUnit, vinyl,

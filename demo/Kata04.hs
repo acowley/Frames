@@ -19,11 +19,12 @@ import Frames
 tableTypes "Row" "data/weather.csv"
 
 getTemperatureRange :: (MxT ∈ rs, MnT ∈ rs) => Record rs -> Double
-getTemperatureRange row = rget @MxT row - rget @MnT row
+getTemperatureRange row = rgetField @MxT row - rgetField @MnT row
 
 partOne :: IO T.Text
-partOne = do tbl <- inCoreAoS (readTable "data/weather.csv") :: IO (Frame Row)
-             return $ rget @Dy (F.maximumBy (comparing getTemperatureRange) tbl)
+partOne =
+  do tbl <- inCoreAoS (readTable "data/weather.csv") :: IO (Frame Row)
+     return $ rgetField @Dy (F.maximumBy (comparing getTemperatureRange) tbl)
 
 
 -- shapr: Fight the dying of the light!
