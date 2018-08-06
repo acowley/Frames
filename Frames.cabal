@@ -206,7 +206,7 @@ test-suite spec
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   main-is:             Spec.hs
-  other-modules:       DataCSV PrettyTH Temp LatinTest Issue114
+  other-modules:       DataCSV PrettyTH Temp LatinTest Issue114 NoHeader
   build-depends:       base, text, hspec, Frames, template-haskell,
                        temporary, directory, htoml, regex-applicative, pretty,
                        unordered-containers, pipes, HUnit, vinyl,

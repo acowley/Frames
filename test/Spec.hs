@@ -22,6 +22,7 @@ import Test.HUnit.Lang (assertFailure)
 
 import qualified LatinTest as Latin
 import qualified Issue114 as Issue114
+import qualified NoHeader
 
 -- | Extract all example @(CSV, generatedCode)@ pairs from
 -- @test/examples.toml@
@@ -73,6 +74,14 @@ newtype Code = Code String
 instance Show Code where show (Code x) = x
 instance Eq Code where
   Code a == Code b = filter (not . isSpace) a == filter (not . isSpace) b
+
+shouldBeWithinEpsilon :: Double -> Double -> Expectation
+shouldBeWithinEpsilon actual expected =
+  unless (abs (actual - expected) < 1e-6)
+         (assertFailure
+           (show actual
+            ++ " is not very close to the expected value "
+            ++ show expected))
 
 main :: IO ()
 main = do
@@ -144,3 +153,14 @@ main = do
          fnames <- H.runIO Issue114.testNames
          it "Extracts facility_name" $
            fnames `shouldBe` ["LILLIAN B. SMITH, ET AL", "MUSSER, B W \"B\""]
+       describe "Supports user-supplied column names" $ do
+         res0 <- H.runIO (NoHeader.getJobAndSchooling 0)
+         it "Extracts job from row 0" $
+           fst <$> res0 `shouldBe` Just "gov.administrators"
+         it "Extracts schooling from row 0" $
+           maybe 99 snd res0 `shouldBeWithinEpsilon` 13.11
+         res9 <- H.runIO (NoHeader.getJobAndSchooling 9)
+         it "Extracts job from row 9" $
+           fst <$> res9 `shouldBe` Just "mining.engineers"
+         it "Extracts schooling from row 9" $
+           maybe 99 snd res9 `shouldBeWithinEpsilon` 14.64
