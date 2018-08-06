@@ -1,4 +1,4 @@
-{ compiler ? "ghc822"
+{ compiler ? "ghc843"
 , withHoogle ? true
 }:
 
@@ -12,7 +12,7 @@ packageSet = pkgs.haskell.packages.${compiler};
         overrides = (self: super: {
         ghc = super.ghc // { withPackages = f: super.ghc.withHoogle (ps: f ps ++ [ps.intero ps.cabal-install ]); };
           vinyl = super.callPackage ~/Projects/Vinyl {};
-          Chart = super.callHackage "Chart" "1.9" {};
+          # Chart = super.callHackage "Chart" "1.9" {};
           SVGFonts = super.callHackage "SVGFonts" "1.6.0.3" {};
           intero = pkgs.haskell.lib.dontCheck (super.callPackage ~/src/intero {});
           ghcWithPackages = self.ghc.withPackages;

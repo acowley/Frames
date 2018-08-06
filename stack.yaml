@@ -1,10 +1,11 @@
-resolver: lts-10.0
+# resolver: lts-10.0
+resolver: ghc-8.4.3
 
 packages:
 - '.'
 flags:
   Frames:
-    demos: false
+    demos: true
 extra-package-dbs: []
 nix:
   shell-file: shell.nix
