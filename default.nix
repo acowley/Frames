@@ -1,7 +1,7 @@
 { mkDerivation, base, contravariant, criterion, deepseq, directory
 , discrimination, ghc-prim, hashable, hspec, htoml, HUnit, pipes
 , pipes-bytestring, pipes-group, pipes-parse, pipes-safe
-, pipes-text, pretty, primitive, readable, regex-applicative
+, pretty, primitive, readable, regex-applicative
 , stdenv, template-haskell, temporary, text, transformers
 , unordered-containers, vector, vinyl
 , Chart, Chart-diagrams, diagrams-lib, diagrams-rasterific
@@ -16,7 +16,7 @@ mkDerivation {
   isExecutable = true;
   libraryHaskellDepends = [
     base contravariant deepseq discrimination ghc-prim hashable pipes
-    pipes-bytestring pipes-group pipes-parse pipes-safe pipes-text
+    pipes-bytestring pipes-group pipes-parse pipes-safe
     primitive readable template-haskell text transformers vector vinyl
   ];
   testHaskellDepends = [

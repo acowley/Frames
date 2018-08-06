@@ -1,5 +1,5 @@
 name:                Frames
-version:             0.4.0
+version:             0.4.1
 synopsis:            Data frames For working with tabular data files
 description:         User-friendly, type safe, runtime efficient tooling for
                      working with tabular data deserialized from
@@ -67,7 +67,7 @@ library
                        pipes-group >= 1.0.8 && < 1.1,
                        pipes-parse >= 3.0 && < 3.1,
                        pipes-safe >= 2.2.6 && < 2.3,
-                       pipes-text >= 0.0.2.5 && < 0.1,
+                       bytestring,
                        vinyl >= 0.9 && < 0.10,
                        discrimination,
                        contravariant,

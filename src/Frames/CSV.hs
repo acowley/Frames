@@ -10,15 +10,10 @@
 -- necessary types so that you can write type safe programs referring
 -- to those types.
 module Frames.CSV where
-#if __GLASGOW_HASKELL__ < 710
-import Control.Applicative ((<$>), pure, (<*>))
-import Data.Foldable (foldMap)
-import Data.Traversable (sequenceA)
-import Data.Monoid (Monoid)
-#endif
-
 import Control.Arrow (first, second)
-import Control.Monad (when, void)
+import Control.Exception (try, IOException)
+import Control.Monad (when)
+import qualified Data.ByteString.Char8 as B8
 import Data.Char (isAlpha, isAlphaNum, toLower, toUpper)
 import qualified Data.Foldable as F
 import Data.List (intercalate)
@@ -26,6 +21,8 @@ import Data.Maybe (isNothing, fromMaybe)
 import Data.Monoid ((<>))
 import Data.Proxy
 import qualified Data.Text as T
+import qualified Data.Text.Encoding as T
+import qualified Data.Text.IO as T
 import Data.Vinyl (RecMapMethod, rmap, RElem, Rec(..), ElField(..), RecordToList, RMap)
 import Data.Vinyl.TypeLevel (RIndex)
 import Data.Vinyl.Functor ((:.), Compose(..))
@@ -40,15 +37,10 @@ import Language.Haskell.TH.Syntax
 import Pipes ((>->))
 import qualified Pipes as P
 import qualified Pipes.Prelude as P
-import qualified Pipes.ByteString
-import qualified Pipes.Group
 import qualified Pipes.Parse as P
-import qualified Pipes.Prelude.Text as PT
-import qualified Pipes.Text as PT
-import qualified Pipes.Text.Encoding as PT
 import qualified Pipes.Safe as P
-import qualified Pipes.Safe.Prelude
-import System.IO (IOMode(ReadMode))
+import qualified Pipes.Safe.Prelude as Safe
+import System.IO (Handle, IOMode(ReadMode, WriteMode))
 
 type Separator = T.Text
 
@@ -188,17 +180,38 @@ instance (Parseable t, ReadRec ts, KnownSymbol s) => ReadRec (s :-> t ': ts) whe
                         (Compose . Right . Field)
                         (parse' h) :& readRec t
 
+-- | Opens a file (in 'P.MonadSafe') and repeatedly applies the given
+-- function to the 'Handle' to obtain lines to yield. Adapted from the
+-- moribund pipes-text package.
+pipeLines :: P.MonadSafe m
+          => (Handle -> IO (Either IOException T.Text))
+          -> FilePath
+          -> P.Producer T.Text m ()
+pipeLines pgetLine fp = Safe.withFile fp ReadMode $ \h ->
+  let loop = do txt <- P.liftIO (pgetLine h)
+                case txt of
+                  Left _e -> return ()
+                  Right y -> P.yield y >> loop
+  in loop
+
+-- | Produce lines of 'T.Text'.
+produceTextLines :: P.MonadSafe m => FilePath -> P.Producer T.Text m ()
+produceTextLines = pipeLines (try . T.hGetLine)
+
+-- | Consume lines of 'T.Text', writing them to a file.
+consumeTextLines :: P.MonadSafe m => FilePath -> P.Consumer T.Text m r
+consumeTextLines fp = Safe.withFile fp WriteMode $ \h ->
+  let loop = P.await >>= P.liftIO . T.hPutStrLn h >> loop
+  in loop
+
 -- | Produce the lines of a latin1 (or ISO8859 Part 1) encoded file as
--- ’T.Text’ values. Similar to ’PT.readFileLn’ that uses the system
--- locale for decoding, but built on the ’PT.decodeIso8859_1’ decoder.
+-- ’T.Text’ values.
 readFileLatin1Ln :: P.MonadSafe m => FilePath -> P.Producer T.Text m ()
-readFileLatin1Ln fp = Pipes.Safe.Prelude.withFile fp ReadMode $ \h ->
-  let latinText = void (PT.decodeIso8859_1 (Pipes.ByteString.fromHandle h))
-      latinLines = PT.decode PT.lines latinText
-  in Pipes.Group.concats latinLines
+readFileLatin1Ln = pipeLines (try . fmap T.decodeLatin1 . B8.hGetLine)
 
 -- | Read a 'RecF' from one line of CSV.
-readRow :: ReadRec rs => ParserOptions -> T.Text -> Rec (Either T.Text :. ElField) rs
+readRow :: ReadRec rs
+        => ParserOptions -> T.Text -> Rec (Either T.Text :. ElField) rs
 readRow = (readRec .) . tokenizeRow
 
 -- | Produce rows where any given entry can fail to parse.
@@ -207,7 +220,7 @@ readTableMaybeOpt :: (P.MonadSafe m, ReadRec rs, RMap rs)
                   -> FilePath
                   -> P.Producer (Rec (Maybe :. ElField) rs) m ()
 readTableMaybeOpt opts csvFile =
-  PT.readFileLn csvFile >-> pipeTableMaybeOpt opts
+  produceTextLines csvFile >-> pipeTableMaybeOpt opts
 {-# INLINE readTableMaybeOpt #-}
 
 -- | Stream lines of CSV data into rows of ’Rec’ values values where
@@ -429,7 +442,7 @@ colQ n = [e| (Proxy :: Proxy (ColumnUniverse $(conT n))) |]
 -- separator (a comma), infer column types from the default 'Columns'
 -- set of types, and produce a row type with name @Row@.
 rowGen :: FilePath -> RowGen Columns
-rowGen = RowGen [] "" defaultSep "Row" Proxy . PT.readFileLn
+rowGen = RowGen [] "" defaultSep "Row" Proxy . produceTextLines
 
 -- | Generate a type for each row of a table. This will be something
 -- like @Record ["x" :-> a, "y" :-> b, "z" :-> c]@.
@@ -562,4 +575,4 @@ writeCSV :: (ColumnHeaders ts, Foldable f, RecordToList ts,
              RecMapMethod Show ElField ts)
          => FilePath -> f (Record ts) -> IO ()
 writeCSV fp recs = P.runSafeT . P.runEffect $
-                   produceCSV recs >-> P.map T.pack >-> PT.writeFileLn fp
+                   produceCSV recs >-> P.map T.pack >-> consumeTextLines fp
