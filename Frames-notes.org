@@ -144,16 +144,36 @@ The best choice is for the splice to declare a value ~usersParser~
 that ~readTableOpt~ could then use. This works out quite nicely.
 
 * Prettying TH Splice Dumps
-Dumping the definitions created by the TH splices results in a pretty
-unreadable mess. Here's how to use these functions to clean things up:
 
-1. Evaluate the three elisp definitions here
-2. Hit ~C-c C-e~ to get =ghc-mod= to evaluate all splices
-3. Copy the contents of the =*GHC Info*= buffer to somewhere like your =*scratch*=
-   buffer (because =*GHC Info*= is read-only)
-4. Run =M-x pretty-splices= in that buffer
+** At the GHCi repl
+#+BEGIN_EXAMPLE
+> :set -XQuasiQuotes -XTemplateHaskell
+> import Language.Haskell.TH
+> putStrLn $(tableTypes "base" "base.csv" >>= stringE . show . ppr_list)
+#+END_EXAMPLE
 
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_EXAMPLE
+> set -XOverloadedStrings -XQuasiQuotes TempalteHaskell
+> import Data.Char
+> import Data.List
+> import Frames
+> import Frames.CSV
+> let stripModule = until (\w -> length w == 1 || not ("." `isInfixOf` w)) (tail . dropWhile isAlpha)
+> let onWords f xs = takeWhile isSpace xs ++ unwords (map f (words xs))
+> putStrLn . unlines . map (onWords stripModule) $ lines $(tableTypes' (rowGen "data/ml-100k/u.user") {rowTypeName = "User", columnNames = ["user id", "age", "gender", "occupation", "zip code"], separator = "|"} >>= stringE . show . ppr_list)
+#+END_EXAMPLE
+
+** Using ghc-mod and some elisp helpers
+ Dumping the definitions created by the TH splices results in a pretty
+ unreadable mess. Here's how to use these functions to clean things up:
+
+ 1. Evaluate the three elisp definitions here
+ 2. Hit ~C-c C-e~ to get =ghc-mod= to evaluate all splices
+ 3. Copy the contents of the =*GHC Info*= buffer to somewhere like your =*scratch*=
+    buffer (because =*GHC Info*= is read-only)
+ 4. Run =M-x pretty-splices= in that buffer
+
+#+BEGIN_SRC emacs-lisp :results silent
 (defun replace-stringf (from to)
   (beginning-of-buffer)
   (while (search-forward from nil t)
@@ -171,9 +191,16 @@ unreadable mess. Here's how to use these functions to clean things up:
 ")
   ;; Unqualify names
   (replace-stringf "GHC.Types.:" "':")
+  (replace-stringf "Data.Text.Internal." "")
   (replace-stringf "Data.Text." "T.")
+  (replace-stringf "GHC.Types.Int" "Int")
+  (replace-stringf "GHC.Base." "")
+  (replace-stringf "Frames.Col." "")
   (replace-stringf "Data.Proxy." "")
   (replace-stringf "Data.Vinyl.TypeLevel." "")
+  (replace-stringf "Data.Vinyl.Core." "")
+  (replace-stringf "Frames.Rec." "")
+  (replace-stringf "Data.Vinyl.Lens." "")
   (replace-stringf "Frames.CSV.ParserOptions" "ParserOptions")
 
   ;; Erase inferrable type

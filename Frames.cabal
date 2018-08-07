@@ -147,7 +147,7 @@ executable tutorial
   if flag(demos)
     build-depends: base, Frames,
                    microlens, vector, text, template-haskell, readable,
-                   foldl, pipes
+                   foldl, pipes, vinyl
   hs-source-dirs: demo
   default-language: Haskell2010
 
