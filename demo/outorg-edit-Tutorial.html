@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<!-- 2018-03-19 Mon 15:49 -->
+<!-- 2018-08-07 Tue 13:49 -->
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Frames Tutorial</title>
@@ -179,7 +179,9 @@
   /*]]>*/-->
 </style>
 <style type="text/css">
- pre.src {background-color: #424242; color: #E0E0E0; overflow: scroll;} body { max-width: 600pt; margin: auto} </style>
+ pre.src {background-color: #212121; color: #E0E0E0; overflow: scroll;} body { max-width: 600pt; margin: auto} </style>
+<style type="text/css">
+ pre.src {background-color: #212121; color: #E0E0E0; overflow: scroll;} body { max-width: 600pt; margin: auto} </style>
 <script type="text/javascript">
 /*
 @licstart  The following is the entire license notice for the
@@ -234,28 +236,28 @@ for the JavaScript code in this tag.
 <h2>Table of Contents</h2>
 <div id="text-table-of-contents">
 <ul>
-<li><a href="#org0a97957">1. Data Import</a>
+<li><a href="#org220ea81">1. Data Import</a>
 <ul>
-<li><a href="#org9fef981">1.1. Streaming Cores?</a></li>
-<li><a href="#org2632d8f">1.2. Sanity Check</a></li>
+<li><a href="#org63e8725">1.1. Streaming Cores?</a></li>
+<li><a href="#org8c2a1c7">1.2. Sanity Check</a></li>
 </ul>
 </li>
-<li><a href="#orgd6eb4de">2. Subsetting</a>
+<li><a href="#org1723a9a">2. Subsetting</a>
 <ul>
-<li><a href="#org7a475a7">2.1. Row Subset</a></li>
-<li><a href="#orgef69958">2.2. Column Subset</a></li>
-<li><a href="#orge52a8eb">2.3. Query / Conditional Subset</a></li>
-<li><a href="#org5cdf84f">2.4. Column Subset Update</a></li>
-<li><a href="#org3c53e33">2.5. Mostly-Uniform Data</a></li>
+<li><a href="#org063ab77">2.1. Row Subset</a></li>
+<li><a href="#org18829cb">2.2. Column Subset</a></li>
+<li><a href="#orgf328b25">2.3. Query / Conditional Subset</a></li>
+<li><a href="#org85d55b4">2.4. Column Subset Update</a></li>
+<li><a href="#org7f0e064">2.5. Mostly-Uniform Data</a></li>
 </ul>
 </li>
-<li><a href="#org8c6f79f">3. Escape Hatch</a></li>
-<li><a href="#org34c3525">4. Better Types</a></li>
-<li><a href="#orga2af597">5. Appendix</a>
+<li><a href="#org61fc4da">3. Escape Hatch</a></li>
+<li><a href="#orgfa57664">4. Better Types</a></li>
+<li><a href="#org597000c">5. Appendix</a>
 <ul>
-<li><a href="#orgf68079e">5.1. User Types</a></li>
-<li><a href="#orgbc7ce04">5.2. Splice Dump</a></li>
-<li><a href="#orgeb933a6">5.3. Thanks</a></li>
+<li><a href="#org657f38e">5.1. User Types</a></li>
+<li><a href="#org14775bc">5.2. Splice Dump</a></li>
+<li><a href="#org826e1f2">5.3. Thanks</a></li>
 </ul>
 </li>
 </ul>
@@ -307,7 +309,8 @@ smaller test program than this!
 <div class="org-src-container">
 <pre class="src src-haskell"><span style="color: #E1BEE7;">import</span> <span style="color: #E1BEE7;">qualified</span> <span style="color: #FFCC80;">Control.Foldl</span> <span style="color: #E1BEE7;">as</span> <span style="color: #FFCC80;">L</span>
 <span style="color: #E1BEE7;">import</span> <span style="color: #E1BEE7;">qualified</span> <span style="color: #FFCC80;">Data.Foldable</span> <span style="color: #E1BEE7;">as</span> <span style="color: #FFCC80;">F</span>
-<span style="color: #E1BEE7;">import</span> <span style="color: #FFCC80;">Data.Proxy</span> (<span style="color: #FFCC80;">Proxy</span>(<span style="color: #80CBC4;">..</span>))
+<span style="color: #E1BEE7;">import</span> <span style="color: #FFCC80;">Data.Vinyl</span>
+<span style="color: #E1BEE7;">import</span> <span style="color: #FFCC80;">Data.Vinyl.Functor</span> (<span style="color: #FFCC80;">Identity</span>(<span style="color: #80CBC4;">..</span>), <span style="color: #FFCC80;">Const</span>(<span style="color: #80CBC4;">..</span>))
 <span style="color: #E1BEE7;">import</span> <span style="color: #FFCC80;">Lens.Micro</span>
 <span style="color: #E1BEE7;">import</span> <span style="color: #FFCC80;">Lens.Micro.Extras</span>
 <span style="color: #E1BEE7;">import</span> <span style="color: #FFCC80;">Frames</span>
@@ -318,7 +321,7 @@ smaller test program than this!
 </div>
 
 <p>
-A few other imports will be used for highly customized parsing <a href="#org34c3525">later</a>.
+A few other imports will be used for highly customized parsing <a href="#orgfa57664">later</a>.
 </p>
 
 <div class="org-src-container">
@@ -327,8 +330,8 @@ A few other imports will be used for highly customized parsing <a href="#org34c3
 </pre>
 </div>
 
-<div id="outline-container-org0a97957" class="outline-2">
-<h2 id="org0a97957"><span class="section-number-2">1</span> Data Import</h2>
+<div id="outline-container-org220ea81" class="outline-2">
+<h2 id="org220ea81"><span class="section-number-2">1</span> Data Import</h2>
 <div class="outline-text-2" id="text-1">
 <p>
 We usually package column names with the data to keep things a bit
@@ -365,7 +368,7 @@ This template haskell splice explicitly specifies the name for the
 inferred record type, column names, a separator string, and the
 data file from which to infer the record type (i.e. what type
 should be used to represent each column). The result of this splice
-is included in an <a href="#orgbc7ce04">appendix</a> below so you can flip
+is included in an <a href="#org14775bc">appendix</a> below so you can flip
 between the generated code and how it is used.
 </p>
 
@@ -420,8 +423,8 @@ memory) array of structures (AoS) representation.
 </div>
 </div>
 
-<div id="outline-container-org9fef981" class="outline-3">
-<h3 id="org9fef981"><span class="section-number-3">1.1</span> Streaming Cores?</h3>
+<div id="outline-container-org63e8725" class="outline-3">
+<h3 id="org63e8725"><span class="section-number-3">1.1</span> Streaming Cores?</h3>
 <div class="outline-text-3" id="text-1-1">
 <p>
 A <code>Frame</code> is an in-memory representation of your data. The <code>Frames</code>
@@ -463,8 +466,8 @@ the answer to both of those questions is,
 </div>
 </div>
 
-<div id="outline-container-org2632d8f" class="outline-3">
-<h3 id="org2632d8f"><span class="section-number-3">1.2</span> Sanity Check</h3>
+<div id="outline-container-org8c2a1c7" class="outline-3">
+<h3 id="org8c2a1c7"><span class="section-number-3">1.2</span> Sanity Check</h3>
 <div class="outline-text-3" id="text-1-2">
 <p>
 We can compute some easy statistics to see how things look.
@@ -501,12 +504,12 @@ computing the minimum and maximum <code>age</code> across all rows.
 </div>
 </div>
 
-<div id="outline-container-orgd6eb4de" class="outline-2">
-<h2 id="orgd6eb4de"><span class="section-number-2">2</span> Subsetting</h2>
+<div id="outline-container-org1723a9a" class="outline-2">
+<h2 id="org1723a9a"><span class="section-number-2">2</span> Subsetting</h2>
 <div class="outline-text-2" id="text-2">
 </div>
-<div id="outline-container-org7a475a7" class="outline-3">
-<h3 id="org7a475a7"><span class="section-number-3">2.1</span> Row Subset</h3>
+<div id="outline-container-org063ab77" class="outline-3">
+<h3 id="org063ab77"><span class="section-number-3">2.1</span> Row Subset</h3>
 <div class="outline-text-3" id="text-2-1">
 <p>
 Data may be inspected using either Haskell's traditional list API&#x2026;
@@ -547,8 +550,8 @@ This lets us view a subset of rows,
 </div>
 </div>
 
-<div id="outline-container-orgef69958" class="outline-3">
-<h3 id="orgef69958"><span class="section-number-3">2.2</span> Column Subset</h3>
+<div id="outline-container-org18829cb" class="outline-3">
+<h3 id="org18829cb"><span class="section-number-3">2.2</span> Column Subset</h3>
 <div class="outline-text-3" id="text-2-2">
 <p>
 We can consider a single column.
@@ -592,8 +595,8 @@ the types in-line by using the <code>rcast</code> function.
 </div>
 </div>
 
-<div id="outline-container-orge52a8eb" class="outline-3">
-<h3 id="orge52a8eb"><span class="section-number-3">2.3</span> Query / Conditional Subset</h3>
+<div id="outline-container-orgf328b25" class="outline-3">
+<h3 id="orgf328b25"><span class="section-number-3">2.3</span> Query / Conditional Subset</h3>
 <div class="outline-text-3" id="text-2-3">
 <p>
 Filtering our frame is rather nicely done using the
@@ -633,8 +636,8 @@ to eventually apply to a large data set.
 </div>
 </div>
 
-<div id="outline-container-org5cdf84f" class="outline-3">
-<h3 id="org5cdf84f"><span class="section-number-3">2.4</span> Column Subset Update</h3>
+<div id="outline-container-org85d55b4" class="outline-3">
+<h3 id="org85d55b4"><span class="section-number-3">2.4</span> Column Subset Update</h3>
 <div class="outline-text-3" id="text-2-4">
 <p>
 We can also apply a function to a subset of columns of each row! Here,
@@ -669,8 +672,8 @@ various text fields, for example.
 </div>
 </div>
 
-<div id="outline-container-org3c53e33" class="outline-3">
-<h3 id="org3c53e33"><span class="section-number-3">2.5</span> Mostly-Uniform Data</h3>
+<div id="outline-container-org7f0e064" class="outline-3">
+<h3 id="org7f0e064"><span class="section-number-3">2.5</span> Mostly-Uniform Data</h3>
 <div class="outline-text-3" id="text-2-5">
 <p>
 <i>(Warning: This section veers into types that are likely of more
@@ -686,10 +689,10 @@ the first column back on to the result.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-haskell"><span style="color: #64B5F6;">addTwoRest</span> <span style="color: #80CBC4;">::</span> (<span style="color: #FFCC80;">AllCols</span> <span style="color: #FFCC80;">Num</span> rs, <span style="color: #FFCC80;">AsVinyl</span> rs)
-           <span style="color: #80CBC4;">=&gt;</span> <span style="color: #FFCC80;">Record</span> (s <span style="color: #FFCC80;">:-&gt;</span> a <span style="color: #C5E1A5;">': rs) -&gt; Record (s :-&gt; a '</span><span style="color: #FFCC80;">:</span> rs)
-<span style="color: #64B5F6;">addTwoRest</span> (h <span style="color: #FFCC80;">:&amp;</span> t) <span style="color: #80CBC4;">=</span> frameCons h (aux t)
-  <span style="color: #E1BEE7;">where</span> aux <span style="color: #80CBC4;">=</span> mapMethod <span style="color: #80CBC4;">@</span><span style="color: #FFCC80;">Num</span> (<span style="color: #80CBC4;">\</span>x <span style="color: #80CBC4;">-&gt;</span> x <span style="color: #80CBC4;">+</span> 2)
+<pre class="src src-haskell"><span style="color: #64B5F6;">addTwoRest</span> <span style="color: #80CBC4;">::</span> <span style="color: #FFCC80;">RecMapMethod</span> <span style="color: #FFCC80;">Num</span> <span style="color: #FFCC80;">ElField</span> rs
+           <span style="color: #80CBC4;">=&gt;</span> <span style="color: #FFCC80;">Record</span> (s <span style="color: #FFCC80;">:-&gt;</span> a '<span style="color: #FFCC80;">:</span> rs) <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Record</span> (s <span style="color: #FFCC80;">:-&gt;</span> a '<span style="color: #FFCC80;">:</span> rs)
+<span style="color: #64B5F6;">addTwoRest</span> (h <span style="color: #FFCC80;">:&amp;</span> t) <span style="color: #80CBC4;">=</span> h <span style="color: #FFCC80;">:&amp;</span> aux t
+  <span style="color: #E1BEE7;">where</span> aux <span style="color: #80CBC4;">=</span> mapFields <span style="color: #80CBC4;">@</span><span style="color: #FFCC80;">Num</span> (<span style="color: #80CBC4;">\</span>x <span style="color: #80CBC4;">-&gt;</span> x <span style="color: #80CBC4;">+</span> 2)
 </pre>
 </div>
 
@@ -708,10 +711,10 @@ constrained polymorphic operation over the other columns.
 <div class="org-src-container">
 <pre class="src src-haskell"><span style="color: #64B5F6;">addTwoOccupation</span> <span style="color: #80CBC4;">::</span> (<span style="color: #FFCC80;">CanDelete</span> <span style="color: #FFCC80;">Occupation</span> rs,
                      rs' <span style="color: #80CBC4;">~</span> <span style="color: #FFCC80;">RDelete</span> <span style="color: #FFCC80;">Occupation</span> rs,
-                     <span style="color: #FFCC80;">AllCols</span> <span style="color: #FFCC80;">Num</span> rs', <span style="color: #FFCC80;">AsVinyl</span> rs')
-                 <span style="color: #80CBC4;">=&gt;</span> <span style="color: #FFCC80;">Record</span> rs <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Record</span> (<span style="color: #FFCC80;">Occupation</span> <span style="color: #E57373;">'</span><span style="color: #C5E1A5;">: RDelete Occupation rs)</span>
-<span style="color: #64B5F6;">addTwoOccupation</span> r <span style="color: #80CBC4;">=</span> frameCons (rget' occupation' r)
-                   <span style="color: #80CBC4;">$</span> mapMethod <span style="color: #80CBC4;">@</span><span style="color: #FFCC80;">Num</span> (<span style="color: #80CBC4;">+</span> 2) (rdel [pr<span style="color: #C5E1A5;">|Occupation|</span>] r)
+                     <span style="color: #FFCC80;">RecMapMethod</span> <span style="color: #FFCC80;">Num</span> <span style="color: #FFCC80;">ElField</span> rs')
+                 <span style="color: #80CBC4;">=&gt;</span> <span style="color: #FFCC80;">Record</span> rs <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Record</span> (<span style="color: #FFCC80;">Occupation</span> '<span style="color: #FFCC80;">:</span> <span style="color: #FFCC80;">RDelete</span> <span style="color: #FFCC80;">Occupation</span> rs)
+<span style="color: #64B5F6;">addTwoOccupation</span> r <span style="color: #80CBC4;">=</span>
+  rget <span style="color: #80CBC4;">@</span><span style="color: #FFCC80;">Occupation</span> r <span style="color: #FFCC80;">:&amp;</span> mapFields <span style="color: #80CBC4;">@</span><span style="color: #FFCC80;">Num</span> (<span style="color: #80CBC4;">+</span> 2) (rdel <span style="color: #80CBC4;">@</span><span style="color: #FFCC80;">Occupation</span> r)
 </pre>
 </div>
 
@@ -733,9 +736,9 @@ other fields there are, we care not.
 <pre class="src src-haskell"><span style="color: #64B5F6;">addTwoOccupation'</span> <span style="color: #80CBC4;">::</span> <span style="color: #E1BEE7;">forall</span> rs rs'<span style="color: #80CBC4;">.</span>
                      (<span style="color: #FFCC80;">CanDelete</span> <span style="color: #FFCC80;">Occupation</span> rs,
                       rs' <span style="color: #80CBC4;">~</span> <span style="color: #FFCC80;">RDelete</span> <span style="color: #FFCC80;">Occupation</span> rs,
-                      <span style="color: #FFCC80;">AllCols</span> <span style="color: #FFCC80;">Num</span> rs', <span style="color: #FFCC80;">AsVinyl</span> rs')
+                      <span style="color: #FFCC80;">RecMapMethod</span> <span style="color: #FFCC80;">Num</span> <span style="color: #FFCC80;">ElField</span> rs')
                   <span style="color: #80CBC4;">=&gt;</span> <span style="color: #FFCC80;">Record</span> rs <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Record</span> rs
-<span style="color: #64B5F6;">addTwoOccupation'</span> <span style="color: #80CBC4;">=</span> rsubset <span style="color: #80CBC4;">@</span>rs' <span style="color: #80CBC4;">%~</span> mapMethod <span style="color: #80CBC4;">@</span><span style="color: #FFCC80;">Num</span> (<span style="color: #80CBC4;">+</span> 2)
+<span style="color: #64B5F6;">addTwoOccupation'</span> <span style="color: #80CBC4;">=</span> rsubset <span style="color: #80CBC4;">%~</span> mapFields <span style="color: #80CBC4;">@</span><span style="color: #FFCC80;">Num</span> <span style="color: #80CBC4;">@</span>rs' (<span style="color: #80CBC4;">+</span> 2)
 </pre>
 </div>
 
@@ -797,8 +800,8 @@ improved in the future!
 </div>
 </div>
 
-<div id="outline-container-org8c6f79f" class="outline-2">
-<h2 id="org8c6f79f"><span class="section-number-2">3</span> Escape Hatch</h2>
+<div id="outline-container-org61fc4da" class="outline-2">
+<h2 id="org61fc4da"><span class="section-number-2">3</span> Escape Hatch</h2>
 <div class="outline-text-2" id="text-3">
 <p>
 When you're done with <code>Frames</code> and want to get back to more
@@ -806,9 +809,11 @@ familiar monomorphic pastures, you can bundle your data up.
 </p>
 
 <div class="org-src-container">
-<pre class="src src-haskell"><span style="color: #64B5F6;">restInts</span> <span style="color: #80CBC4;">::</span> (<span style="color: #FFCC80;">AllAre</span> <span style="color: #FFCC80;">Int</span> (<span style="color: #FFCC80;">UnColumn</span> rs), <span style="color: #FFCC80;">AsVinyl</span> rs)
-         <span style="color: #80CBC4;">=&gt;</span> <span style="color: #FFCC80;">Record</span> (s <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Text</span> <span style="color: #E57373;">'</span><span style="color: #C5E1A5;">: rs) -&gt; (Text, [Int])</span>
-<span style="color: #64B5F6;">restInts</span> (recUncons <span style="color: #80CBC4;">-&gt;</span> (h, t)) <span style="color: #80CBC4;">=</span> (h, recToList t)
+<pre class="src src-haskell"><span style="color: #64B5F6;">restInts</span> <span style="color: #80CBC4;">::</span> (<span style="color: #FFCC80;">RecordToList</span> (<span style="color: #FFCC80;">Unlabeled</span> rs), <span style="color: #FFCC80;">StripFieldNames</span> rs,
+             <span style="color: #FFCC80;">RecMapMethod</span> ((<span style="color: #80CBC4;">~</span>) <span style="color: #FFCC80;">Int</span>) <span style="color: #FFCC80;">Identity</span> (<span style="color: #FFCC80;">Unlabeled</span> rs))
+         <span style="color: #80CBC4;">=&gt;</span> <span style="color: #FFCC80;">Record</span> (s <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Text</span> '<span style="color: #FFCC80;">:</span> rs) <span style="color: #80CBC4;">-&gt;</span> (<span style="color: #FFCC80;">Text</span>, [<span style="color: #FFCC80;">Int</span>])
+<span style="color: #64B5F6;">restInts</span> (recUncons <span style="color: #80CBC4;">-&gt;</span> (h,t)) <span style="color: #80CBC4;">=</span> (h, recordToList t')
+  <span style="color: #E1BEE7;">where</span> t' <span style="color: #80CBC4;">=</span> rmapMethod <span style="color: #80CBC4;">@</span>((<span style="color: #80CBC4;">~</span>) <span style="color: #FFCC80;">Int</span>) (<span style="color: #FFCC80;">Const</span> <span style="color: #80CBC4;">.</span> getIdentity) (stripNames t)
 </pre>
 </div>
 
@@ -819,8 +824,8 @@ familiar monomorphic pastures, you can bundle your data up.
 </div>
 </div>
 
-<div id="outline-container-org34c3525" class="outline-2">
-<h2 id="org34c3525"><span class="section-number-2">4</span> Better Types</h2>
+<div id="outline-container-orgfa57664" class="outline-2">
+<h2 id="orgfa57664"><span class="section-number-2">4</span> Better Types</h2>
 <div class="outline-text-2" id="text-4">
 <p>
 A common disappointment of parsing general data sets is the
@@ -855,14 +860,14 @@ universe of column types.
                              <span style="color: #E1BEE7;">else</span> return <span style="color: #80CBC4;">$</span> <span style="color: #FFCC80;">ZipWorld</span> v w x y z
       <span style="color: #80CBC4;">|</span> otherwise <span style="color: #80CBC4;">=</span> mzero
 
-<span style="color: #E1BEE7;">type</span> <span style="color: #FFCC80;">MyColumns</span> <span style="color: #80CBC4;">=</span> <span style="color: #FFCC80;">ZipT</span> <span style="color: #E57373;">'</span><span style="color: #C5E1A5;">: CommonColumns</span>
+<span style="color: #E1BEE7;">type</span> <span style="color: #FFCC80;">MyColumns</span> <span style="color: #80CBC4;">=</span> <span style="color: #FFCC80;">ZipT</span> '<span style="color: #FFCC80;">:</span> <span style="color: #FFCC80;">CommonColumns</span>
 </pre>
 </div>
 
 <p>
 Note that these definitions must be imported from a separate module
 to satisfy GHC's stage restrictions related to Template
-Haskell. The full code for the custom type may be found in an <a href="#orgf68079e">appendix</a>.
+Haskell. The full code for the custom type may be found in an <a href="#org657f38e">appendix</a>.
 </p>
 
 <p>
@@ -950,12 +955,12 @@ code</b>. Just recompile against the new data set, and you're good to go.
 </div>
 </div>
 
-<div id="outline-container-orga2af597" class="outline-2">
-<h2 id="orga2af597"><span class="section-number-2">5</span> Appendix</h2>
+<div id="outline-container-org597000c" class="outline-2">
+<h2 id="org597000c"><span class="section-number-2">5</span> Appendix</h2>
 <div class="outline-text-2" id="text-5">
 </div>
-<div id="outline-container-orgf68079e" class="outline-3">
-<h3 id="orgf68079e"><span class="section-number-3">5.1</span> User Types</h3>
+<div id="outline-container-org657f38e" class="outline-3">
+<h3 id="org657f38e"><span class="section-number-3">5.1</span> User Types</h3>
 <div class="outline-text-3" id="text-5-1">
 <p>
 Here are the definitions needed to define the <code>MyColumns</code> type with
@@ -1003,14 +1008,14 @@ off, and the sky's the limit.
                              <span style="color: #E1BEE7;">else</span> return <span style="color: #80CBC4;">$</span> <span style="color: #FFCC80;">ZipWorld</span> v w x y z
       <span style="color: #80CBC4;">|</span> otherwise <span style="color: #80CBC4;">=</span> mzero
 
-<span style="color: #E1BEE7;">type</span> <span style="color: #FFCC80;">MyColumns</span> <span style="color: #80CBC4;">=</span> <span style="color: #FFCC80;">ZipT</span> <span style="color: #E57373;">'</span><span style="color: #C5E1A5;">: CommonColumns</span>
+<span style="color: #E1BEE7;">type</span> <span style="color: #FFCC80;">MyColumns</span> <span style="color: #80CBC4;">=</span> <span style="color: #FFCC80;">ZipT</span> '<span style="color: #FFCC80;">:</span> <span style="color: #FFCC80;">CommonColumns</span>
 </pre>
 </div>
 </div>
 </div>
 
-<div id="outline-container-orgbc7ce04" class="outline-3">
-<h3 id="orgbc7ce04"><span class="section-number-3">5.2</span> Splice Dump</h3>
+<div id="outline-container-org14775bc" class="outline-3">
+<h3 id="org14775bc"><span class="section-number-3">5.2</span> Splice Dump</h3>
 <div class="outline-text-3" id="text-5-2">
 <p>
 The Template Haskell splices we use produce quite a lot of
@@ -1046,104 +1051,94 @@ character.
                     <span style="color: #C5E1A5;">"zip code"</span>],
      separator <span style="color: #80CBC4;">=</span> <span style="color: #C5E1A5;">"|"</span>})
 <span style="color: #80CBC4;">======&gt;</span>
-  <span style="color: #E1BEE7;">type</span> <span style="color: #FFCC80;">User</span> <span style="color: #80CBC4;">=</span>
-      <span style="color: #FFCC80;">Record</span> [<span style="color: #C5E1A5;">"user id"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Int</span>, <span style="color: #C5E1A5;">"age"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Int</span>, <span style="color: #C5E1A5;">"gender"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Text</span>, <span style="color: #C5E1A5;">"occupation"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Text</span>, <span style="color: #C5E1A5;">"zip code"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Text</span>]
+<span style="color: #E1BEE7;">type</span> <span style="color: #FFCC80;">User</span> <span style="color: #80CBC4;">=</span> <span style="color: #FFCC80;">Record</span> [<span style="color: #C5E1A5;">"user id"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Int</span>, <span style="color: #C5E1A5;">"age"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Int</span>, <span style="color: #C5E1A5;">"gender"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Text</span>, <span style="color: #C5E1A5;">"occupation"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Text</span>, <span style="color: #C5E1A5;">"zip code"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Text</span>]
 
-  userParser <span style="color: #80CBC4;">::</span> <span style="color: #FFCC80;">ParserOptions</span>
-  userParser
-    <span style="color: #80CBC4;">=</span> <span style="color: #FFCC80;">ParserOptions</span>
-        (<span style="color: #FFCC80;">Just</span>
-           (map
-              T.pack
-              [<span style="color: #C5E1A5;">"user id"</span>, <span style="color: #C5E1A5;">"age"</span>, <span style="color: #C5E1A5;">"gender"</span>, <span style="color: #C5E1A5;">"occupation"</span>, <span style="color: #C5E1A5;">"zip code"</span>]))
-        (T.pack <span style="color: #C5E1A5;">"|"</span>)
+<span style="color: #64B5F6;">userParser</span> <span style="color: #80CBC4;">::</span> <span style="color: #FFCC80;">ParserOptions</span>
+<span style="color: #64B5F6;">userParser</span> <span style="color: #80CBC4;">=</span> <span style="color: #FFCC80;">ParserOptions</span> (<span style="color: #FFCC80;">Just</span> (map T.pack [<span style="color: #C5E1A5;">"user id"</span>
+                                             , <span style="color: #C5E1A5;">"age"</span>
+                                             , <span style="color: #C5E1A5;">"gender"</span>
+                                             , <span style="color: #C5E1A5;">"occupation"</span>
+                                             , <span style="color: #C5E1A5;">"zip code"</span>]))
+                           (T.pack <span style="color: #C5E1A5;">"|"</span>)
+                           (<span style="color: #FFCC80;">Frames.CSV.RFC4180Quoting</span> <span style="color: #C5E1A5;">'"'</span>)
 
-  <span style="color: #E1BEE7;">type</span> <span style="color: #FFCC80;">UserId</span> <span style="color: #80CBC4;">=</span> <span style="color: #C5E1A5;">"user id"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Int</span>
+<span style="color: #E1BEE7;">type</span> <span style="color: #FFCC80;">UserId</span> <span style="color: #80CBC4;">=</span> <span style="color: #C5E1A5;">"user id"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Int</span>
+<span style="color: #64B5F6;">userId</span> <span style="color: #80CBC4;">::</span> <span style="color: #E1BEE7;">forall</span> f_0 rs_1 <span style="color: #80CBC4;">.</span>
+          (<span style="color: #FFCC80;">Functor</span> f_0, <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">UserId</span> rs_1 (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">UserId</span> rs_1))
+       <span style="color: #80CBC4;">=&gt;</span> (<span style="color: #FFCC80;">Int</span> <span style="color: #80CBC4;">-&gt;</span> f_0 <span style="color: #FFCC80;">Int</span>)
+       <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Record</span> rs_1
+       <span style="color: #80CBC4;">-&gt;</span> f_0 (<span style="color: #FFCC80;">Record</span> rs_1)
+<span style="color: #64B5F6;">userId</span> <span style="color: #80CBC4;">=</span> rlens <span style="color: #80CBC4;">@</span><span style="color: #FFCC80;">UserId</span> <span style="color: #80CBC4;">.</span> rfield
+<span style="color: #64B5F6;">userId'</span> <span style="color: #80CBC4;">::</span> <span style="color: #E1BEE7;">forall</span> f_2 g_3 rs_4 <span style="color: #80CBC4;">.</span>
+           (<span style="color: #FFCC80;">Functor</span> f_2, <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">UserId</span> rs_4 (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">UserId</span> rs_4))
+        <span style="color: #80CBC4;">=&gt;</span> (g_3 <span style="color: #FFCC80;">UserId</span> <span style="color: #80CBC4;">-&gt;</span> f_2 (g_3 <span style="color: #FFCC80;">UserId</span>))
+        <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Rec</span> g_3 rs_4
+        <span style="color: #80CBC4;">-&gt;</span> f_2 (<span style="color: #FFCC80;">Rec</span> g_3 rs_4)
+<span style="color: #64B5F6;">userId'</span> <span style="color: #80CBC4;">=</span> rlens' <span style="color: #80CBC4;">@</span><span style="color: #FFCC80;">UserId</span>
 
-  userId <span style="color: #80CBC4;">::</span>
-    <span style="color: #E1BEE7;">forall</span> f_adkB rs_adkC<span style="color: #80CBC4;">.</span> (<span style="color: #FFCC80;">Functor</span> f_adkB,
-                            <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">UserId</span> rs_adkC (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">UserId</span> rs_adkC)) <span style="color: #80CBC4;">=&gt;</span>
-    (<span style="color: #FFCC80;">Int</span> <span style="color: #80CBC4;">-&gt;</span> f_adkB <span style="color: #FFCC80;">Int</span>) <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Record</span> rs_adkC <span style="color: #80CBC4;">-&gt;</span> f_adkB (<span style="color: #FFCC80;">Record</span> rs_adkC)
-  userId <span style="color: #80CBC4;">=</span> rlens (<span style="color: #FFCC80;">Proxy</span> <span style="color: #80CBC4;">::</span> <span style="color: #FFCC80;">Proxy</span> <span style="color: #FFCC80;">UserId</span>)
+<span style="color: #E1BEE7;">type</span> <span style="color: #FFCC80;">Age</span> <span style="color: #80CBC4;">=</span> <span style="color: #C5E1A5;">"age"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Int</span>
+<span style="color: #64B5F6;">age</span> <span style="color: #80CBC4;">::</span> <span style="color: #E1BEE7;">forall</span> f_5 rs_6 <span style="color: #80CBC4;">.</span>
+       (<span style="color: #FFCC80;">Functor</span> f_5, <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">Age</span> rs_6 (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">Age</span> rs_6))
+    <span style="color: #80CBC4;">=&gt;</span> (<span style="color: #FFCC80;">Int</span> <span style="color: #80CBC4;">-&gt;</span> f_5 <span style="color: #FFCC80;">Int</span>)
+    <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Record</span> rs_6
+    <span style="color: #80CBC4;">-&gt;</span> f_5 (<span style="color: #FFCC80;">Record</span> rs_6)
+<span style="color: #64B5F6;">age</span> <span style="color: #80CBC4;">=</span> rlens <span style="color: #80CBC4;">@</span><span style="color: #FFCC80;">Age</span> <span style="color: #80CBC4;">.</span> rfield
+<span style="color: #64B5F6;">age'</span> <span style="color: #80CBC4;">::</span> <span style="color: #E1BEE7;">forall</span> f_7 g_8 rs_9 <span style="color: #80CBC4;">.</span>
+        (<span style="color: #FFCC80;">Functor</span> f_7, <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">Age</span> rs_9 (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">Age</span> rs_9))
+     <span style="color: #80CBC4;">=&gt;</span> (g_8 <span style="color: #FFCC80;">Age</span> <span style="color: #80CBC4;">-&gt;</span> f_7 (g_8 <span style="color: #FFCC80;">Age</span>))
+     <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Rec</span> g_8 rs_9
+     <span style="color: #80CBC4;">-&gt;</span> f_7 (<span style="color: #FFCC80;">Rec</span> g_8 rs_9)
+<span style="color: #64B5F6;">age'</span> <span style="color: #80CBC4;">=</span> rlens' <span style="color: #80CBC4;">@</span><span style="color: #FFCC80;">Age</span>
 
-  userId' <span style="color: #80CBC4;">::</span>
-    <span style="color: #E1BEE7;">forall</span> g_adkD f_adkE rs_adkF<span style="color: #80CBC4;">.</span> (<span style="color: #FFCC80;">Functor</span> f_adkE,
-                                   <span style="color: #FFCC80;">Functor</span> g_adkD,
-                                   <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">UserId</span> rs_adkF (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">UserId</span> rs_adkF)) <span style="color: #80CBC4;">=&gt;</span>
-    (g_adkD <span style="color: #FFCC80;">UserId</span> <span style="color: #80CBC4;">-&gt;</span> f_adkE (g_adkD <span style="color: #FFCC80;">UserId</span>))
-    <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Rec</span> g_adkD rs_adkF <span style="color: #80CBC4;">-&gt;</span> f_adkE (<span style="color: #FFCC80;">Rec</span> g_adkD rs_adkF)
-  userId' <span style="color: #80CBC4;">=</span> rlens' (<span style="color: #FFCC80;">Proxy</span> <span style="color: #80CBC4;">::</span> <span style="color: #FFCC80;">Proxy</span> <span style="color: #FFCC80;">UserId</span>)
+<span style="color: #E1BEE7;">type</span> <span style="color: #FFCC80;">Gender</span> <span style="color: #80CBC4;">=</span> <span style="color: #C5E1A5;">"gender"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Text</span>
+<span style="color: #64B5F6;">gender</span> <span style="color: #80CBC4;">::</span> <span style="color: #E1BEE7;">forall</span> f_10 rs_11 <span style="color: #80CBC4;">.</span>
+          (<span style="color: #FFCC80;">Functor</span> f_10, <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">Gender</span> rs_11 (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">Gender</span> rs_11))
+       <span style="color: #80CBC4;">=&gt;</span> (<span style="color: #FFCC80;">Text</span> <span style="color: #80CBC4;">-&gt;</span> f_10 <span style="color: #FFCC80;">Text</span>)
+       <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Record</span> rs_11
+       <span style="color: #80CBC4;">-&gt;</span> f_10 (<span style="color: #FFCC80;">Record</span> rs_11)
+<span style="color: #64B5F6;">gender</span> <span style="color: #80CBC4;">=</span> rlens <span style="color: #80CBC4;">@</span><span style="color: #FFCC80;">Gender</span> <span style="color: #80CBC4;">.</span> rfield
+<span style="color: #64B5F6;">gender'</span> <span style="color: #80CBC4;">::</span> <span style="color: #E1BEE7;">forall</span> f_12 g_13 rs_14 <span style="color: #80CBC4;">.</span>
+           (<span style="color: #FFCC80;">Functor</span> f_12, <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">Gender</span> rs_14 (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">Gender</span> rs_14))
+        <span style="color: #80CBC4;">=&gt;</span> (g_13 <span style="color: #FFCC80;">Gender</span> <span style="color: #80CBC4;">-&gt;</span> f_12 (g_13 <span style="color: #FFCC80;">Gender</span>))
+        <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Rec</span> g_13 rs_14
+        <span style="color: #80CBC4;">-&gt;</span> f_12 (<span style="color: #FFCC80;">Rec</span> g_13 rs_14)
+<span style="color: #64B5F6;">gender'</span> <span style="color: #80CBC4;">=</span> rlens' <span style="color: #80CBC4;">@</span><span style="color: #FFCC80;">Gender</span>
 
-  <span style="color: #E1BEE7;">type</span> <span style="color: #FFCC80;">Age</span> <span style="color: #80CBC4;">=</span> <span style="color: #C5E1A5;">"age"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Int</span>
+<span style="color: #E1BEE7;">type</span> <span style="color: #FFCC80;">Occupation</span> <span style="color: #80CBC4;">=</span> (<span style="color: #FFCC80;">:-&gt;</span>) <span style="color: #C5E1A5;">"occupation"</span>
+                                   <span style="color: #FFCC80;">Text</span>
+<span style="color: #64B5F6;">occupation</span> <span style="color: #80CBC4;">::</span> <span style="color: #E1BEE7;">forall</span> f_15 rs_16 <span style="color: #80CBC4;">.</span>
+              (<span style="color: #FFCC80;">Functor</span> f_15, <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">Occupation</span> rs_16 (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">Occupation</span> rs_16))
+           <span style="color: #80CBC4;">=&gt;</span> (<span style="color: #FFCC80;">Text</span> <span style="color: #80CBC4;">-&gt;</span> f_15 <span style="color: #FFCC80;">Text</span>)
+           <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Record</span> rs_16
+           <span style="color: #80CBC4;">-&gt;</span> f_15 (<span style="color: #FFCC80;">Record</span> rs_16)
+<span style="color: #64B5F6;">occupation</span> <span style="color: #80CBC4;">=</span> rlens <span style="color: #80CBC4;">@</span><span style="color: #FFCC80;">Occupation</span> <span style="color: #80CBC4;">.</span> rfield
+<span style="color: #64B5F6;">occupation'</span> <span style="color: #80CBC4;">::</span> <span style="color: #E1BEE7;">forall</span> f_17 g_18 rs_19 <span style="color: #80CBC4;">.</span>
+               (<span style="color: #FFCC80;">Functor</span> f_17, <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">Occupation</span> rs_19 (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">Occupation</span> rs_19))
+            <span style="color: #80CBC4;">=&gt;</span> (g_18 <span style="color: #FFCC80;">Occupation</span> <span style="color: #80CBC4;">-&gt;</span> f_17 (g_18 <span style="color: #FFCC80;">Occupation</span>))
+            <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Rec</span> g_18 rs_19
+            <span style="color: #80CBC4;">-&gt;</span> f_17 (<span style="color: #FFCC80;">Rec</span> g_18 rs_19)
+<span style="color: #64B5F6;">occupation'</span> <span style="color: #80CBC4;">=</span> rlens' <span style="color: #80CBC4;">@</span><span style="color: #FFCC80;">Occupation</span>
 
-  age <span style="color: #80CBC4;">::</span>
-    <span style="color: #E1BEE7;">forall</span> f_adkG rs_adkH<span style="color: #80CBC4;">.</span> (<span style="color: #FFCC80;">Functor</span> f_adkG,
-                            <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">Age</span> rs_adkH (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">Age</span> rs_adkH)) <span style="color: #80CBC4;">=&gt;</span>
-    (<span style="color: #FFCC80;">Int</span> <span style="color: #80CBC4;">-&gt;</span> f_adkG <span style="color: #FFCC80;">Int</span>) <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Record</span> rs_adkH <span style="color: #80CBC4;">-&gt;</span> f_adkG (<span style="color: #FFCC80;">Record</span> rs_adkH)
-  age <span style="color: #80CBC4;">=</span> rlens (<span style="color: #FFCC80;">Proxy</span> <span style="color: #80CBC4;">::</span> <span style="color: #FFCC80;">Proxy</span> <span style="color: #FFCC80;">Age</span>)
-
-  age' <span style="color: #80CBC4;">::</span>
-    <span style="color: #E1BEE7;">forall</span> g_adkI f_adkJ rs_adkK<span style="color: #80CBC4;">.</span> (<span style="color: #FFCC80;">Functor</span> f_adkJ,
-                                   <span style="color: #FFCC80;">Functor</span> g_adkI,
-                                   <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">Age</span> rs_adkK (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">Age</span> rs_adkK)) <span style="color: #80CBC4;">=&gt;</span>
-    (g_adkI <span style="color: #FFCC80;">Age</span> <span style="color: #80CBC4;">-&gt;</span> f_adkJ (g_adkI <span style="color: #FFCC80;">Age</span>))
-    <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Rec</span> g_adkI rs_adkK <span style="color: #80CBC4;">-&gt;</span> f_adkJ (<span style="color: #FFCC80;">Rec</span> g_adkI rs_adkK)
-  age' <span style="color: #80CBC4;">=</span> rlens' (<span style="color: #FFCC80;">Proxy</span> <span style="color: #80CBC4;">::</span> <span style="color: #FFCC80;">Proxy</span> <span style="color: #FFCC80;">Age</span>)
-
-  <span style="color: #E1BEE7;">type</span> <span style="color: #FFCC80;">Gender</span> <span style="color: #80CBC4;">=</span> <span style="color: #C5E1A5;">"gender"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Text</span>
-
-  gender <span style="color: #80CBC4;">::</span>
-    <span style="color: #E1BEE7;">forall</span> f_adkL rs_adkM<span style="color: #80CBC4;">.</span> (<span style="color: #FFCC80;">Functor</span> f_adkL,
-                            <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">Gender</span> rs_adkM (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">Gender</span> rs_adkM)) <span style="color: #80CBC4;">=&gt;</span>
-    (<span style="color: #FFCC80;">Text</span> <span style="color: #80CBC4;">-&gt;</span> f_adkL <span style="color: #FFCC80;">Text</span>) <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Record</span> rs_adkM <span style="color: #80CBC4;">-&gt;</span> f_adkL (<span style="color: #FFCC80;">Record</span> rs_adkM)
-  gender <span style="color: #80CBC4;">=</span> rlens (<span style="color: #FFCC80;">Proxy</span> <span style="color: #80CBC4;">::</span> <span style="color: #FFCC80;">Proxy</span> <span style="color: #FFCC80;">Gender</span>)
-
-  gender' <span style="color: #80CBC4;">::</span>
-    <span style="color: #E1BEE7;">forall</span> g_adkN f_adkO rs_adkP<span style="color: #80CBC4;">.</span> (<span style="color: #FFCC80;">Functor</span> f_adkO,
-                                   <span style="color: #FFCC80;">Functor</span> g_adkN,
-                                   <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">Gender</span> rs_adkP (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">Gender</span> rs_adkP)) <span style="color: #80CBC4;">=&gt;</span>
-    (g_adkN <span style="color: #FFCC80;">Gender</span> <span style="color: #80CBC4;">-&gt;</span> f_adkO (g_adkN <span style="color: #FFCC80;">Gender</span>))
-    <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Rec</span> g_adkN rs_adkP <span style="color: #80CBC4;">-&gt;</span> f_adkO (<span style="color: #FFCC80;">Rec</span> g_adkN rs_adkP)
-  gender' <span style="color: #80CBC4;">=</span> rlens' (<span style="color: #FFCC80;">Proxy</span> <span style="color: #80CBC4;">::</span> <span style="color: #FFCC80;">Proxy</span> <span style="color: #FFCC80;">Gender</span>)
-
-  <span style="color: #E1BEE7;">type</span> <span style="color: #FFCC80;">Occupation</span> <span style="color: #80CBC4;">=</span> <span style="color: #C5E1A5;">"occupation"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Text</span>
-
-  occupation <span style="color: #80CBC4;">::</span>
-    <span style="color: #E1BEE7;">forall</span> f_adkQ rs_adkR<span style="color: #80CBC4;">.</span> (<span style="color: #FFCC80;">Functor</span> f_adkQ,
-                            <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">Occupation</span> rs_adkR (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">Occupation</span> rs_adkR)) <span style="color: #80CBC4;">=&gt;</span>
-    (<span style="color: #FFCC80;">Text</span> <span style="color: #80CBC4;">-&gt;</span> f_adkQ <span style="color: #FFCC80;">Text</span>) <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Record</span> rs_adkR <span style="color: #80CBC4;">-&gt;</span> f_adkQ (<span style="color: #FFCC80;">Record</span> rs_adkR)
-  occupation <span style="color: #80CBC4;">=</span> rlens (<span style="color: #FFCC80;">Proxy</span> <span style="color: #80CBC4;">::</span> <span style="color: #FFCC80;">Proxy</span> <span style="color: #FFCC80;">Occupation</span>)
-
-  occupation' <span style="color: #80CBC4;">::</span>
-    <span style="color: #E1BEE7;">forall</span> g_adkS f_adkT rs_adkU<span style="color: #80CBC4;">.</span> (<span style="color: #FFCC80;">Functor</span> f_adkT,
-                                   <span style="color: #FFCC80;">Functor</span> g_adkS,
-                                   <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">Occupation</span> rs_adkU (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">Occupation</span> rs_adkU)) <span style="color: #80CBC4;">=&gt;</span>
-    (g_adkS <span style="color: #FFCC80;">Occupation</span> <span style="color: #80CBC4;">-&gt;</span> f_adkT (g_adkS <span style="color: #FFCC80;">Occupation</span>))
-    <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Rec</span> g_adkS rs_adkU <span style="color: #80CBC4;">-&gt;</span> f_adkT (<span style="color: #FFCC80;">Rec</span> g_adkS rs_adkU)
-  occupation' <span style="color: #80CBC4;">=</span> rlens' (<span style="color: #FFCC80;">Proxy</span> <span style="color: #80CBC4;">::</span> <span style="color: #FFCC80;">Proxy</span> <span style="color: #FFCC80;">Occupation</span>)
-
-  <span style="color: #E1BEE7;">type</span> <span style="color: #FFCC80;">ZipCode</span> <span style="color: #80CBC4;">=</span> <span style="color: #C5E1A5;">"zip code"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Text</span>
-
-  zipCode <span style="color: #80CBC4;">::</span>
-    <span style="color: #E1BEE7;">forall</span> f_adkV rs_adkW<span style="color: #80CBC4;">.</span> (<span style="color: #FFCC80;">Functor</span> f_adkV,
-                            <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">ZipCode</span> rs_adkW (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">ZipCode</span> rs_adkW)) <span style="color: #80CBC4;">=&gt;</span>
-    (<span style="color: #FFCC80;">Text</span> <span style="color: #80CBC4;">-&gt;</span> f_adkV <span style="color: #FFCC80;">Text</span>) <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Record</span> rs_adkW <span style="color: #80CBC4;">-&gt;</span> f_adkV (<span style="color: #FFCC80;">Record</span> rs_adkW)
-  zipCode <span style="color: #80CBC4;">=</span> rlens (<span style="color: #FFCC80;">Proxy</span> <span style="color: #80CBC4;">::</span> <span style="color: #FFCC80;">Proxy</span> <span style="color: #FFCC80;">ZipCode</span>)
-
-  zipCode' <span style="color: #80CBC4;">::</span>
-    <span style="color: #E1BEE7;">forall</span> g_adkX f_adkY rs_adkZ<span style="color: #80CBC4;">.</span> (<span style="color: #FFCC80;">Functor</span> f_adkY,
-                                   <span style="color: #FFCC80;">Functor</span> g_adkX,
-                                   <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">ZipCode</span> rs_adkZ (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">ZipCode</span> rs_adkZ)) <span style="color: #80CBC4;">=&gt;</span>
-    (g_adkX <span style="color: #FFCC80;">ZipCode</span> <span style="color: #80CBC4;">-&gt;</span> f_adkY (g_adkX <span style="color: #FFCC80;">ZipCode</span>))
-    <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Rec</span> g_adkX rs_adkZ <span style="color: #80CBC4;">-&gt;</span> f_adkY (<span style="color: #FFCC80;">Rec</span> g_adkX rs_adkZ)
-  zipCode' <span style="color: #80CBC4;">=</span> rlens' (<span style="color: #FFCC80;">Proxy</span> <span style="color: #80CBC4;">::</span> <span style="color: #FFCC80;">Proxy</span> <span style="color: #FFCC80;">ZipCode</span>)
+<span style="color: #E1BEE7;">type</span> <span style="color: #FFCC80;">ZipCode</span> <span style="color: #80CBC4;">=</span> <span style="color: #C5E1A5;">"zip code"</span> <span style="color: #FFCC80;">:-&gt;</span> <span style="color: #FFCC80;">Text</span>
+<span style="color: #64B5F6;">zipCode</span> <span style="color: #80CBC4;">::</span> <span style="color: #E1BEE7;">forall</span> f_20 rs_21 <span style="color: #80CBC4;">.</span>
+           (<span style="color: #FFCC80;">Functor</span> f_20, <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">ZipCode</span> rs_21 (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">ZipCode</span> rs_21))
+        <span style="color: #80CBC4;">=&gt;</span> (<span style="color: #FFCC80;">Text</span> <span style="color: #80CBC4;">-&gt;</span> f_20 <span style="color: #FFCC80;">Text</span>)
+        <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Record</span> rs_21
+        <span style="color: #80CBC4;">-&gt;</span> f_20 (<span style="color: #FFCC80;">Record</span> rs_21)
+<span style="color: #64B5F6;">zipCode</span> <span style="color: #80CBC4;">=</span> rlens <span style="color: #80CBC4;">@</span><span style="color: #FFCC80;">ZipCode</span> <span style="color: #80CBC4;">.</span> rfield
+<span style="color: #64B5F6;">zipCode'</span> <span style="color: #80CBC4;">::</span> <span style="color: #E1BEE7;">forall</span> f_22 g_23 rs_24 <span style="color: #80CBC4;">.</span>
+            (<span style="color: #FFCC80;">Functor</span> f_22, <span style="color: #FFCC80;">RElem</span> <span style="color: #FFCC80;">ZipCode</span> rs_24 (<span style="color: #FFCC80;">RIndex</span> <span style="color: #FFCC80;">ZipCode</span> rs_24))
+         <span style="color: #80CBC4;">=&gt;</span> (g_23 <span style="color: #FFCC80;">ZipCode</span> <span style="color: #80CBC4;">-&gt;</span> f_22 (g_23 <span style="color: #FFCC80;">ZipCode</span>))
+         <span style="color: #80CBC4;">-&gt;</span> <span style="color: #FFCC80;">Rec</span> g_23 rs_24
+         <span style="color: #80CBC4;">-&gt;</span> f_22 (<span style="color: #FFCC80;">Rec</span> g_23 rs_24)
+<span style="color: #64B5F6;">zipCode'</span> <span style="color: #80CBC4;">=</span> rlens' <span style="color: #80CBC4;">@</span><span style="color: #FFCC80;">ZipCode</span>
 </pre>
 </div>
 </div>
 </div>
 
-<div id="outline-container-orgeb933a6" class="outline-3">
-<h3 id="orgeb933a6"><span class="section-number-3">5.3</span> Thanks</h3>
+<div id="outline-container-org826e1f2" class="outline-3">
+<h3 id="org826e1f2"><span class="section-number-3">5.3</span> Thanks</h3>
 <div class="outline-text-3" id="text-5-3">
 <p>
 Thanks to Greg Hale and Ben Gamari for reviewing early drafts of this document.
