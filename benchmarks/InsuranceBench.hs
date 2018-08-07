@@ -24,12 +24,12 @@ data P a = P !a !a
 pipeBench :: IO (P Double)
 pipeBench = do (n,sumLat) <-
                  runSafeT $
-                 P.fold (\ !(!i, !s) r -> (i+1, s + rget @PointLatitude r))
+                 P.fold (\ !(!i, !s) r -> (i+1, s + rgetField @PointLatitude r))
                         (0::Int,0)
                         id
                         tbl
                sumLong <- runSafeT $
-                          P.fold (\s r -> (s + rget @PointLongitude r)) 0 id tbl
+                          P.fold (\s r -> (s + rgetField @PointLongitude r)) 0 id tbl
                return $! P (sumLat / fromIntegral n) (sumLong / fromIntegral n)
   where tbl = P.for tblP (P.yield . rcast) :: P.Producer TinyIns (SafeT IO) ()
 
@@ -39,12 +39,12 @@ pipeBenchInCore :: IO (P Double)
 pipeBenchInCore =
   do tbl <- inCore tblP :: IO (P.Producer Ins Identity ())
      let Identity (n,sumLat) =
-           P.fold (\ !(!i, !s) r -> (i+1, s+rget @PointLatitude r))
+           P.fold (\ !(!i, !s) r -> (i+1, s+rgetField @PointLatitude r))
                   (0::Int,0)
                   id
                   tbl
          Identity sumLong =
-           P.fold (\s r -> (s + rget @PointLongitude r)) 0 id tbl
+           P.fold (\s r -> (s + rgetField @PointLongitude r)) 0 id tbl
      return $! P (sumLat / fromIntegral n) (sumLong / fromIntegral n)
 
 -- | Perform two consecutive folds after first projecting a subset of
@@ -54,12 +54,12 @@ pipeBenchInCore' =
   do tbl <- inCore $ P.for tblP (P.yield . rcast)
          :: IO (P.Producer TinyIns Identity ())
      let Identity (n,sumLat) =
-           P.fold (\ !(!i, !s) r -> (i+1, s+rget @PointLatitude r))
+           P.fold (\ !(!i, !s) r -> (i+1, s+rgetField @PointLatitude r))
                   (0::Int,0)
                   id
                   tbl
          Identity sumLong =
-           P.fold (\s r -> (s + rget @PointLongitude r)) 0 id tbl
+           P.fold (\s r -> (s + rgetField @PointLongitude r)) 0 id tbl
      return $! P (sumLat / fromIntegral n) (sumLong / fromIntegral n)
 
 -- | Perform two consecutive folds after projecting a subset of an
@@ -67,11 +67,11 @@ pipeBenchInCore' =
 pipeBenchAoS :: IO (P Double)
 pipeBenchAoS = do tbl <- inCoreAoS' rcast tblP :: IO (Frame TinyIns)
                   let (n,sumLat) =
-                        F.foldl' (\ !(!i,!s) r -> (i+1, s+rget @PointLatitude r))
+                        F.foldl' (\ !(!i,!s) r -> (i+1, s+rgetField @PointLatitude r))
                                  (0::Int,0)
                                  tbl
                       sumLong =
-                        F.foldl' (\ !s r -> (s + rget @PointLongitude r)) 0 tbl
+                        F.foldl' (\ !s r -> (s + rgetField @PointLongitude r)) 0 tbl
                   return $! P (sumLat / fromIntegral n) (sumLong / fromIntegral n)
 
 main :: IO ()
