@@ -12,9 +12,9 @@ import qualified Pipes.Prelude as P
 -- listed as "NA".
 tableTypes "Row" "test/data/prestigePartial.csv"
 
--- | A pipes 'Producer' of our 'Row' type with a column functor
--- ('ColFun') of 'Maybe'. That is, each element of each row may have
--- failed to parse from the CSV file.
+-- | A pipes 'Producer' of our 'Row' type with a column functor of
+-- 'Maybe'. That is, each element of each row may have failed to parse
+-- from the CSV file.
 maybeRows :: MonadSafe m => Producer (Rec (Maybe :. ElField) (RecordColumns Row)) m ()
 maybeRows = readTableMaybe "test/data/prestigePartial.csv"
 
