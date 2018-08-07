@@ -2,7 +2,9 @@
 -- | A 'Frame' is a finite 'Int'-indexed collection of rows.
 module Frames.Frame where
 import Data.Foldable
+#if __GLASGOW_HASKELL__ < 804
 import Data.Semigroup
+#endif
 import qualified Data.Vector as V
 import Data.Vinyl.TypeLevel
 import Frames.Rec (Record)

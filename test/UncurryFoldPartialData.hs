@@ -2,7 +2,6 @@
 module UncurryFoldPartialData where
 import qualified Control.Foldl as L
 import Data.Maybe (isNothing)
-import Data.Vinyl (getField)
 import Data.Vinyl.XRec (toHKD)
 import Frames
 import Pipes (Producer, (>->))

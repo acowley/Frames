@@ -2,7 +2,7 @@
 module UncurryFold where
 import qualified Control.Foldl as L
 import Data.Vinyl (rcast)
-import Data.Vinyl.Curry (runcurryFields)
+import Data.Vinyl.Curry (runcurryX)
 import Frames
 
 -- Data set from http://vincentarelbundock.github.io/Rdatasets/datasets.html
@@ -14,7 +14,7 @@ loadRows = inCoreAoS (readTable "test/data/prestige.csv")
 -- | Compute the ratio of income to prestige for a record containing
 -- only those fields.
 ratio :: Record '[Income, Prestige] -> Double
-ratio = runcurryFields (\i p -> fromIntegral i / p)
+ratio = runcurryX (\i p -> fromIntegral i / p)
 
 averageRatio :: IO Double
 averageRatio = L.fold (L.premap (ratio . rcast) avg) <$> loadRows

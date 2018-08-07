@@ -2,7 +2,7 @@
 module UncurryFoldNoHeader where
 import qualified Control.Foldl as L
 import Data.Vinyl (rcast)
-import Data.Vinyl.Curry (runcurryFields)
+import Data.Vinyl.Curry (runcurryX)
 import Frames
 import Frames.CSV (rowGen, columnNames, tablePrefix, rowTypeName, readTableOpt)
 
@@ -19,7 +19,7 @@ loadRows = inCoreAoS (readTableOpt noHParser "test/data/prestigeNoHeader.csv")
 -- | Compute the ratio of money to respect for a record containing
 -- only those fields.
 ratio :: Record '[NoHeadMoney, NoHeadRespect] -> Double
-ratio = runcurryFields (\m r -> fromIntegral m / r)
+ratio = runcurryX (\m r -> fromIntegral m / r)
 
 averageRatio :: IO Double
 averageRatio = L.fold (L.premap (ratio . rcast) avg) <$> loadRows
