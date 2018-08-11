@@ -1,98 +1,82 @@
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE BangPatterns,
-             ConstraintKinds,
-             CPP,
-             DataKinds,
-             FlexibleContexts,
-             FlexibleInstances,
-             GADTs,
-             InstanceSigs,
-             KindSignatures,
-             LambdaCase,
-             MultiParamTypeClasses,
-             OverloadedStrings,
-             QuasiQuotes,
-             RankNTypes,
-             ScopedTypeVariables,
-             TemplateHaskell,
-             TypeFamilies,
-             TypeOperators,
-             UndecidableInstances #-}
+{-# LANGUAGE BangPatterns, CPP, ConstraintKinds, DataKinds,
+             FlexibleContexts, FlexibleInstances, GADTs, InstanceSigs,
+             KindSignatures, LambdaCase, MultiParamTypeClasses,
+             OverloadedStrings, QuasiQuotes, RankNTypes,
+             ScopedTypeVariables, TemplateHaskell, TypeApplications,
+             TypeFamilies, TypeOperators, UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
-module Frames.ColumnUniverse (CoRec, Columns, ColumnUniverse, CommonColumns,
-                              parsedTypeRep) where
-import Language.Haskell.TH
-#if __GLASGOW_HASKELL__ < 800
-import Data.Monoid
-#endif
-import Data.Proxy
+module Frames.ColumnUniverse (
+  CoRec, Columns, ColumnUniverse, ColInfo,
+  CommonColumns, CommonColumnsCat, parsedTypeRep
+) where
+import Data.Maybe (fromMaybe)
 import Data.Semigroup (Semigroup((<>)))
 import qualified Data.Text as T
-import Data.Typeable (Typeable, showsTypeRep, typeRep)
 import Data.Vinyl
 import Data.Vinyl.CoRec
 import Data.Vinyl.Functor
-import Data.Vinyl.TypeLevel (AllConstrained)
+import Data.Vinyl.TypeLevel (RIndex, NatToInt)
 import Frames.ColumnTypeable
-import Frames.RecF (reifyDict)
-import Data.Typeable (TypeRep)
-import Data.Maybe (fromMaybe)
-
--- * TypeRep Helpers
-
--- | A 'TypeRep' tagged with the type it is associated with.
-type Typed = Const TypeRep
-
-mkTyped :: forall a. Typeable a => Typed a
-mkTyped = Const (typeRep (Proxy::Proxy a))
-
-quoteType :: TypeRep -> Q Type
-quoteType x = do n <- lookupTypeName s
-                 case n of
-                   Just n' -> conT n'
-                   Nothing -> error $ "Type "++s++" isn't in scope"
-  where s = showsTypeRep x ""
-
--- * Parseable Proxy
+import Frames.Categorical
+import Language.Haskell.TH
 
 -- | Extract a function to test whether some value of a given type
 -- could be read from some 'T.Text'.
-inferParseable :: forall a. Parseable a
-               => T.Text -> (Maybe :. (Parsed :. Proxy)) a
-inferParseable = Compose
-               . fmap (Compose . fmap (const Proxy))
-               . (parse :: T.Text -> Maybe (Parsed a))
+inferParseable :: Parseable a => T.Text -> (Maybe :. Parsed) a
+inferParseable = Compose . parse
 
 -- | Helper to call 'inferParseable' on variants of a 'CoRec'.
-inferParseable' :: Parseable a
-                => (((->) T.Text) :. (Maybe :. (Parsed :. Proxy))) a
+inferParseable' :: Parseable a => (((->) T.Text) :. (Maybe :. Parsed)) a
 inferParseable' = Compose inferParseable
 
 -- * Record Helpers
 
-tryParseAll :: forall ts. (RecApplicative ts, AllConstrained Parseable ts)
-            => T.Text -> Rec (Maybe :. (Parsed :. Proxy)) ts
+tryParseAll :: forall ts. (RecApplicative ts, RPureConstrained Parseable ts)
+            => T.Text -> Rec (Maybe :. Parsed) ts
 tryParseAll = rtraverse getCompose funs
-  where funs :: Rec (((->) T.Text) :. (Maybe :. (Parsed :. Proxy))) ts
-        funs = reifyDict @Parseable inferParseable'
-
--- | Preserving the outermost two functor layers, replace each element with
--- its TypeRep.
-elementTypes :: (Functor f, Functor g, AllConstrained Typeable ts)
-             => Rec (f :. (g :. h)) ts -> Rec (f :. (g :. Typed)) ts
-elementTypes RNil = RNil
-elementTypes (Compose x :& xs) =
-    Compose (fmap (Compose . fmap (const mkTyped) . getCompose) x)
-    :& elementTypes xs
+  where funs :: Rec (((->) T.Text) :. (Maybe :. Parsed)) ts
+        funs = rpureConstrained @Parseable inferParseable'
 
 -- * Column Type Inference
 
 -- | Information necessary for synthesizing row types and comparing
 -- types.
-newtype ColInfo a = ColInfo (Q Type, Parsed (Typed a))
+newtype ColInfo a = ColInfo (Either (String -> [Dec]) Type, Parsed a)
+instance Show a => Show (ColInfo a) where
+  show (ColInfo (t,p)) = "(ColInfo {"
+                         ++ either (const "cat") show t
+                         ++ ", "
+                         ++ show (discardConfidence p) ++"})"
 
-parsedTypeRep :: ColInfo a -> Parsed TypeRep
-parsedTypeRep (ColInfo (_,p)) = fmap getConst p
+parsedToColInfo :: Parseable a => Parsed a -> ColInfo a
+parsedToColInfo x = case getConst rep of
+                      Left dec -> ColInfo (Left dec, x)
+                      Right ty ->
+                        ColInfo (Right ty, x)
+  where rep = representableAsType x
+
+parsedTypeRep :: ColInfo a -> Parsed Type
+parsedTypeRep (ColInfo (t,p)) =
+  const (either (const (ConT (mkName "Categorical"))) id t) <$> p
+
+-- | Map 'Type's we know about (with a special treatment of
+-- synthesized types for categorical variables) to 'Int's for ordering
+-- purposes.
+orderParsePriorities :: Parsed (Maybe Type) -> Maybe Int
+orderParsePriorities x =
+  case discardConfidence x of
+    Nothing -> Just 1 -- categorical variable
+    Just t
+      | t == tyText -> Just (0 + uncertainty)
+      | t == tyDbl -> Just (2 + uncertainty)
+      | t == tyInt -> Just (3 + uncertainty)
+      | t == tyBool -> Just (4 + uncertainty)
+      | otherwise -> Nothing
+  where tyText = ConT (mkName "Text")
+        tyDbl = ConT (mkName "Double")
+        tyInt = ConT (mkName "Int")
+        tyBool = ConT (mkName "Bool")
+        uncertainty = case x of Definitely _ -> 0; Possibly _ -> 5
 
 -- | We use a join semi-lattice on types for representations. The
 -- bottom of the lattice is effectively an error (we have nothing to
@@ -107,44 +91,39 @@ parsedTypeRep (ColInfo (_,p)) = fmap getConst p
 -- made here are described in the previous paragraph. If there is no
 -- defaulting rule, we give up (i.e. use 'T.Text' as a
 -- representation).
-lubTypeReps :: Parsed TypeRep -> Parsed TypeRep -> Maybe Ordering
-lubTypeReps (Possibly _) (Definitely _) = Just LT
-lubTypeReps (Definitely _) (Possibly _) = Just GT
-lubTypeReps (Possibly trX) (Possibly trY)
-  | trX == trY = Just EQ
-  | otherwise = Nothing
-lubTypeReps (Definitely trX) (Definitely trY)
-  | trX == trY = Just EQ
-  | trX == trText = Just GT
-  | trY == trText = Just LT
-  | trX == trInt  && trY == trDbl = Just LT
-  | trX == trDbl  && trY == trInt = Just GT
-  | trX == trBool && trY == trInt = Just LT
-  | trX == trInt  && trY == trBool = Just GT
-  | trX == trBool && trY == trDbl = Just LT
-  | trX == trDbl  && trY == trBool = Just GT
-  | otherwise = Nothing
-  where trInt = typeRep (Proxy :: Proxy Int)
-        trDbl = typeRep (Proxy :: Proxy Double)
-        trBool = typeRep (Proxy :: Proxy Bool)
-        trText = typeRep (Proxy :: Proxy T.Text)
+lubTypes :: Parsed (Maybe Type) -> Parsed (Maybe Type) -> Maybe Ordering
+lubTypes x y = compare <$> orderParsePriorities y <*> orderParsePriorities x
 
-instance (T.Text ∈ ts) => Monoid (CoRec ColInfo ts) where
-  mempty = CoRec (ColInfo ([t|T.Text|], Possibly mkTyped) :: ColInfo T.Text)
-  mappend x@(CoRec (ColInfo (_, trX))) y@(CoRec (ColInfo (_, trY))) =
-      case lubTypeReps (fmap getConst trX) (fmap getConst trY) of
-        Just GT -> x
-        Just LT -> y
-        Just EQ -> x
-        Nothing -> mempty
+instance (T.Text ∈ ts, RPureConstrained Parseable ts) => Monoid (CoRec ColInfo ts) where
+  mempty = CoRec (ColInfo ( Right (ConT (mkName "Text")), Possibly T.empty))
+  mappend x y = x <> y
 
-instance (T.Text ∈ ts) => Semigroup (CoRec ColInfo ts) where
-  x@(CoRec (ColInfo (_, trX))) <> y@(CoRec (ColInfo (_, trY))) =
-    case lubTypeReps (fmap getConst trX) (fmap getConst trY) of
+-- | A helper For the 'Semigroup' instance below.
+mergeEqTypeParses :: forall ts. (RPureConstrained Parseable ts, T.Text ∈ ts)
+                  => CoRec ColInfo ts -> CoRec ColInfo ts -> CoRec ColInfo ts
+mergeEqTypeParses x@(CoRec _) y = fromMaybe definitelyText
+                                $ coRecTraverse getCompose
+                                                (coRecMapC @Parseable aux x)
+  where definitelyText = CoRec (ColInfo (Right (ConT (mkName "Text")), Definitely T.empty))
+        aux :: forall a. (Parseable a, NatToInt (RIndex a ts))
+            => ColInfo a -> (Maybe :. ColInfo) a
+        aux (ColInfo (_, pX)) =
+          case asA' @a y of
+            Nothing -> Compose Nothing
+            Just (ColInfo (_, pY)) ->
+              maybe (Compose Nothing)
+                    (Compose . Just . parsedToColInfo)
+                    (parseCombine pX pY)
+
+instance (T.Text ∈ ts, RPureConstrained Parseable ts)
+  => Semigroup (CoRec ColInfo ts) where
+  x@(CoRec (ColInfo (tyX, pX))) <> y@(CoRec (ColInfo (tyY, pY))) =
+    case lubTypes (const (either (const Nothing) Just tyX) <$> pX)
+                  (const (either (const Nothing) Just tyY) <$> pY) of
       Just GT -> x
       Just LT -> y
-      Just EQ -> x
-      Nothing -> CoRec (ColInfo ([t|T.Text|], Possibly mkTyped) :: ColInfo T.Text)
+      Just EQ -> mergeEqTypeParses x y
+      Nothing -> mempty
 
 -- | Find the best (i.e. smallest) 'CoRec' variant to represent a
 -- parsed value. For inspection in GHCi after loading this module,
@@ -156,26 +135,20 @@ instance (T.Text ∈ ts) => Semigroup (CoRec ColInfo ts) where
 -- >>> foldCoRec parsedTypeRep (bestRep @CommonColumns "2.3")
 -- Definitely Double
 bestRep :: forall ts.
-           (AllConstrained Parseable ts, AllConstrained Typeable ts, FoldRec ts ts,
+           (RPureConstrained Parseable ts,
+            FoldRec ts ts,
             RecApplicative ts, T.Text ∈ ts)
         => T.Text -> CoRec ColInfo ts
 bestRep t
-  | T.null t || t == "NA" =
-    aux (CoRec (Compose (Possibly (mkTyped :: Typed T.Text))))
-  | otherwise = aux
-              . fromMaybe (CoRec (Compose $ Possibly (mkTyped :: Typed T.Text)))
+  | T.null t || t == "NA" = (CoRec (parsedToColInfo (Possibly T.empty)))
+  | otherwise = coRecMapC @Parseable parsedToColInfo
+              . fromMaybe (CoRec (Possibly T.empty :: Parsed T.Text))
               . firstField
-              . elementTypes
-              . (tryParseAll :: T.Text -> Rec (Maybe :. (Parsed :. Proxy)) ts)
+              . (tryParseAll :: T.Text -> Rec (Maybe :. Parsed) ts)
               $ t
-  where aux :: CoRec (Parsed :. Typed) ts -> CoRec ColInfo ts
-        aux (CoRec (Compose d@(Possibly (Const tr)))) =
-          CoRec (ColInfo (quoteType tr, d))
-        aux (CoRec (Compose d@(Definitely (Const tr)))) =
-          CoRec (ColInfo (quoteType tr, d))
 {-# INLINABLE bestRep #-}
 
-instance (AllConstrained Parseable ts, AllConstrained Typeable ts, FoldRec ts ts,
+instance (RPureConstrained Parseable ts, FoldRec ts ts,
           RecApplicative ts, T.Text ∈ ts) =>
     ColumnTypeable (CoRec ColInfo ts) where
   colType (CoRec (ColInfo (t, _))) = t
@@ -183,10 +156,17 @@ instance (AllConstrained Parseable ts, AllConstrained Typeable ts, FoldRec ts ts
   inferType = bestRep
   {-# INLINABLE inferType #-}
 
+instance forall ts. (RPureConstrained Show ts, RecApplicative ts)
+  => Show (CoRec ColInfo ts) where
+  show x = "(Col " ++ onCoRec @Show show x ++")"
+
 -- * Common Columns
 
--- | Common column types
+-- | Common column types: 'Bool', 'Int', 'Double', 'T.Text'
 type CommonColumns = [Bool, Int, Double, T.Text]
+
+-- | Common column types including categorical types.
+type CommonColumnsCat = [Bool, Int, Double, Categorical 8, T.Text]
 
 -- | Define a set of variants that captures all possible column types.
 type ColumnUniverse = CoRec ColInfo

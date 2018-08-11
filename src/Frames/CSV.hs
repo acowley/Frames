@@ -1,10 +1,8 @@
-{-# LANGUAGE FlexibleContexts #-}
-{-# LANGUAGE TypeApplications #-}
-{-# LANGUAGE BangPatterns, CPP, DataKinds, FlexibleInstances,
-             KindSignatures, LambdaCase, MultiParamTypeClasses,
-             OverloadedStrings, QuasiQuotes, RankNTypes,
-             RecordWildCards, ScopedTypeVariables, TemplateHaskell,
-             TypeOperators #-}
+{-# LANGUAGE BangPatterns, CPP, DataKinds, FlexibleContexts,
+             FlexibleInstances, KindSignatures, LambdaCase,
+             MultiParamTypeClasses, OverloadedStrings, QuasiQuotes,
+             RankNTypes, RecordWildCards, ScopedTypeVariables,
+             TemplateHaskell, TypeApplications, TypeOperators #-}
 -- | Infer row types from comma-separated values (CSV) data and read
 -- that data from files. Template Haskell is used to generate the
 -- necessary types so that you can write type safe programs referring
@@ -322,11 +320,11 @@ pipeTable = pipeTableOpt defaultParser
 -- * Template Haskell
 
 -- | Generate a column type.
-recDec :: [(T.Text, Q Type)] -> Q Type
+recDec :: [Type] -> Q Type
 recDec = appT [t|Record|] . go
   where go [] = return PromotedNilT
-        go ((n,t):cs) =
-          [t|($(litT $ strTyLit (T.unpack n)) :-> $(t)) ': $(go cs) |]
+        go (t:cs) =
+          [t|$(pure t) ': $(go cs) |]
 
 
 -- | Capitalize the first letter of a 'T.Text'.
@@ -349,19 +347,18 @@ sanitizeTypeName = unreserved . fixupStart
                                     | otherwise -> "Col" <> t
 
 -- | Declare a type synonym for a column.
-mkColTDec :: TypeQ -> Name -> DecQ
-mkColTDec colTypeQ colTName = tySynD colTName [] colTypeQ
+mkColSynDec :: TypeQ -> Name -> DecQ
+mkColSynDec colTypeQ colTName = tySynD colTName [] colTypeQ
 
--- | Declare a singleton value of the given column type and lenses for
--- working with that column.
-mkColPDec :: Name -> TypeQ -> T.Text -> DecsQ
-mkColPDec colTName colTy colPName = sequenceA [tySig, val, tySig', val']
+-- | Declare lenses for working with a column.
+mkColLensDec :: Name -> Type -> T.Text -> DecsQ
+mkColLensDec colTName colTy colPName = sequenceA [tySig, val, tySig', val']
   where nm = mkName $ T.unpack colPName
         nm' = mkName $ T.unpack colPName <> "'"
         -- tySig = sigD nm [t|Proxy $(conT colTName)|]
         tySig = sigD nm [t|forall f rs. (Functor f,
                             RElem $(conT colTName) rs (RIndex $(conT colTName) rs))
-                         => ($colTy -> f $colTy)
+                         => ($(pure colTy) -> f $(pure colTy))
                          -> Record rs
                          -> f (Record rs)
                          |]
@@ -384,28 +381,30 @@ lowerHead = fmap aux . T.uncons
 
 -- | For each column, we declare a type synonym for its type, and a
 -- Proxy value of that type.
-colDec :: ColumnTypeable a => T.Text -> T.Text -> a -> DecsQ
-colDec prefix colName colTy = (:) <$> mkColTDec colTypeQ colTName'
-                                  <*> mkColPDec colTName' colTyQ colPName
+colDec :: T.Text -> String -> T.Text -> (Either (String -> [Dec]) Type) -> Q (Type, [Dec])
+colDec prefix rowName colName colTypeGen = do
+  syn <- mkColSynDec colTypeQ colTName'
+  lenses <- mkColLensDec colTName' colTy colPName
+  return (ConT colTName', syn : extraDecs ++ lenses)
   where colTName = sanitizeTypeName (prefix <> capitalize1 colName)
         colPName = fromMaybe "colDec impossible" (lowerHead colTName)
         colTName' = mkName $ T.unpack colTName
-        colTyQ = colType colTy
-        colTypeQ = [t|$(litT . strTyLit $ T.unpack colName) :-> $colTyQ|]
+        colDecsHelper f = let qualName = rowName ++ T.unpack (capitalize1 colName)
+                          in (ConT (mkName qualName), f qualName)
+        (colTy, extraDecs) = either colDecsHelper (\x -> (x,[])) colTypeGen
+        colTypeQ = [t|$(litT . strTyLit $ T.unpack colName) :-> $(return colTy)|]
 
 -- | Splice for manually declaring a column of a given type. For
 -- example, @declareColumn "x2" ''Double@ will declare a type synonym
 -- @type X2 = "x2" :-> Double@ and a lens @x2@.
 declareColumn :: T.Text -> Name -> DecsQ
-declareColumn colName colTy = (:) <$> mkColTDec colTypeQ colTName'
-                                  <*> mkColPDec colTName' colTyQ colPName
+declareColumn colName colTypeName = (:) <$> mkColSynDec colTypeQ colTName'
+                                        <*> mkColLensDec colTName' colTy colPName
   where colTName = sanitizeTypeName colName
-        colPName = maybe "colDec impossible"
-                         (\(c,t) -> T.cons (toLower c) t)
-                         (T.uncons colTName)
+        colPName = fromMaybe "colDec impossible" (lowerHead colTName)
         colTName' = mkName $ T.unpack colTName
-        colTyQ = return (ConT colTy)
-        colTypeQ = [t|$(litT . strTyLit $ T.unpack colName) :-> $colTyQ|]
+        colTy = ConT colTypeName
+        colTypeQ = [t|$(litT . strTyLit $ T.unpack colName) :-> $(return colTy)|]
 
 -- * Default CSV Parsing
 
@@ -443,6 +442,11 @@ colQ n = [e| (Proxy :: Proxy (ColumnUniverse $(conT n))) |]
 -- set of types, and produce a row type with name @Row@.
 rowGen :: FilePath -> RowGen Columns
 rowGen = RowGen [] "" defaultSep "Row" Proxy . produceTextLines
+
+-- | Like 'rowGen', but will also generate custom data types for
+-- 'Categorical' variables with up to 8 distinct variants.
+rowGenCat :: FilePath -> RowGen (ColumnUniverse CommonColumnsCat)
+rowGenCat = RowGen [] "" defaultSep "Row" Proxy . produceTextLines
 
 -- -- | Generate a type for each row of a table. This will be something
 -- -- like @Record ["x" :-> a, "y" :-> b, "z" :-> c]@.
@@ -491,56 +495,60 @@ tableTypesText' (RowGen {..}) =
                  maybe (colNamesP opts lineReader)
                        pure
                        (headerOverride opts)
-     let headers = zip colNames (repeat (inferType " "))
-     recTy <- tySynD (mkName rowTypeName) [] (recDec' headers)
+     let headers = zip colNames (repeat (ConT ''T.Text))
+     (colTypes, colDecs) <- (second concat . unzip)
+                            <$> mapM (uncurry mkColDecs) headers
+     recTy <- tySynD (mkName rowTypeName) [] (recDec colTypes)
      let optsName = case rowTypeName of
                       [] -> error "Row type name shouldn't be empty"
                       h:t -> mkName $ toLower h : t ++ "Parser"
      optsTy <- sigD optsName [t|ParserOptions|]
      optsDec <- valD (varP optsName) (normalB $ lift opts) []
-     colDecs <- concat <$> mapM (uncurry mkColDecs) headers
+
      return (recTy : optsTy : optsDec : colDecs)
-  where recDec' = recDec . map (second colType) :: [(T.Text, a)] -> Q Type
-        colNames' | null columnNames = Nothing
+  where colNames' | null columnNames = Nothing
                   | otherwise = Just (map T.pack columnNames)
         opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
         mkColDecs colNm colTy = do
-          let safeName = tablePrefix ++ (T.unpack . sanitizeTypeName $ colNm)
-          mColNm <- lookupTypeName safeName
+          let safeName = T.unpack (sanitizeTypeName colNm)
+          mColNm <- lookupTypeName (tablePrefix ++ safeName)
           case mColNm of
-            Just _ -> pure []
-            Nothing -> colDec (T.pack tablePrefix) colNm colTy
+            Just n -> pure (ConT n, [])
+            Nothing -> colDec (T.pack tablePrefix) rowTypeName colNm (Right colTy)
 
--- | Like 'tableType'', but additionally generates a type synonym for
--- each column, and a proxy value of that type. If the CSV file has
--- column names \"foo\", \"bar\", and \"baz\", then this will declare
--- @type Foo = "foo" :-> Int@, for example, @foo = rlens \@Foo@, and
--- @foo' = rlens' \@Foo@.
-tableTypes' :: forall a. (ColumnTypeable a, Monoid a)
+-- | Generate a type for a row of a table. This will be something like
+-- @Record ["x" :-> a, "y" :-> b, "z" :-> c]@. Additionally generates
+-- a type synonym for each column, and a proxy value of that type. If
+-- the CSV file has column names \"foo\", \"bar\", and \"baz\", then
+-- this will declare @type Foo = "foo" :-> Int@, for example, @foo =
+-- rlens \@Foo@, and @foo' = rlens' \@Foo@.
+tableTypes' :: forall a. (Show a, ColumnTypeable a, Monoid a)
             => RowGen a -> DecsQ
 tableTypes' (RowGen {..}) =
-  do headers <- runIO . P.runSafeT $ readColHeaders opts lineSource
-     recTy <- tySynD (mkName rowTypeName) [] (recDec' headers)
+  do headers <- runIO . P.runSafeT $ readColHeaders opts lineSource :: Q [(T.Text, a)]
+     (colTypes, colDecs) <- (second concat . unzip)
+                            <$> mapM (uncurry mkColDecs)
+                                     (map (second colType) headers)
+     recTy <- tySynD (mkName rowTypeName) [] (recDec colTypes)
      let optsName = case rowTypeName of
                       [] -> error "Row type name shouldn't be empty"
                       h:t -> mkName $ toLower h : t ++ "Parser"
      optsTy <- sigD optsName [t|ParserOptions|]
      optsDec <- valD (varP optsName) (normalB $ lift opts) []
-     colDecs <- concat <$> mapM (uncurry mkColDecs) headers
      return (recTy : optsTy : optsDec : colDecs)
      -- (:) <$> (tySynD (mkName n) [] (recDec' headers))
      --     <*> (concat <$> mapM (uncurry $ colDec (T.pack prefix)) headers)
-  where recDec' = recDec . map (second colType) :: [(T.Text, a)] -> Q Type
-        colNames' | null columnNames = Nothing
+  where colNames' | null columnNames = Nothing
                   | otherwise = Just (map T.pack columnNames)
         opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
         lineSource = lineReader >-> P.take prefixSize
+        mkColDecs :: T.Text -> Either (String -> [Dec]) Type -> Q (Type, [Dec])
         mkColDecs colNm colTy = do
           let safeName = tablePrefix ++ (T.unpack . sanitizeTypeName $ colNm)
           mColNm <- lookupTypeName safeName
           case mColNm of
-            Just _ -> pure []
-            Nothing -> colDec (T.pack tablePrefix) colNm colTy
+            Just n -> pure (ConT n, []) -- Column's type was already defined
+            Nothing -> colDec (T.pack tablePrefix) rowTypeName colNm colTy
 
 -- * Writing CSV Data
 

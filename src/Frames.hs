@@ -4,7 +4,8 @@
 -- files. The type of each row of data is inferred from data, which
 -- can then be streamed from disk, or worked with in memory.
 module Frames
-  ( module Data.Vinyl
+  ( module Data.Readable
+  , module Data.Vinyl
   , module Data.Vinyl.CoRec
   , module Data.Vinyl.Derived
   , module Data.Vinyl.Functor
@@ -27,6 +28,7 @@ module Frames
   ) where
 import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Primitive
+import Data.Readable (Readable(..))
 import Data.Text (Text)
 import Data.Vinyl ((<+>), Rec, rcast, rsubset, ElField)
 import Data.Vinyl.CoRec (Field, onField, onCoRec)

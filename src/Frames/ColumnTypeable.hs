@@ -1,12 +1,19 @@
-{-# LANGUAGE BangPatterns, DefaultSignatures, LambdaCase #-}
+{-# LANGUAGE BangPatterns, DefaultSignatures, LambdaCase,
+             ScopedTypeVariables #-}
 module Frames.ColumnTypeable where
 import Control.Monad (MonadPlus)
 import Data.Maybe (fromMaybe)
 import Data.Readable (Readable(fromText))
+import Data.Typeable (Proxy(..), typeRep, Typeable)
 import qualified Data.Text as T
+import Data.Vinyl.Functor (Const(..))
 import Language.Haskell.TH
 
 data Parsed a = Possibly a | Definitely a deriving (Eq, Ord, Show)
+
+parsedValue :: Parsed a -> a
+parsedValue (Possibly a) = a
+parsedValue (Definitely a) = a
 
 instance Functor Parsed where
   fmap f (Possibly x) = Possibly (f x)
@@ -24,6 +31,22 @@ class Parseable a where
                 => T.Text -> m (Parsed a)
   parse = fmap Definitely . fromText
   {-# INLINE parse #-}
+
+  -- | Combine two parse results such that the combination can
+  -- fail. Useful when we have two 'Possibly' parsed values that are
+  -- different enough to suggest the parse of each should be
+  -- considered a failure. The default implementation is to 'return'
+  -- the first argument.
+  parseCombine :: MonadPlus m => Parsed a -> Parsed a -> m (Parsed a)
+  default parseCombine :: MonadPlus m => Parsed a -> Parsed a -> m (Parsed a)
+  parseCombine = const . return
+
+  representableAsType :: Parsed a -> Const (Either (String -> [Dec]) Type) a
+  default
+    representableAsType :: Typeable a
+                        => Parsed a -> Const (Either (String -> [Dec]) Type) a
+  representableAsType =
+    const (Const (Right (ConT (mkName (show (typeRep (Proxy :: Proxy a)))))))
 
 -- | Discard any estimate of a parse's ambiguity.
 discardConfidence :: Parsed a -> a
@@ -50,5 +73,5 @@ instance Parseable T.Text where
 -- types, and provides a mechanism to infer which type best represents
 -- some textual data.
 class ColumnTypeable a where
-  colType :: a -> Q Type
+  colType :: a -> Either (String -> [Dec]) Type
   inferType :: T.Text -> a

@@ -27,11 +27,11 @@ module Frames.RecF (V.rappend, V.rtraverse, rdel, CanDelete,
                     -- ShowRec,
                     -- showRec,
                     ColFun, ColumnHeaders,
-                    columnHeaders, reifyDict) where
+                    columnHeaders) where
 -- import Data.List (intercalate)
 import Data.Proxy
 import qualified Data.Vinyl as V
-import Data.Vinyl (Rec(..), RecApplicative(rpure))
+import Data.Vinyl (Rec(..))
 import Data.Vinyl.Derived (StripFieldNames(..), Unlabeled)
 import Data.Vinyl.Functor ((:.))
 import Data.Vinyl.TypeLevel
@@ -121,12 +121,3 @@ type CanDelete r rs = (V.RElem r rs (RIndex r rs), RDelete r rs V.⊆ rs)
 -- | Delete a field from a record
 rdel :: CanDelete r rs => Rec f rs -> Rec f (RDelete r rs)
 rdel = V.rcast
-
--- | Build a record whose elements are derived solely from a
--- constraint satisfied by each.
-reifyDict :: forall c f ts. (AllConstrained c ts, RecApplicative ts)
-          => (forall a. c a => f a) -> Rec f ts
-reifyDict f = go (rpure Proxy)
-  where go :: AllConstrained c ts' => Rec Proxy ts' -> Rec f ts'
-        go RNil = RNil
-        go (_ V.:& xs) = f V.:& go xs

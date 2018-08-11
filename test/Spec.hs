@@ -23,6 +23,7 @@ import Test.HUnit.Lang (assertFailure)
 import qualified LatinTest as Latin
 import qualified Issue114 as Issue114
 import qualified NoHeader
+import qualified Categorical
 
 import qualified UncurryFold
 import qualified UncurryFoldNoHeader
@@ -178,3 +179,10 @@ main = do
            n `shouldBe` 4
          it "Computed the average income correctly" $
            avg `shouldBe` 3344.5
+       describe "Can generate categorical types" $ do
+         mSmall <- H.runIO Categorical.fifthMonthSmall
+         it "Generates enumerated types for small cardinality sets" $
+           mSmall `shouldBe` Just Categorical.SmallMonthMay
+         mLarge <- H.runIO Categorical.fifthMonthLarge
+         it "Falls back to Text when the number of variants grows" $
+           mLarge `shouldBe` Just (T.pack "May")
