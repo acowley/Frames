@@ -444,10 +444,10 @@ colQ n = [e| (Proxy :: Proxy (ColumnUniverse $(conT n))) |]
 rowGen :: FilePath -> RowGen Columns
 rowGen = RowGen [] "" defaultSep "Row" Proxy . produceTextLines
 
--- | Generate a type for each row of a table. This will be something
--- like @Record ["x" :-> a, "y" :-> b, "z" :-> c]@.
-tableType :: String -> FilePath -> DecsQ
-tableType n fp = tableType' (rowGen fp) { rowTypeName = n }
+-- -- | Generate a type for each row of a table. This will be something
+-- -- like @Record ["x" :-> a, "y" :-> b, "z" :-> c]@.
+-- tableType :: String -> FilePath -> DecsQ
+-- tableType n fp = tableType' (rowGen fp) { rowTypeName = n }
 
 -- | Like 'tableType', but additionally generates a type synonym for
 -- each column, and a proxy value of that type. If the CSV file has
@@ -466,16 +466,16 @@ prefixSize = 1000
 -- | Generate a type for a row of a table. This will be something like
 -- @Record ["x" :-> a, "y" :-> b, "z" :-> c]@.  Column type synonyms
 -- are /not/ generated (see 'tableTypes'').
-tableType' :: forall a. (ColumnTypeable a, Monoid a)
-           => RowGen a -> DecsQ
-tableType' (RowGen {..}) =
-    pure . TySynD (mkName rowTypeName) [] <$>
-    (runIO (P.runSafeT (readColHeaders opts lineSource)) >>= recDec')
-  where recDec' = recDec . map (second colType) :: [(T.Text, a)] -> Q Type
-        colNames' | null columnNames = Nothing
-                  | otherwise = Just (map T.pack columnNames)
-        opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
-        lineSource = lineReader >-> P.take prefixSize
+-- tableType' :: forall a. (ColumnTypeable a, Monoid a)
+--            => RowGen a -> DecsQ
+-- tableType' (RowGen {..}) =
+--     pure . TySynD (mkName rowTypeName) [] <$>
+--     (runIO (P.runSafeT (readColHeaders opts lineSource)) >>= recDec')
+--   where recDec' = recDec . map (second colType) :: [(T.Text, a)] -> Q Type
+--         colNames' | null columnNames = Nothing
+--                   | otherwise = Just (map T.pack columnNames)
+--         opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
+--         lineSource = lineReader >-> P.take prefixSize
 
 -- | Tokenize the first line of a ’P.Producer’.
 colNamesP :: Monad m

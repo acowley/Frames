@@ -39,7 +39,7 @@ import Frames.Col ((:->), pattern Col)
 import Frames.ColumnUniverse
 import Frames.CSV (readTable, readTableMaybe, declareColumn,
                    pipeTable, pipeTableMaybe,
-                   tableType, tableTypes, tableType', tableTypes')
+                   tableTypes, tableTypes')
 import Frames.Exploration
 import Frames.Frame
 import qualified Frames.InCore as I
