@@ -1,5 +1,5 @@
 {-# LANGUAGE BangPatterns, CPP, DataKinds, FlexibleContexts,
-             FlexibleInstances, KindSignatures, LambdaCase,
+             FlexibleInstances, GADTs, KindSignatures, LambdaCase,
              MultiParamTypeClasses, OverloadedStrings, QuasiQuotes,
              RankNTypes, RecordWildCards, ScopedTypeVariables,
              TemplateHaskell, TypeApplications, TypeOperators #-}
@@ -21,14 +21,17 @@ import Data.Proxy
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
 import qualified Data.Text.IO as T
-import Data.Vinyl (RecMapMethod, rmap, RElem, Rec(..), ElField(..), RecordToList, RMap)
+import Data.Vinyl (recordToList, RElem, Rec(..), ElField(..), RecordToList)
+import Data.Vinyl (RecMapMethod, rmapMethod, RMap, rmap)
+import Data.Vinyl.Class.Method (PayloadType)
 import Data.Vinyl.TypeLevel (RIndex)
-import Data.Vinyl.Functor ((:.), Compose(..))
+import Data.Vinyl.Functor (Const(..), (:.), Compose(..))
 import Frames.Col
 import Frames.ColumnTypeable
 import Frames.ColumnUniverse
 import Frames.Rec
 import Frames.RecF
+import Frames.ShowCSV
 import GHC.TypeLits (KnownSymbol, Symbol)
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
@@ -552,17 +555,24 @@ tableTypes' (RowGen {..}) =
 
 -- * Writing CSV Data
 
+showFieldsCSV :: (RecMapMethod ShowCSV ElField ts, RecordToList ts)
+              => Record ts -> [T.Text]
+showFieldsCSV = recordToList . rmapMethod @ShowCSV aux
+  where aux :: (ShowCSV (PayloadType ElField a))
+            => ElField a -> Const T.Text a
+        aux (Field x) = Const (showCSV x)
+
 -- | 'P.yield' a header row with column names followed by a line of
 -- text for each 'Record' with each field separated by a comma. If
 -- your source of 'Record' values is a 'P.Producer', consider using
 -- 'pipeToCSV' to keep everything streaming.
 produceCSV :: forall f ts m.
               (ColumnHeaders ts, Foldable f, Monad m, RecordToList ts,
-              RecMapMethod Show ElField ts)
+              RecMapMethod ShowCSV ElField ts)
            => f (Record ts) -> P.Producer String m ()
 produceCSV recs = do
   P.yield (intercalate "," (columnHeaders (Proxy :: Proxy (Record ts))))
-  F.mapM_ (P.yield . intercalate "," . showFields) recs
+  F.mapM_ (P.yield . T.unpack . T.intercalate "," . showFieldsCSV) recs
 
 -- | 'P.yield' a header row with column names followed by a line of
 -- text for each 'Record' with each field separated by a comma. This
@@ -580,7 +590,7 @@ pipeToCSV = P.yield (T.intercalate "," (map T.pack header)) >> go
 -- | Write a header row with column names followed by a line of text
 -- for each 'Record' to the given file.
 writeCSV :: (ColumnHeaders ts, Foldable f, RecordToList ts,
-             RecMapMethod Show ElField ts)
+             RecMapMethod ShowCSV ElField ts)
          => FilePath -> f (Record ts) -> IO ()
 writeCSV fp recs = P.runSafeT . P.runEffect $
                    produceCSV recs >-> P.map T.pack >-> consumeTextLines fp
