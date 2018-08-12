@@ -1,21 +1,23 @@
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE KindSignatures #-}
-{-# LANGUAGE MagicHash #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-{-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE ViewPatterns #-}
+{-# LANGUAGE DataKinds, KindSignatures, MagicHash,
+             ScopedTypeVariables, TemplateHaskell, ViewPatterns #-}
+-- | Support for representing so-called categorical variables: a
+-- (usually small) finite set of textual values. We map these onto
+-- regular Haskell data types and offer help to generate useful type
+-- class instances for such types.
 module Frames.Categorical where
+import Control.Applicative (ZipList(..))
 import Control.Monad (MonadPlus(mzero))
 import Data.Char (toUpper)
-import Data.Readable (Readable)
+import Data.Readable (Readable(..))
 import Data.Set (Set)
 import qualified Data.Set as S
-import Data.String (IsString)
+import Data.String (IsString(..))
 import Data.Text (Text)
 import qualified Data.Text as T
 import Data.Typeable (Typeable)
 import Data.Vinyl.Functor (Const(..))
 import Frames.ColumnTypeable
+import Frames.ShowCSV
 import GHC.Exts (Proxy#, proxy#)
 import GHC.TypeNats
 import Language.Haskell.TH
@@ -25,6 +27,60 @@ import Language.Haskell.TH
 -- @n@ variants.
 newtype Categorical (n :: Nat) = Categorical { categories :: Set Text }
   deriving (Eq, Show, Typeable)
+
+-- | Ensure the first character of a 'String' is uppercase.
+cap :: String -> String
+cap [] = []
+cap (c : cs) = toUpper c : cs
+
+-- | Generate a data type declaration and associated instances for
+-- type suitable for representing a categorical variable. This is a
+-- type that maps between a finite set of textual names and Haskell
+-- data constructors. Usage: @categoricalDecls typeName
+-- optionalConPrefix variantNames@ will produce a data type with name
+-- @typeName@ and data constructors whose names are a concatenation of
+-- @optionalConPrefix@ and each element of @variantNames@.
+categoricalDecls :: String -> Maybe String -> [String] -> [Dec]
+categoricalDecls (cap -> name) (fmap cap -> prefix) variants =
+  [ dataDecl, iIsString, iReadable, iParseable, iShowCSV ]
+  where variantCons = map (mkName . maybe id (++) prefix . cap) variants
+        onVariants f =
+          getZipList (f <$> ZipList variants <*> ZipList variantCons)
+        nameName = mkName name
+        fromStringClause variant variantCon =
+          Clause [LitP (StringL variant)] (NormalB (ConE variantCon)) []
+        showCSVClause variant variantCon =
+          Clause [ConP variantCon []]
+                 (NormalB (AppE (VarE 'T.pack) (LitE (StringL variant))))
+                 []
+        readableGuarded argName variant variantCon =
+          ( NormalG (InfixE (Just (VarE argName))
+                    (VarE '(==))
+                    (Just (AppE (VarE 'T.pack) (LitE (StringL variant)))))
+          , AppE (VarE 'return ) (ConE variantCon) )
+        dataDecl = DataD [] nameName [] Nothing
+                         (map (flip NormalC []) variantCons)
+                         [DerivClause Nothing [ ConT ''Eq
+                                              , ConT ''Enum
+                                              , ConT ''Bounded
+                                              , ConT ''Ord
+                                              , ConT ''Show ]]
+        iIsString =
+          InstanceD Nothing [] (AppT (ConT ''IsString) (ConT nameName))
+                    [FunD 'fromString
+                          (onVariants fromStringClause)]
+        iReadable =
+          let argName = mkName "t"
+              clauses = onVariants (readableGuarded argName)
+              clausesTotal = clauses ++ [(NormalG (ConE 'True), VarE 'mzero)]
+          in InstanceD Nothing [] (AppT (ConT ''Readable) (ConT nameName))
+                       [FunD 'fromText
+                             [Clause [VarP argName] (GuardedB clausesTotal) []]]
+        iParseable =
+          InstanceD Nothing [] (AppT (ConT ''Parseable) (ConT nameName)) []
+        iShowCSV =
+          InstanceD Nothing [] (AppT (ConT ''ShowCSV) (ConT nameName))
+                    [FunD 'showCSV (onVariants showCSVClause)]
 
 instance KnownNat n => Parseable (Categorical n) where
   parse txt = return (Possibly (Categorical (S.singleton txt)))
@@ -37,42 +93,4 @@ instance KnownNat n => Parseable (Categorical n) where
           maxVariants :: Int
           maxVariants = fromIntegral (toInteger (natVal' (proxy# :: Proxy# n)))
   representableAsType (S.toList . categories . parsedValue -> cats) =
-    Const (Left (\(cap -> n) -> [dataDecl n, isString n, readable n, parseable n]))
-    where variantNames = map T.unpack cats
-          dataDecl typeName =
-            DataD []
-                  (mkName typeName)
-                  [] Nothing
-                  (map (toCon typeName) variantNames)
-                  [DerivClause Nothing [ (ConT ''Eq)
-                                       , (ConT ''Enum)
-                                       , (ConT ''Bounded)
-                                       , (ConT ''Ord)
-                                       , (ConT ''Show) ]]
-          toCon typeName variantName =
-            NormalC (mkName (typeName ++ cap variantName)) []
-          cap [] = []
-          cap (c : cs) = toUpper c : cs
-          fromStringClause typeName variantName =
-            Clause [LitP (StringL variantName)]
-                   (NormalB (ConE (mkName (typeName ++ cap variantName))))
-                   []
-          isString typeName =
-            InstanceD Nothing []
-                      (AppT (ConT ''IsString) (ConT (mkName typeName)))
-                      [FunD (mkName "fromString")
-                            (map (fromStringClause typeName) variantNames)]
-          readable typeName =
-            InstanceD Nothing []
-                      (AppT (ConT ''Readable) (ConT (mkName typeName)))
-                      [FunD (mkName "fromText")
-                            [Clause []
-                               (NormalB (InfixE (Just (VarE (mkName "return")))
-                                                (VarE (mkName "."))
-                                                (Just (InfixE (Just (VarE (mkName "fromString")))
-                                                              (VarE (mkName "."))
-                                                              (Just (VarE 'T.unpack))))))
-                               []]]
-          parseable typeName =
-            InstanceD Nothing []
-                      (AppT (ConT ''Parseable) (ConT (mkName typeName))) []
+    Const (Left (\n -> categoricalDecls n (Just n) (map T.unpack cats)))
