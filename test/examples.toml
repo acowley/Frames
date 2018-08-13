@@ -6,7 +6,7 @@ id,manager,age,pay
 """
 
 generated = """
-type Row = Record ["id" :-> Int, "manager" :-> T.Text, "age" :-> Int, "pay" :-> Double]
+type Row = Record [Id, Manager, Age, Pay]
 rowParser :: ParserOptions
 rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
 
@@ -18,9 +18,9 @@ id' :: forall f_2 g_3 rs_4 . (Functor f_2, Id ∈ rs_4) =>
                              (g_3 Id -> f_2 (g_3 Id)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
 id' = rlens' @Id
 
-type Manager = "manager" :-> T.Text
+type Manager = "manager" :-> Text
 manager :: forall f_5 rs_6 . (Functor f_5, Manager ∈ rs_6) =>
-                             (T.Text -> f_5 T.Text) -> Record rs_6 -> f_5 (Record rs_6)
+                             (Text -> f_5 Text) -> Record rs_6 -> f_5 (Record rs_6)
 manager = rlens @Manager . rfield
 manager' :: forall f_7 g_8 rs_9 . (Functor f_7,
                                    Manager ∈ rs_9) =>
@@ -53,7 +53,7 @@ id,employee,age,pay,manager_id
 """
 
 generated = """
-type Row = Record ["id" :-> Int, "employee" :-> T.Text, "age" :-> Int, "pay" :-> Double, "manager_id" :-> Int]
+type Row = Record [Id, Employee, Age, Pay, ManagerId]
 rowParser :: ParserOptions
 rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
 
@@ -65,9 +65,9 @@ id' :: forall f_2 g_3 rs_4 . (Functor f_2, Id ∈ rs_4) =>
                              (g_3 Id -> f_2 (g_3 Id)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
 id' = rlens' @Id
 
-type Employee = "employee" :-> T.Text
+type Employee = "employee" :-> Text
 employee :: forall f_5 rs_6 . (Functor f_5, Employee ∈ rs_6) =>
-                              (T.Text -> f_5 T.Text) -> Record rs_6 -> f_5 (Record rs_6)
+                              (Text -> f_5 Text) -> Record rs_6 -> f_5 (Record rs_6)
 employee = rlens @Employee . rfield
 employee' :: forall f_7 g_8 rs_9 . (Functor f_7,
                                     Employee ∈ rs_9) =>
@@ -104,7 +104,7 @@ managerId' = rlens' @ManagerId"""
 
 [managers_employees]
 generated = """
-type ManagerRec = Record ["id" :-> Int, "manager" :-> T.Text, "age" :-> Int, "pay" :-> Double]
+type ManagerRec = Record [Id, Manager, Age, Pay]
 managerRecParser :: ParserOptions
 managerRecParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
 
@@ -116,9 +116,9 @@ id' :: forall f_2 g_3 rs_4 . (Functor f_2, Functor g_3, Id ∈ rs_4) =>
                              (g_3 Id -> f_2 (g_3 Id)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
 id' = rlens' @Id
 
-type Manager = "manager" :-> T.Text
+type Manager = "manager" :-> Text
 manager :: forall f_5 rs_6 . (Functor f_5, Manager ∈ rs_6) =>
-                             (T.Text -> f_5 T.Text) -> Record rs_6 -> f_5 (Record rs_6)
+                             (Text -> f_5 Text) -> Record rs_6 -> f_5 (Record rs_6)
 manager = rlens @Manager . rfield
 manager' :: forall f_7 g_8 rs_9 . (Functor f_7,
                                    Manager ∈ rs_9) =>
@@ -143,13 +143,13 @@ pay' :: forall f_17 g_18 rs_19 . (Functor f_17,
                                  (g_18 Pay -> f_17 (g_18 Pay)) -> Rec g_18 rs_19 -> f_17 (Rec g_18 rs_19)
 pay' = rlens' @Pay
 
-type EmployeeRec = Record ["id" :-> Int, "employee" :-> T.Text, "age" :-> Int, "pay" :-> Double, "manager_id" :-> Int]
+type EmployeeRec = Record ["id" :-> Int, "employee" :-> Text, "age" :-> Int, "pay" :-> Double, "manager_id" :-> Int]
 employeeRecParser :: ParserOptions
 employeeRecParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
 
-type Employee = "employee" :-> T.Text
+type Employee = "employee" :-> Text
 employee :: forall f_5 rs_6 . (Functor f_5, Employee ∈ rs_6) =>
-                              (T.Text -> f_5 T.Text) -> Record rs_6 -> f_5 (Record rs_6)
+                              (Text -> f_5 Text) -> Record rs_6 -> f_5 (Record rs_6)
 employee = rlens @Employee . rfield
 employee' :: forall f_7 g_8 rs_9 . (Functor f_7,
                                     Employee ∈ rs_9) =>
@@ -179,7 +179,7 @@ col_a,col_b,col_c
 """
 
 generated = """
-type Row = Record ["col_a" :-> Int, "col_b" :-> Int, "col_c" :-> Double]
+type Row = Record [ColA, ColB, ColC]
 rowParser :: ParserOptions
 rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
 
@@ -221,13 +221,13 @@ A
 """
 
 generated = """
-type Row = Record ["col_a" :-> T.Text]
+type Row = Record [ColA]
 rowParser :: ParserOptions
 rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
 
-type ColA = "col_a" :-> T.Text
+type ColA = "col_a" :-> Text
 colA :: forall f_0 rs_1 . (Functor f_0, ColA ∈ rs_1) =>
-                          (T.Text -> f_0 T.Text) -> Record rs_1 -> f_0 (Record rs_1)
+                          (Text -> f_0 Text) -> Record rs_1 -> f_0 (Record rs_1)
 colA = rlens @ColA . rfield
 colA' :: forall f_2 g_3 rs_4 . (Functor f_2,
                                 ColA ∈ rs_4) =>
@@ -245,7 +245,7 @@ col_a,col_b
 """
 
 generated = """
-type Row = Record ["col_a" :-> Int, "col_b" :-> T.Text]
+type Row = Record [ColA, ColB]
 rowParser :: ParserOptions
 rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
 
@@ -258,9 +258,9 @@ colA' :: forall f_2 g_3 rs_4 . (Functor f_2,
                                (g_3 ColA -> f_2 (g_3 ColA)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
 colA' = rlens' @ColA
 
-type ColB = "col_b" :-> T.Text
+type ColB = "col_b" :-> Text
 colB :: forall f_5 rs_6 . (Functor f_5, ColB ∈ rs_6) =>
-                          (T.Text -> f_5 T.Text) -> Record rs_6 -> f_5 (Record rs_6)
+                          (Text -> f_5 Text) -> Record rs_6 -> f_5 (Record rs_6)
 colB = rlens @ColB . rfield
 colB' :: forall f_7 g_8 rs_9 . (Functor f_7,
                                 ColB ∈ rs_9) =>
@@ -277,7 +277,7 @@ id,foo
 """
 
 generated = """
-type Row = Record ["id" :-> Int, "foo" :-> Int]
+type Row = Record [Id, Foo]
 rowParser :: ParserOptions
 rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
 
@@ -310,7 +310,7 @@ id,foo
 """
 
 generated = """
-type Row = Record ["id" :-> Int, "foo" :-> Int]
+type Row = Record [Id, Foo]
 rowParser :: ParserOptions
 rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
 
@@ -343,13 +343,13 @@ Label,Count
 """
 
 generated = """
-type Row = Record ["Label" :-> T.Text, "Count" :-> Int]
+type Row = Record [Label, Count]
 rowParser :: ParserOptions
 rowParser = ParserOptions Nothing (T.pack ",") (Frames.CSV.RFC4180Quoting '"')
 
-type Label = "Label" :-> T.Text
+type Label = "Label" :-> Text
 label :: forall f_0 rs_1 . (Functor f_0, Label ∈ rs_1) =>
-         (T.Text -> f_0 T.Text) -> Record rs_1 -> f_0 (Record rs_1)
+         (Text -> f_0 Text) -> Record rs_1 -> f_0 (Record rs_1)
 label = rlens @Label . rfield
 label' :: forall f_2 g_3 rs_4 . (Functor f_2, Label ∈ rs_4) =>
           (g_3 Label -> f_2 (g_3 Label)) -> Rec g_3 rs_4 -> f_2 (Rec g_3 rs_4)
