@@ -1,9 +1,8 @@
 {-# LANGUAGE DataKinds, FlexibleContexts, OverloadedLabels, TemplateHaskell #-}
 module Categorical where
-import Data.String (IsString(..))
 import Data.Vinyl.Derived
 import Frames
-import Frames.CSV
+import Frames.TH (rowGenCat, RowGen(..))
 import Pipes (Producer, (>->))
 import qualified Pipes.Prelude as P
 

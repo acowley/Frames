@@ -53,6 +53,7 @@ library
                        Frames.Rec
                        Frames.RecF
                        Frames.ShowCSV
+                       Frames.TH
                        Frames.TypeLevel
                        Frames.Joins
                        Frames.ExtraInstances

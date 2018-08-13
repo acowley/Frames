@@ -4,7 +4,7 @@ import qualified Control.Foldl as L
 import Data.Vinyl (rcast)
 import Data.Vinyl.Curry (runcurryX)
 import Frames
-import Frames.CSV (rowGen, columnNames, tablePrefix, rowTypeName, readTableOpt)
+import Frames.TH (rowGen, RowGen(..))
 
 -- Data set from http://vincentarelbundock.github.io/Rdatasets/datasets.html
 tableTypes' (rowGen "test/data/prestigeNoHeader.csv")

@@ -3,7 +3,7 @@ module NoHeader where
 import Control.Arrow ((&&&))
 import Data.Vinyl.Derived
 import Frames
-import Frames.CSV (rowGen, RowGen(..), readTableOpt)
+import Frames.TH (rowGen, RowGen(..))
 import Pipes (Producer, (>->))
 import qualified Pipes.Prelude as P
 

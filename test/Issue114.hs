@@ -21,7 +21,7 @@ import qualified Data.Text as T
 import           Data.Attoparsec.Text
 import           Control.Applicative
 
-import Frames.CSV (tableTypesText', rowGen, RowGen(..))
+import Frames.TH (tableTypesText', rowGen, RowGen(..))
 
 tableTypesText' (rowGen "test/data/issue114.csv") { rowTypeName = "ProductionData" }
 

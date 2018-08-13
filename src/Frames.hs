@@ -18,11 +18,12 @@ module Frames
   , module Frames.Frame
   , inCoreAoS, inCoreAoS', inCore, inCoreSoA
   , I.toAoS, I.toFrame, I.filterFrame
+  , module Frames.Joins
   , module Frames.Melt
   , module Frames.Rec
   , module Frames.RecF
+  , module Frames.TH
   , module Frames.TypeLevel
-  , module Frames.Joins
   , module Pipes.Safe, runSafeEffect
   , Text
   ) where
@@ -39,9 +40,7 @@ import Data.Vinyl.TypeLevel (AllConstrained, AllSatisfied, AllAllSat,
                              RDelete, RecAll)
 import Frames.Col ((:->), pattern Col)
 import Frames.ColumnUniverse
-import Frames.CSV (readTable, readTableMaybe, declareColumn,
-                   pipeTable, pipeTableMaybe,
-                   tableTypes, tableTypes')
+import Frames.CSV (readTable, readTableOpt, readTableMaybe, pipeTable, pipeTableMaybe)
 import Frames.Exploration
 import Frames.Frame
 import qualified Frames.InCore as I
@@ -49,6 +48,7 @@ import Frames.Melt (melt, meltRow)
 import Frames.Rec (Record, RecordColumns, (&:), recUncons, recMaybe, showFields)
 import Frames.Rec (rgetField, rputField)
 import Frames.RecF
+import Frames.TH (tableTypes, tableTypes', declareColumn)
 import Frames.TypeLevel
 import Frames.Joins
 import Frames.ExtraInstances()
