@@ -29,11 +29,10 @@ import qualified Pipes.Prelude as P
 import qualified Pipes.Safe as P
 
 -- | Generate a column type.
-recDec :: [Type] -> Q Type
-recDec = appT [t|Record|] . go
-  where go [] = return PromotedNilT
-        go (t:cs) =
-          [t|$(pure t) ': $(go cs) |]
+recDec :: [Type] -> Type
+recDec = AppT (ConT ''Record) . go
+  where go [] = PromotedNilT
+        go (t:cs) = AppT (AppT PromotedConsT t) (go cs)
 
 -- | Capitalize the first letter of a 'T.Text'.
 capitalize1 :: T.Text -> T.Text
@@ -210,8 +209,8 @@ tableTypesText' (RowGen {..}) =
      let headers = zip colNames (repeat (ConT ''T.Text))
      (colTypes, colDecs) <- (second concat . unzip)
                             <$> mapM (uncurry mkColDecs) headers
-     recTy <- tySynD (mkName rowTypeName) [] (recDec colTypes)
-     let optsName = case rowTypeName of
+     let recTy = TySynD (mkName rowTypeName) [] (recDec colTypes)
+         optsName = case rowTypeName of
                       [] -> error "Row type name shouldn't be empty"
                       h:t -> mkName $ toLower h : t ++ "Parser"
      optsTy <- sigD optsName [t|ParserOptions|]
@@ -241,8 +240,8 @@ tableTypes' (RowGen {..}) =
      (colTypes, colDecs) <- (second concat . unzip)
                             <$> mapM (uncurry mkColDecs)
                                      (map (second colType) headers)
-     recTy <- tySynD (mkName rowTypeName) [] (recDec colTypes)
-     let optsName = case rowTypeName of
+     let recTy = TySynD (mkName rowTypeName) [] (recDec colTypes)
+         optsName = case rowTypeName of
                       [] -> error "Row type name shouldn't be empty"
                       h:t -> mkName $ toLower h : t ++ "Parser"
      optsTy <- sigD optsName [t|ParserOptions|]
