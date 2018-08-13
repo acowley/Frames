@@ -8,7 +8,7 @@ language: c
 sudo: false
 
 git:
-  submodules: false  # whether to recursively clone submodules
+  submodules: true  # whether to recursively clone submodules
 
 cache:
   directories:
@@ -82,7 +82,7 @@ install:
       cabal new-update head.hackage -v
     fi
   - grep -Ev -- '^\s*--' ${HOME}/.cabal/config | grep -Ev '^\s*$'
-  - "printf 'packages: \".\"\\n' > cabal.project"
+  - "printf 'packages: ./Frames.cabal ./Vinyl/vinyl.cabal\\n' > cabal.project"
   - touch cabal.project.local
   - "if ! $NOINSTALLEDCONSTRAINTS; then for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/^/constraints: /' | sed 's/-[^-]*$/ installed/' >> cabal.project.local; done; fi"
   - cat cabal.project || true
@@ -102,9 +102,10 @@ script:
   # test that source-distributions can be generated
   - (cd "." && cabal sdist)
   - mv "."/dist/Frames-*.tar.gz ${DISTDIR}/
+  - mv "."/Vinyl ${DISTDIR}/
   - cd ${DISTDIR} || false
   - find . -maxdepth 1 -name '*.tar.gz' -exec tar -xvf '{}' \;
-  - "printf 'packages: Frames-*/*.cabal\\n' > cabal.project"
+  - "printf 'packages: ./Frames-*/Frames.cabal ./Vinyl/vinyl.cabal\\n' > cabal.project"
   - touch cabal.project.local
   - "if ! $NOINSTALLEDCONSTRAINTS; then for pkg in $($HCPKG list --simple-output); do echo $pkg | sed 's/^/constraints: /' | sed 's/-[^-]*$/ installed/' >> cabal.project.local; done; fi"
   - cat cabal.project || true
