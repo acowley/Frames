@@ -33,6 +33,17 @@ cap :: String -> String
 cap [] = []
 cap (c : cs) = toUpper c : cs
 
+-- | Generate a splice with data type declaration and associated
+-- instances for type suitable for representing a categorical
+-- variable. This is a type that maps between a finite set of textual
+-- names and Haskell data constructors. Usage: @declareCategorical
+-- typeName optionalConPrefix variantNames@ will produce a data type
+-- with name @typeName@ and data constructors whose names are a
+-- concatenation of @optionalConPrefix@ and each element of
+-- @variantNames@.
+declareCategorical :: String -> Maybe String -> [String] -> DecsQ
+declareCategorical = fmap (fmap (fmap pure)) categoricalDecls
+
 -- | Generate a data type declaration and associated instances for
 -- type suitable for representing a categorical variable. This is a
 -- type that maps between a finite set of textual names and Haskell

@@ -107,9 +107,19 @@ colDec prefix rowName colName colTypeGen = do
 -- example, @declareColumn "x2" ''Double@ will declare a type synonym
 -- @type X2 = "x2" :-> Double@ and a lens @x2@.
 declareColumn :: T.Text -> Name -> DecsQ
-declareColumn colName colTypeName = (:) <$> mkColSynDec colTypeQ colTName'
-                                        <*> mkColLensDec colTName' colTy colPName
-  where colTName = sanitizeTypeName colName
+declareColumn = flip declarePrefixedColumn T.empty
+
+-- | Splice for manually declaring a column of a given type in which
+-- the generated type synonym's name has a prefix applied to the
+-- column name. For example, @declarePrefixedColumn "x2" "my"
+-- ''Double@ will declare a type synonym @type MyX2 = "x2" :-> Double@
+-- and a lens @myX2@.
+declarePrefixedColumn :: T.Text -> T.Text -> Name -> DecsQ
+declarePrefixedColumn colName prefix colTypeName =
+  (:) <$> mkColSynDec colTypeQ colTName'
+      <*> mkColLensDec colTName' colTy colPName
+  where prefix' = capitalize1 prefix
+        colTName = sanitizeTypeName (prefix' <> capitalize1 colName)
         colPName = fromMaybe "colDec impossible" (lowerHead colTName)
         colTName' = mkName $ T.unpack colTName
         colTy = ConT colTypeName

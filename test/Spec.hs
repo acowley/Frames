@@ -186,3 +186,6 @@ main = do
          mLarge <- H.runIO Categorical.fifthMonthLarge
          it "Falls back to Text when the number of variants grows" $
            mLarge `shouldBe` Just (T.pack "May")
+         mCustom <- H.runIO Categorical.fifthMonthCustom
+         it "Can parse into manually-specified categorical variables" $
+           mCustom `shouldBe` Just Categorical.MyMay
