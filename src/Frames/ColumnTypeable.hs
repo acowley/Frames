@@ -41,10 +41,10 @@ class Parseable a where
   default parseCombine :: MonadPlus m => Parsed a -> Parsed a -> m (Parsed a)
   parseCombine = const . return
 
-  representableAsType :: Parsed a -> Const (Either (String -> [Dec]) Type) a
+  representableAsType :: Parsed a -> Const (Either (String -> Q [Dec]) Type) a
   default
     representableAsType :: Typeable a
-                        => Parsed a -> Const (Either (String -> [Dec]) Type) a
+                        => Parsed a -> Const (Either (String -> Q [Dec]) Type) a
   representableAsType =
     const (Const (Right (ConT (mkName (show (typeRep (Proxy :: Proxy a)))))))
 
@@ -73,5 +73,5 @@ instance Parseable T.Text where
 -- types, and provides a mechanism to infer which type best represents
 -- some textual data.
 class ColumnTypeable a where
-  colType :: a -> Either (String -> [Dec]) Type
+  colType :: a -> Either (String -> Q [Dec]) Type
   inferType :: T.Text -> a

@@ -41,7 +41,7 @@ tryParseAll = rtraverse getCompose funs
 
 -- | Information necessary for synthesizing row types and comparing
 -- types.
-newtype ColInfo a = ColInfo (Either (String -> [Dec]) Type, Parsed a)
+newtype ColInfo a = ColInfo (Either (String -> Q [Dec]) Type, Parsed a)
 instance Show a => Show (ColInfo a) where
   show (ColInfo (t,p)) = "(ColInfo {"
                          ++ either (const "cat") show t

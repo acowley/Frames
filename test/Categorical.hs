@@ -1,6 +1,6 @@
-{-# LANGUAGE DataKinds, FlexibleContexts, OverloadedLabels,
-             OverloadedStrings, TemplateHaskell, TypeFamilies,
-             TypeOperators #-}
+{-# LANGUAGE DataKinds, FlexibleContexts, MultiParamTypeClasses,
+             OverloadedLabels, OverloadedStrings, TemplateHaskell,
+             TypeFamilies, TypeOperators #-}
 module Categorical where
 import Data.Vinyl.Derived
 import Data.Vinyl.XRec (toHKD)

@@ -56,11 +56,8 @@ The summary of a whole frame might just go through summaries for each column:
 | occupation | numCategories | 3           |
 | zip code   | class         | Categorical |
 | zip code   | numCategories | 4           |
-** TODO Generate ~VectorFor~ type family instances for Categorical types
-It would be particularly nice if we can pick a ~Word~ size based on
-the number of variants we need to represent. Perhaps an ~Unbox~ instance can mediate conversion between the custom data type and ~Word8~, ~Word16~, etc.
 ** TODO Support overriding specific columns for type inference
-We currently support overriding all or none, but something more granular will be very helpful. In particular with things like data types for categorical variables where the inference is more likely to be wrong.
+We currently support overriding all or none, but something more granular will be helpful. In particular with things like data types for categorical variables where the inference is more likely to be wrong.
 * Debugging inference in the REPLp
 Some handy examples,
 

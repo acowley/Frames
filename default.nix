@@ -3,7 +3,7 @@
 , pipes-bytestring, pipes-group, pipes-parse, pipes-safe
 , pretty, primitive, readable, regex-applicative
 , stdenv, template-haskell, temporary, text, transformers
-, unordered-containers, vector, vinyl
+, unordered-containers, vector, vector-th-unbox, vinyl
 , Chart, Chart-diagrams, diagrams-lib, diagrams-rasterific
 , foldl, http-client, list-t, microlens, statistics, zip-archive
 , llvmPackages, attoparsec
@@ -16,8 +16,8 @@ mkDerivation {
   isExecutable = true;
   libraryHaskellDepends = [
     base contravariant deepseq discrimination ghc-prim hashable pipes
-    pipes-bytestring pipes-group pipes-parse pipes-safe
-    primitive readable template-haskell text transformers vector vinyl
+    pipes-bytestring pipes-group pipes-parse pipes-safe text vinyl
+    primitive readable template-haskell transformers vector vector-th-unbox
   ];
   testHaskellDepends = [
     base directory hspec htoml HUnit pipes pretty regex-applicative
