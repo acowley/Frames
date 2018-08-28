@@ -2,6 +2,10 @@
 
 - Renamed the `rgetf` and `rputf` exported by the `Frames` module to `rgetField` and `rputField`. This avoids clashing with the same names exported by `vinyl` and further advances the process of eliminating the old `Frames` `Col` type in favor of `vinyl`'s `ElField`.
 
+- Add a `ShowCSV` class rather than leaning on overburdened `Show` instances.
+
+- Add support for categorical column types: values of these types are one of a small number of textual values. Because they can only take on a small number of different text values, we can compactly represent values of these types as standard Haskell sum types.
+
 # 0.4.0
 
 - Added table joins in `Data.Vinyl.Joins` (Chris Hammill)
