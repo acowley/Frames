@@ -1,4 +1,7 @@
 * Tasks
+  :PROPERTIES:
+  :CATEGORY: Frames
+  :END:
 ** TODO [#C] Add a summarize class
 Other data analysis toolkits have something like a ~summary~ function
 that computes arguably sensible properties of columns. It shows things
@@ -56,8 +59,14 @@ The summary of a whole frame might just go through summaries for each column:
 | occupation | numCategories | 3           |
 | zip code   | class         | Categorical |
 | zip code   | numCategories | 4           |
-** TODO Support overriding specific columns for type inference
+** TODO [#B] Support overriding specific columns for type inference
 We currently support overriding all or none, but something more granular will be helpful. In particular with things like data types for categorical variables where the inference is more likely to be wrong.
+** TODO [#A] Support types like ~Either Categorical Double~
+The idea is that a numeric column could have several "failure modes" that we might like to enumerate.
+** TODO [#A] Demonstrate grouping
+Show how to perform a fold that performs a computation based on some grouping criteria.
+** TODO [#A] Revisit Joins
+Get a benchmark sorted out.
 * Debugging inference in the REPLp
 Some handy examples,
 
