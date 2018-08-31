@@ -29,4 +29,4 @@
 .stack-work
 *~
 /dist-newstyle
-/demo/framestack.cabal
+/demo/framestack/framestack.cabal

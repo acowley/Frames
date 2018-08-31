@@ -7,9 +7,6 @@ dependencies:
 - pipes
 - microlens
 
-library:
-  source-dirs: src
-
 executables:
   framestack-exe:
     main:                Main.hs
@@ -18,6 +15,4 @@ executables:
     - -threaded
     - -rtsopts
     - -with-rtsopts=-N
-    dependencies:
-    - framestack
 
