@@ -1,5 +1,5 @@
 name:                Frames
-version:             0.5.0
+version:             0.5.1
 synopsis:            Data frames For working with tabular data files
 description:         User-friendly, type safe, runtime efficient tooling for
                      working with tabular data deserialized from
@@ -28,7 +28,7 @@ extra-source-files:  benchmarks/*.hs benchmarks/*.py
                      data/left1.csv data/right1.csv data/left_summary.csv
                      data/FL2.csv
 cabal-version:       >=1.10
-tested-with:         GHC == 8.2.2, GHC == 8.4.3
+tested-with:         GHC == 8.2.2, GHC == 8.4.3, GHC == 8.6.1
 
 source-repository head
   type:     git
@@ -61,7 +61,7 @@ library
                        TypeOperators, ConstraintKinds, StandaloneDeriving,
                        UndecidableInstances, ScopedTypeVariables,
                        OverloadedStrings, TypeApplications
-  build-depends:       base >=4.8 && <4.12,
+  build-depends:       base >=4.8 && <4.13,
                        ghc-prim >=0.3 && <0.6,
                        primitive >= 0.6 && < 0.7,
                        text >= 1.1.1.0,
@@ -73,7 +73,7 @@ library
                        pipes-bytestring >= 2.1.6 && < 2.2,
                        pipes-group >= 1.0.8 && < 1.1,
                        pipes-parse >= 3.0 && < 3.1,
-                       pipes-safe >= 2.2.6 && < 2.3,
+                       pipes-safe >= 2.2.6 && < 2.4,
                        bytestring,
                        vinyl >= 0.10.0 && < 0.11,
                        discrimination,
