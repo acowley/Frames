@@ -29,3 +29,5 @@
 .stack-work
 *~
 /dist-newstyle
+/.direnv.*
+/.envrc
