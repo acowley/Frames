@@ -10,7 +10,7 @@
 }:
 mkDerivation {
   pname = "Frames";
-  version = "0.4.0";
+  version = "0.5.0";
   src = ./.;
   isLibrary = true;
   isExecutable = true;
