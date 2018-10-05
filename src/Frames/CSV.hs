@@ -8,7 +8,7 @@
 -- to those types.
 module Frames.CSV where
 import Control.Exception (try, IOException)
-import Control.Monad (when)
+import Control.Monad (when, unless)
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.Foldable as F
 import Data.List (intercalate)
@@ -156,8 +156,19 @@ readColHeaders opts = P.evalStateT $
                         pure
                         (headerOverride opts)
      colTypes <- prefixInference
+     unless (length headerRow == length colTypes) (error errNumColumns)
      return (zip headerRow colTypes)
   where err = error "Empty Producer has no header row"
+        errNumColumns =
+          unlines
+          [ ""
+          , "Error parsing CSV: "
+          , "  Number of columns in header differs from number of columns"
+          , "  found in the remaining file. This may be due to newlines"
+          , "  being present within the data itself (not just separating"
+          , "  rows). If support for embedded newlines is required, "
+          , "  consider using the Frames-dsv package in conjunction with"
+          , "  Frames to make use of a different CSV parser."]
 
 -- * Loading CSV Data
 
