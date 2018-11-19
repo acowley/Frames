@@ -1,4 +1,4 @@
-{-# LANGUAGE DataKinds, FlexibleContexts, TemplateHaskell, TypeOperators #-}
+{-# LANGUAGE DataKinds, FlexibleContexts, TemplateHaskell, TypeApplications, TypeOperators #-}
 {-# OPTIONS_GHC -fno-warn-unused-top-binds #-}
 module Main (main) where
 import Frames
@@ -9,13 +9,13 @@ import Frames
 tableTypes "Mpg" "test/data/mpg.csv"
 
 drvCol :: (Drv ∈ rs) => Record rs -> Text
-drvCol = rget drv
+drvCol = rgetField @Drv
 
 cylCol :: (Cyl ∈ rs) => Record rs -> Int
-cylCol = rget cyl
+cylCol = rgetField @Cyl
 
 dispCol :: (Displ ∈ rs) => Record rs -> Double
-dispCol = rget displ
+dispCol = rgetField @Displ
 
 main :: IO ()
 main = return ()

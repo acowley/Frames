@@ -1,5 +1,5 @@
 name:                Frames
-version:             0.4.0
+version:             0.6.0
 synopsis:            Data frames For working with tabular data files
 description:         User-friendly, type safe, runtime efficient tooling for
                      working with tabular data deserialized from
@@ -11,7 +11,7 @@ license:             BSD3
 license-file:        LICENSE
 author:              Anthony Cowley
 maintainer:          acowley@gmail.com
-copyright:           Copyright (C) 2014-2015 Anthony Cowley
+copyright:           Copyright (C) 2014-2018 Anthony Cowley
 category:            Data
 build-type:          Simple
 extra-source-files:  benchmarks/*.hs benchmarks/*.py
@@ -19,10 +19,17 @@ extra-source-files:  benchmarks/*.hs benchmarks/*.py
                      data/GetData.hs
                      test/examples.toml
                      test/data/managers.csv test/data/employees.csv
-                     test/data/mpg.csv
+                     test/data/mpg.csv test/data/issue114.csv
                      test/data/latinManagers.csv
+                     test/data/prestige.csv
+                     test/data/prestigeNoHeader.csv
+                     test/data/prestigePartial.csv
+                     test/data/catSmall.csv test/data/catLarge.csv
+                     test/data/multiline.csv
+                     data/left1.csv data/right1.csv data/left_summary.csv
+                     data/FL2.csv
 cabal-version:       >=1.10
-tested-with:         GHC == 8.0.2, GHC == 8.2.2, GHC == 8.4.1
+tested-with:         GHC == 8.2.2, GHC == 8.4.3, GHC == 8.6.1
 
 source-repository head
   type:     git
@@ -35,6 +42,7 @@ flag demos
 
 library
   exposed-modules:     Frames
+                       Frames.Categorical
                        Frames.Col
                        Frames.ColumnTypeable
                        Frames.ColumnUniverse
@@ -45,15 +53,16 @@ library
                        Frames.Melt
                        Frames.Rec
                        Frames.RecF
-                       Frames.RecLens
+                       Frames.ShowCSV
+                       Frames.TH
                        Frames.TypeLevel
                        Frames.Joins
                        Frames.ExtraInstances
   other-extensions:    DataKinds, GADTs, KindSignatures, TypeFamilies,
                        TypeOperators, ConstraintKinds, StandaloneDeriving,
                        UndecidableInstances, ScopedTypeVariables,
-                       OverloadedStrings
-  build-depends:       base >=4.8 && <4.12,
+                       OverloadedStrings, TypeApplications
+  build-depends:       base >=4.8 && <4.13,
                        ghc-prim >=0.3 && <0.6,
                        primitive >= 0.6 && < 0.7,
                        text >= 1.1.1.0,
@@ -65,13 +74,15 @@ library
                        pipes-bytestring >= 2.1.6 && < 2.2,
                        pipes-group >= 1.0.8 && < 1.1,
                        pipes-parse >= 3.0 && < 3.1,
-                       pipes-safe >= 2.2.6 && < 2.3,
-                       pipes-text >= 0.0.2.5 && < 0.1,
-                       vinyl >= 0.7 && < 0.9,
+                       pipes-safe >= 2.2.6 && < 2.4,
+                       bytestring,
+                       vinyl >= 0.10.0 && < 0.11,
                        discrimination,
                        contravariant,
                        hashable,
-                       deepseq >= 1.4
+                       deepseq >= 1.4,
+                       containers,
+                       vector-th-unbox >= 0.2.1.6
   hs-source-dirs:      src
   default-language:    Haskell2010
   ghc-options:         -Wall
@@ -98,8 +109,8 @@ executable plot
                    template-haskell,
                    pipes >= 4.1.5 && < 4.4,
                    pipes-safe,
-                   Chart >= 1.5 && < 1.9,
-                   Chart-diagrams >= 1.5 && < 1.9,
+                   Chart >= 1.5 && < 2.0,
+                   Chart-diagrams >= 1.5 && < 2.0,
                    diagrams-rasterific >= 1.3 && < 1.5,
                    diagrams-lib >= 1.3 && < 1.5,
                    readable, containers, statistics
@@ -114,8 +125,8 @@ executable plot2
     build-depends: base, Frames,
                    microlens, vector, text, template-haskell,
                    pipes >= 4.1.5 && < 4.4,
-                   Chart >= 1.5 && < 1.9,
-                   Chart-diagrams >= 1.5 && < 1.9,
+                   Chart >= 1.5 && < 2.0,
+                   Chart-diagrams >= 1.5 && < 2.0,
                    diagrams-rasterific >= 1.3 && < 1.5,
                    diagrams-lib >= 1.3 && < 1.5,
                    readable, containers, statistics
@@ -143,7 +154,7 @@ executable tutorial
   if flag(demos)
     build-depends: base, Frames,
                    microlens, vector, text, template-haskell, readable,
-                   foldl, pipes
+                   foldl, pipes, vinyl
   hs-source-dirs: demo
   default-language: Haskell2010
 
@@ -154,7 +165,7 @@ executable benchdemo
   main-is:          BenchDemo.hs
   if flag(demos)
     build-depends:    base, Frames,
-                      foldl >= 1.1.0 && < 1.4,
+                      foldl >= 1.3 && < 1.5,
                       pipes >= 4.1.5 && < 4.4
   hs-source-dirs:   benchmarks
   default-language: Haskell2010
@@ -205,10 +216,14 @@ test-suite spec
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
   main-is:             Spec.hs
-  other-modules:       DataCSV PrettyTH Temp LatinTest
+  other-modules:       DataCSV PrettyTH Temp LatinTest Issue114 NoHeader
+                       UncurryFold UncurryFoldNoHeader UncurryFoldPartialData
+                       Categorical
   build-depends:       base, text, hspec, Frames, template-haskell,
                        temporary, directory, htoml, regex-applicative, pretty,
-                       unordered-containers, pipes, HUnit, vinyl
+                       unordered-containers, pipes, HUnit, vinyl,
+                       foldl >= 1.3 && < 1.5,
+                       attoparsec, lens
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall
   default-language:    Haskell2010
 

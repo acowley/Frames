@@ -1,0 +1,3 @@
+line_id,report_month,report_year,ST,api_county_code,api_seq_num,sidetrack_num,formation_code,well_status,prod_days,water_disp_code,water_vol,water_press_tbg,water_press_csg,bom_invent,oil_vol,oil_sales,adjustment,eom_invent,gravity_sales,gas_sales,flared,gas_vol,shrink,gas_prod,btu_sales,gas_press_tbg,gas_press_csg,operator_num,name,facility_name,facility_num,accepted_date,revised
+0,01,1999,"05","045","06036","00","WMFK","SI",,,,,,,,,,,,,,,,,,,,88348,"TIMBERLINE ENERGY INC","LILLIAN B. SMITH, ET AL","1",2017-05-18 16:53:40.077000000,
+1,01,1999,"05","081","05447","00","WSTC","SI",0,,,,,,,,,,,,,,,,,,,95960,"WEXPRO COMPANY","MUSSER, B W "B"","6",2017-03-23 17:45:54.713000000,

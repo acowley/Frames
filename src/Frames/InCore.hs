@@ -1,12 +1,6 @@
-{-# LANGUAGE BangPatterns,
-             CPP,
-             DataKinds,
-             EmptyCase,
-             FlexibleInstances,
-             ScopedTypeVariables,
-             TupleSections,
-             TypeFamilies,
-             TypeOperators,
+{-# LANGUAGE BangPatterns, CPP, DataKinds, EmptyCase,
+             FlexibleInstances, PolyKinds, ScopedTypeVariables,
+             TupleSections, TypeFamilies, TypeOperators,
              UndecidableInstances #-}
 -- | Efficient in-memory (in-core) storage of tabular data.
 module Frames.InCore where
@@ -18,8 +12,9 @@ import qualified Data.Vector as VB
 import qualified Data.Vector.Generic as VG
 import qualified Data.Vector.Generic.Mutable as VGM
 import qualified Data.Vector.Unboxed as VU
+import Data.Vinyl (Rec(..))
 import qualified Data.Vinyl as V
-import Data.Vinyl.Functor (Identity(..))
+import Data.Vinyl.Functor (Compose(..), getCompose, ElField(..), (:.))
 import Frames.Col
 import Frames.Frame
 import Frames.Rec
@@ -27,6 +22,8 @@ import Frames.RecF
 #if __GLASGOW_HASKELL__ < 800
 import GHC.Prim (RealWorld)
 #endif
+import GHC.TypeLits (KnownSymbol)
+import GHC.Types (Symbol, Type)
 import qualified Pipes as P
 import qualified Pipes.Prelude as P
 
@@ -61,7 +58,7 @@ type family Vectors rs where
 
 -- | Tooling to allocate, grow, write to, freeze, and index into
 -- records of vectors.
-class RecVec rs where
+class RecVec (rs :: [(Symbol,Type)]) where
   allocRec   :: PrimMonad m
              => proxy rs -> Int -> m (Record (VectorMs m rs))
   freezeRec  :: PrimMonad m
@@ -72,7 +69,7 @@ class RecVec rs where
   writeRec   :: PrimMonad m
              => proxy rs -> Int -> Record (VectorMs m rs) -> Record rs -> m ()
   indexRec   :: proxy rs -> Int -> Record (Vectors rs) -> Record rs
-  produceRec :: proxy rs -> Record (Vectors rs) -> V.Rec ((->) Int) rs
+  produceRec :: proxy rs -> Record (Vectors rs) -> V.Rec (((->) Int) :. ElField) rs
 
 -- The use of the type families Vectors and VectorMs interferes with
 -- GHC's pattern match exhaustiveness checker, so we write down dummy
@@ -80,7 +77,7 @@ class RecVec rs where
 -- apparently missing pattern match causes a type checker error!
 
 instance RecVec '[] where
-  allocRec _ _ = return Nil
+  allocRec _ _ = return V.RNil
   {-# INLINE allocRec #-}
 
   freezeRec _ _ V.RNil = return V.RNil
@@ -113,45 +110,34 @@ instance RecVec '[] where
 instance forall s a rs.
   (VGM.MVector (VectorMFor a) a,
    VG.Vector (VectorFor a) a,
-   RecVec rs)
+   KnownSymbol s, RecVec rs)
   => RecVec (s :-> a ': rs) where
   allocRec _ size = (&:) <$> VGM.new size <*> allocRec (Proxy::Proxy rs) size
   {-# INLINE allocRec #-}
 
-  freezeRec _ n (Identity (Col x) V.:& xs) =
+  freezeRec _ n (Col x :& xs) =
     (&:) <$> (VG.unsafeFreeze $ VGM.unsafeSlice 0 n x)
          <*> freezeRec (Proxy::Proxy rs) n xs
-#if __GLASGOW_HASKELL__ < 800
-  freezeRec _ _ x = case x of
-#endif
+  freezeRec _ _ _ = error "Impossible case freezeRec"
   {-# INLINE freezeRec #-}
 
-  growRec _ (Identity (Col x) V.:& xs) = (&:) <$> VGM.grow x (VGM.length x)
+  growRec _ (Col x :& xs) = (&:) <$> VGM.grow x (VGM.length x)
                                               <*> growRec (Proxy :: Proxy rs) xs
-#if __GLASGOW_HASKELL__ < 800
-  growRec _ x = case x of
-#endif
+  growRec _ _ = error "Impossible case growRec"
   {-# INLINE growRec #-}
 
-  writeRec _ !i !(Identity (Col v) V.:& vs) (Identity (Col x) V.:& xs) =
+  writeRec _ !i !(Col v :& vs) (Col x :& xs) =
     VGM.unsafeWrite v i x >> writeRec (Proxy::Proxy rs) i vs xs
-#if __GLASGOW_HASKELL__ < 800
-  writeRec _ _ _ x = case x of
-#endif
+  writeRec _ _ _ _ = error "Impossible case writeRec"
   {-# INLINE writeRec #-}
 
-  indexRec _ !i !(Identity (Col x) V.:& xs) =
+  indexRec _ !i !(Col x :& xs) =
     x VG.! i &: indexRec (Proxy :: Proxy rs) i xs
-#if __GLASGOW_HASKELL__ < 800
-  indexRec _ _ x = case x of
-#endif
+  indexRec _ _ _ = error "Impossible case indexRec"
   {-# INLINE indexRec #-}
 
-  produceRec _ (Identity (Col v) V.:& vs) = frameCons (v VG.!) $
-                                            produceRec (Proxy::Proxy rs) vs
-#if __GLASGOW_HASKELL__ < 800
-  produceRec _ x = case x of
-#endif
+  produceRec _ (Col v V.:& vs) = Compose (Field . (v VG.!)) :& produceRec (Proxy::Proxy rs) vs
+  produceRec _ _ = error "Impossible case produceRec"
   {-# INLINE produceRec #-}
 
 -- | Stream a finite sequence of rows into an efficient in-memory
@@ -163,7 +149,7 @@ instance forall s a rs.
 -- which provides an easier-to-use function that indexes into the
 -- table in a row-major fashion.
 inCoreSoA :: forall m rs. (PrimMonad m, RecVec rs)
-          => P.Producer (Record rs) m () -> m (Int, V.Rec ((->) Int) rs)
+          => P.Producer (Record rs) m () -> m (Int, V.Rec (((->) Int) :. ElField) rs)
 inCoreSoA xs =
   do mvs <- allocRec (Proxy :: Proxy rs) initialCapacity
      let feed (!i, !sz, !mvs') row
@@ -190,15 +176,15 @@ inCoreAoS = fmap (uncurry toAoS) . inCoreSoA
 -- | Like 'inCoreAoS', but applies the provided function to the record
 -- of columns before building the 'Frame'.
 inCoreAoS' :: (PrimMonad m, RecVec rs)
-           => (V.Rec ((->) Int) rs -> V.Rec ((->) Int) ss)
+           => (V.Rec ((->) Int :. ElField) rs -> V.Rec ((->) Int :. ElField) ss)
            -> P.Producer (Record rs) m () -> m (FrameRec ss)
 inCoreAoS' f = fmap (uncurry toAoS . aux) . inCoreSoA
   where aux (x,y) = (x, f y)
 
 -- | Convert a structure-of-arrays to an array-of-structures. This can
 -- simplify usage of an in-memory representation.
-toAoS :: Int -> V.Rec ((->) Int) rs -> FrameRec rs
-toAoS n = Frame n . rtraverse (fmap Identity)
+toAoS :: Int -> V.Rec ((->) Int :. ElField) rs -> FrameRec rs
+toAoS n = Frame n . rtraverse getCompose
 {-# INLINE toAoS #-}
 
 -- | Stream a finite sequence of rows into an efficient in-memory

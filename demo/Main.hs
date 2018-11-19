@@ -1,5 +1,5 @@
 {-# LANGUAGE BangPatterns, DataKinds, TemplateHaskell #-}
-{-# LANGUAGE FlexibleContexts, TypeOperators #-}
+{-# LANGUAGE FlexibleContexts, TypeApplications, TypeOperators #-}
 module Main where
 import Data.Functor.Identity
 import Frames
@@ -62,12 +62,12 @@ main = do itbl <- inCore $ P.for insuranceTbl (P.yield . rcast)
             :: IO (P.Producer TinyIns Identity ())
           putStrLn "In-core representation prepared"
           let Identity (n,sumLat) =
-                P.fold (\ !(!i,!s) r -> (i+1, s+rget pointLatitude r))
+                P.fold (\ !(!i,!s) r -> (i+1, s+rgetField @PointLatitude r))
                        (0::Int,0)
                        id
                        itbl
           putStrLn $ "Considering " ++ show n ++ " records..."
           putStrLn $ "Average latitude: " ++ show (sumLat / fromIntegral n)
           let Identity sumLong =
-                P.fold (\ !s r -> (s + rget pointLongitude r)) 0 id itbl
+                P.fold (\ !s r -> (s + rgetField @PointLongitude r)) 0 id itbl
           putStrLn $ "Average longitude: " ++ show (sumLong / fromIntegral n)

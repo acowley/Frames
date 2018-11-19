@@ -39,6 +39,7 @@ makePretty = -- Add new lines before type synonym definitions
              . replace' "GHC.Base." ""
              . replace' "GHC.Types." ""
              . replace' "Data.Vinyl.Core." ""
+             . replace' "Data.Vinyl.Derived." ""
              . replace' "Data.Vinyl.Lens." ""
              . replace' "Data.Vinyl.TypeLevel." ""
              . replace' "Frames.Rec." ""
@@ -49,13 +50,13 @@ makePretty = -- Add new lines before type synonym definitions
              . replace' "'GHC.Types.:" "(':)"
   where replace' orig replacement = replace (replacement <$ string orig)
         infixCol = (\x y -> '"' : x ++ "\" :-> " ++ y)
-                   <$> ("Frames.Col.:-> \"" *> (some (psym (/= '"'))) <* "\"" 
+                   <$> ("(Frames.Col.:->) \"" *> (some (psym (/= '"'))) <* "\""
                         <* some (psym isSpace))
                    <*> some (psym (/= ' '))
         infixNil = (\x -> '[' : x ++ "]")
-                   <$> ("((':) (" *> some (psym (/= ')')) <* ")" 
+                   <$> ("('(:) " *> some (psym (/= ' '))
                         <* some (psym isSpace) <* "'[])")
         infixCons = (\x y -> '[' : x ++ ", " ++ y ++ "]")
-                    <$> ("((':) (" *> some (psym (/= ')')) <* ")"
+                    <$> ("('(:) " *> some (psym (/= ' '))
                          <* some (psym isSpace) <* "[")
                     <*> (some (psym (/= ']')) <* "])")

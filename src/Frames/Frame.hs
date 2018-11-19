@@ -2,10 +2,9 @@
 -- | A 'Frame' is a finite 'Int'-indexed collection of rows.
 module Frames.Frame where
 import Data.Foldable
-#if __GLASGOW_HASKELL__ < 800
-import Data.Monoid
+#if __GLASGOW_HASKELL__ < 804
+import Data.Semigroup
 #endif
-import Data.Semigroup (Semigroup)
 import qualified Data.Vector as V
 import Data.Vinyl.TypeLevel
 import Frames.Rec (Record)
@@ -37,10 +36,11 @@ instance Eq r => Eq (Frame r) where
 -- a new 'Frame' with the rows of @f1@ followed by the rows of @f2@.
 instance Monoid (Frame r) where
   mempty = Frame 0 (const $ error "index out of bounds (empty frame)")
-  Frame l1 f1 `mappend` Frame l2 f2 = Frame (l1+l2) $ \i ->
-                                      if i < l1 then f1 i else f2 (i - l1)
+  f1 `mappend` f2 = f1 <> f2
 
 instance Semigroup (Frame r) where
+  Frame l1 f1 <> Frame l2 f2 =
+    Frame (l1+l2) $ \i -> if i < l1 then f1 i else f2 (i - l1)
 
 instance Foldable Frame where
   foldMap f (Frame n row) = foldMap (f . row) [0..n-1]

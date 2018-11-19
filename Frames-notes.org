@@ -1,4 +1,7 @@
 * Tasks
+  :PROPERTIES:
+  :CATEGORY: Frames
+  :END:
 ** TODO [#C] Add a summarize class
 Other data analysis toolkits have something like a ~summary~ function
 that computes arguably sensible properties of columns. It shows things
@@ -56,13 +59,15 @@ The summary of a whole frame might just go through summaries for each column:
 | occupation | numCategories | 3           |
 | zip code   | class         | Categorical |
 | zip code   | numCategories | 4           |
-
-** TODO [#C] Simplify the elisp to pretty print the splice dump
-Can't we handle /any/ infix operator? If the identifier in the
-function position of an application is parenthesized and begins with a
-colon, it's an operator.
-
-* Debugging inference in the REPL
+** TODO [#B] Support overriding specific columns for type inference
+We currently support overriding all or none, but something more granular will be helpful. In particular with things like data types for categorical variables where the inference is more likely to be wrong.
+** TODO [#A] Support types like ~Either Categorical Double~
+The idea is that a numeric column could have several "failure modes" that we might like to enumerate.
+** TODO [#A] Demonstrate grouping
+Show how to perform a fold that performs a computation based on some grouping criteria.
+** TODO [#A] Revisit Joins
+Get a benchmark sorted out.
+* Debugging inference in the REPLp
 Some handy examples,
 
 #+BEGIN_SRC haskell
@@ -140,16 +145,36 @@ The best choice is for the splice to declare a value ~usersParser~
 that ~readTableOpt~ could then use. This works out quite nicely.
 
 * Prettying TH Splice Dumps
-Dumping the definitions created by the TH splices results in a pretty
-unreadable mess. Here's how to use these functions to clean things up:
 
-1. Evaluate the three elisp definitions here
-2. Hit ~C-c C-e~ to get =ghc-mod= to evaluate all splices
-3. Copy the contents of the =*GHC Info*= buffer to somewhere like your =*scratch*=
-   buffer (because =*GHC Info*= is read-only)
-4. Run =M-x pretty-splices= in that buffer
+** At the GHCi repl
+#+BEGIN_EXAMPLE
+> :set -XQuasiQuotes -XTemplateHaskell
+> import Language.Haskell.TH
+> putStrLn $(tableTypes "base" "base.csv" >>= stringE . show . ppr_list)
+#+END_EXAMPLE
 
-#+BEGIN_SRC emacs-lisp
+#+BEGIN_EXAMPLE
+> set -XOverloadedStrings -XQuasiQuotes TempalteHaskell
+> import Data.Char
+> import Data.List
+> import Frames
+> import Frames.CSV
+> let stripModule = until (\w -> length w == 1 || not ("." `isInfixOf` w)) (tail . dropWhile isAlpha)
+> let onWords f xs = takeWhile isSpace xs ++ unwords (map f (words xs))
+> putStrLn . unlines . map (onWords stripModule) $ lines $(tableTypes' (rowGen "data/ml-100k/u.user") {rowTypeName = "User", columnNames = ["user id", "age", "gender", "occupation", "zip code"], separator = "|"} >>= stringE . show . ppr_list)
+#+END_EXAMPLE
+
+** Using ghc-mod and some elisp helpers
+ Dumping the definitions created by the TH splices results in a pretty
+ unreadable mess. Here's how to use these functions to clean things up:
+
+ 1. Evaluate the three elisp definitions here
+ 2. Hit ~C-c C-e~ to get =ghc-mod= to evaluate all splices
+ 3. Copy the contents of the =*GHC Info*= buffer to somewhere like your =*scratch*=
+    buffer (because =*GHC Info*= is read-only)
+ 4. Run =M-x pretty-splices= in that buffer
+
+#+BEGIN_SRC emacs-lisp :results silent
 (defun replace-stringf (from to)
   (beginning-of-buffer)
   (while (search-forward from nil t)
@@ -167,9 +192,16 @@ unreadable mess. Here's how to use these functions to clean things up:
 ")
   ;; Unqualify names
   (replace-stringf "GHC.Types.:" "':")
+  (replace-stringf "Data.Text.Internal." "")
   (replace-stringf "Data.Text." "T.")
+  (replace-stringf "GHC.Types.Int" "Int")
+  (replace-stringf "GHC.Base." "")
+  (replace-stringf "Frames.Col." "")
   (replace-stringf "Data.Proxy." "")
   (replace-stringf "Data.Vinyl.TypeLevel." "")
+  (replace-stringf "Data.Vinyl.Core." "")
+  (replace-stringf "Frames.Rec." "")
+  (replace-stringf "Data.Vinyl.Lens." "")
   (replace-stringf "Frames.CSV.ParserOptions" "ParserOptions")
 
   ;; Erase inferrable type

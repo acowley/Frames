@@ -1,0 +1,38 @@
+#    -*- mode: org -*-
+
+
+Archived entries from file /home/acowley/Projects/Frames/Frames-notes.org
+
+
+* DONE Change ~Record~ to be ~FieldRec~
+  :PROPERTIES:
+  :ARCHIVE_TIME: 2018-08-11 Sat 00:49
+  :ARCHIVE_FILE: ~/Projects/Frames/Frames-notes.org
+  :ARCHIVE_OLPATH: Tasks
+  :ARCHIVE_CATEGORY: Frames-notes
+  :ARCHIVE_TODO: DONE
+  :END:
+
+Archived entries from file /home/acowley/Projects/Frames/Frames-notes.org
+
+
+* DONE See about using an ~HKD~ type family in ~vinyl~
+  :PROPERTIES:
+  :ARCHIVE_TIME: 2018-08-11 Sat 00:50
+  :ARCHIVE_FILE: ~/Projects/Frames/Frames-notes.org
+  :ARCHIVE_OLPATH: Tasks
+  :ARCHIVE_CATEGORY: Frames-notes
+  :ARCHIVE_TODO: DONE
+  :END:
+To eliminate ~Compose~, ~ElField~, and ~Identity~ syntax noise.
+
+* DONE Generate ~VectorFor~ type family instances for Categorical types
+  :PROPERTIES:
+  :ARCHIVE_TIME: 2018-08-14 Tue 13:02
+  :ARCHIVE_FILE: ~/Projects/Frames/Frames-notes.org
+  :ARCHIVE_OLPATH: Tasks
+  :ARCHIVE_CATEGORY: Frames-notes
+  :ARCHIVE_TODO: DONE
+  :END:
+It would be particularly nice if we can pick a ~Word~ size based on
+the number of variants we need to represent. Perhaps an ~Unbox~ instance can mediate conversion between the custom data type and ~Word8~, ~Word16~, etc.

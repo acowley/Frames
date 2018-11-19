@@ -23,13 +23,8 @@ import Frames.InCore (toFrame)
 import Frames.Melt (RDeleteAll)
 import Frames.InCore (RecVec)
 import Data.Vinyl.TypeLevel
-import Data.Vinyl hiding (rcast)
-import qualified Data.Vinyl
+import Data.Vinyl
 import Data.Vinyl.Functor
-
--- Easier argument ordering for type applications.
-rcast :: forall rs ss f. rs ⊆ ss => Rec f ss -> Rec f rs
-rcast = Data.Vinyl.rcast @Rec
 
 mergeRec :: forall fs rs rs2 rs2'.
   (fs ⊆ rs2
@@ -86,15 +81,15 @@ innerJoin a b =
       proj2 = rcast @fs
 
 
-justsFromRec :: Record fs -> Rec Maybe fs
+justsFromRec :: RMap fs => Record fs -> Rec (Maybe :. ElField) fs
 {-# INLINE justsFromRec #-}
-justsFromRec = rmap (Just . getIdentity)
+justsFromRec = rmap (Compose . Just)
 
 mkNothingsRec :: forall fs.
   (RecApplicative fs) =>
-  Rec Maybe fs
+  Rec (Maybe :. ElField) fs
 {-# INLINE mkNothingsRec #-}
-mkNothingsRec = rpure @fs Nothing
+mkNothingsRec = rpure @fs (Compose Nothing)
 
 -- | Perform an outer join (@FULL JOIN@) operation on two frames.
 --
@@ -128,13 +123,16 @@ outerJoin :: forall fs rs rs' rs2  rs2' ors.
     , RecApplicative rs
     , RecApplicative rs'
     , Grouping (Record fs)
+    , RMap rs
+    , RMap rs2
+    , RMap ors
     , RecVec rs
     , RecVec rs2'
     , RecVec ors
     ) =>
   Frame (Record rs)  -- ^ The left frame
   -> Frame (Record rs2) -- ^ The right frame
-  -> [Rec Maybe ors] -- ^ A list of the merged records, now in the Maybe functor
+  -> [Rec (Maybe :. ElField) ors] -- ^ A list of the merged records, now in the Maybe functor
 
 outerJoin a b =
   concat
@@ -182,13 +180,15 @@ rightJoin :: forall fs rs rs' rs2  rs2' ors.
     , RecApplicative rs
     , RecApplicative rs'
     , Grouping (Record fs)
+    , RMap rs2
+    , RMap ors
     , RecVec rs
     , RecVec rs2'
     , RecVec ors
     ) =>
   Frame (Record rs)  -- ^ The left frame
   -> Frame (Record rs2) -- ^ The right frame
-  -> [Rec Maybe ors] -- ^ A list of the merged records, now in the Maybe functor
+  -> [Rec (Maybe :. ElField) ors] -- ^ A list of the merged records, now in the Maybe functor
 
 rightJoin a b =
   concat  $
@@ -226,6 +226,8 @@ leftJoin :: forall fs rs rs2  rs2'.
     , rs ⊆ (rs ++ rs2')
     , rs2' ⊆ rs2
     , rs2' ~ RDeleteAll fs rs2
+    , RMap rs
+    , RMap (rs ++ rs2')
     , RecApplicative rs2'
     , Grouping (Record fs)
     , RecVec rs
@@ -234,7 +236,7 @@ leftJoin :: forall fs rs rs2  rs2'.
     ) =>
   Frame (Record rs)  -- ^ The left frame
   -> Frame (Record rs2) -- ^ The right frame
-  -> [Rec Maybe (rs ++ rs2')] -- ^ A list of the merged records, now in the Maybe functor
+  -> [Rec (Maybe :. ElField) (rs ++ rs2')] -- ^ A list of the merged records, now in the Maybe functor
 
 leftJoin a b =
   concat

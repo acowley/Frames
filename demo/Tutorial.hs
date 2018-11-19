@@ -32,7 +32,8 @@
 
 import qualified Control.Foldl as L
 import qualified Data.Foldable as F
-import Data.Proxy (Proxy(..))
+import Data.Vinyl
+import Data.Vinyl.Functor (Identity(..), Const(..))
 import Lens.Micro
 import Lens.Micro.Extras
 import Frames
@@ -299,10 +300,10 @@ intFieldDoubler = mapMono (* 2)
 -- constrained polymorphic operation on the other columns, then glue
 -- the first column back on to the result.
 
-addTwoRest :: (AllCols Num rs, AsVinyl rs)
+addTwoRest :: RecMapMethod Num ElField rs
            => Record (s :-> a ': rs) -> Record (s :-> a ': rs)
-addTwoRest (h :& t) = frameCons h (aux t)
-  where aux = mapMethod @Num (\x -> x + 2)
+addTwoRest (h :& t) = h :& aux t
+  where aux = mapFields @Num (\x -> x + 2)
 
 -- #+BEGIN_EXAMPLE
 -- λ> addTwoRest (rcast @'[Occupation, UserId, Age] (frameRow ms 0))
@@ -316,10 +317,10 @@ addTwoRest (h :& t) = frameCons h (aux t)
 
 addTwoOccupation :: (CanDelete Occupation rs,
                      rs' ~ RDelete Occupation rs,
-                     AllCols Num rs', AsVinyl rs')
+                     RecMapMethod Num ElField rs')
                  => Record rs -> Record (Occupation ': RDelete Occupation rs)
-addTwoOccupation r = frameCons (rget' occupation' r)
-                   $ mapMethod @Num (+ 2) (rdel [pr|Occupation|] r)
+addTwoOccupation r =
+  rget @Occupation r :& mapFields @Num (+ 2) (rdel @Occupation r)
 
 -- #+BEGIN_EXAMPLE
 -- λ> addTwoOccupation (rcast @'[UserId,Age,Occupation] (frameRow ms 0))
@@ -336,9 +337,9 @@ addTwoOccupation r = frameCons (rget' occupation' r)
 addTwoOccupation' :: forall rs rs'.
                      (CanDelete Occupation rs,
                       rs' ~ RDelete Occupation rs,
-                      AllCols Num rs', AsVinyl rs')
+                      RecMapMethod Num ElField rs')
                   => Record rs -> Record rs
-addTwoOccupation' = rsubset @rs' %~ mapMethod @Num (+ 2)
+addTwoOccupation' = rsubset %~ mapFields @Num @rs' (+ 2)
 
 -- #+BEGIN_EXAMPLE
 -- λ> addTwoOccupation' (rcast @'[UserId,Age,Occupation] (frameRow ms 0))
@@ -392,9 +393,11 @@ addTwoOccupation' = rsubset @rs' %~ mapMethod @Num (+ 2)
 -- When you're done with ~Frames~ and want to get back to more
 -- familiar monomorphic pastures, you can bundle your data up.
 
-restInts :: (AllAre Int (UnColumn rs), AsVinyl rs)
+restInts :: (RecordToList (Unlabeled rs), StripFieldNames rs,
+             RecMapMethod ((~) Int) Identity (Unlabeled rs))
          => Record (s :-> Text ': rs) -> (Text, [Int])
-restInts (recUncons -> (h, t)) = (h, recToList t)
+restInts (recUncons -> (h,t)) = (h, recordToList t')
+  where t' = rmapMethod @((~) Int) (Const . getIdentity) (stripNames t)
 
 -- #+BEGIN_EXAMPLE
 -- λ> restInts (rcast @'[Occupation,UserId,Age] (frameRow ms 0))
@@ -583,97 +586,87 @@ neOccupations = P.filter (isNewEngland . view u2ZipCode)
 --                     "zip code"],
 --      separator = "|"})
 -- ======>
---   type User =
---       Record ["user id" :-> Int, "age" :-> Int, "gender" :-> Text, "occupation" :-> Text, "zip code" :-> Text]
+-- type User = Record ["user id" :-> Int, "age" :-> Int, "gender" :-> Text, "occupation" :-> Text, "zip code" :-> Text]
 
---   userParser :: ParserOptions
---   userParser
---     = ParserOptions
---         (Just
---            (map
---               T.pack
---               ["user id", "age", "gender", "occupation", "zip code"]))
---         (T.pack "|")
+-- userParser :: ParserOptions
+-- userParser = ParserOptions (Just (map T.pack ["user id"
+--                                              , "age"
+--                                              , "gender"
+--                                              , "occupation"
+--                                              , "zip code"]))
+--                            (T.pack "|")
+--                            (Frames.CSV.RFC4180Quoting '"')
 
---   type UserId = "user id" :-> Int
+-- type UserId = "user id" :-> Int
+-- userId :: forall f_0 rs_1 .
+--           (Functor f_0, RElem UserId rs_1 (RIndex UserId rs_1))
+--        => (Int -> f_0 Int)
+--        -> Record rs_1
+--        -> f_0 (Record rs_1)
+-- userId = rlens @UserId . rfield
+-- userId' :: forall f_2 g_3 rs_4 .
+--            (Functor f_2, RElem UserId rs_4 (RIndex UserId rs_4))
+--         => (g_3 UserId -> f_2 (g_3 UserId))
+--         -> Rec g_3 rs_4
+--         -> f_2 (Rec g_3 rs_4)
+-- userId' = rlens' @UserId
 
---   userId ::
---     forall f_adkB rs_adkC. (Functor f_adkB,
---                             RElem UserId rs_adkC (RIndex UserId rs_adkC)) =>
---     (Int -> f_adkB Int) -> Record rs_adkC -> f_adkB (Record rs_adkC)
---   userId = rlens (Proxy :: Proxy UserId)
+-- type Age = "age" :-> Int
+-- age :: forall f_5 rs_6 .
+--        (Functor f_5, RElem Age rs_6 (RIndex Age rs_6))
+--     => (Int -> f_5 Int)
+--     -> Record rs_6
+--     -> f_5 (Record rs_6)
+-- age = rlens @Age . rfield
+-- age' :: forall f_7 g_8 rs_9 .
+--         (Functor f_7, RElem Age rs_9 (RIndex Age rs_9))
+--      => (g_8 Age -> f_7 (g_8 Age))
+--      -> Rec g_8 rs_9
+--      -> f_7 (Rec g_8 rs_9)
+-- age' = rlens' @Age
 
---   userId' ::
---     forall g_adkD f_adkE rs_adkF. (Functor f_adkE,
---                                    Functor g_adkD,
---                                    RElem UserId rs_adkF (RIndex UserId rs_adkF)) =>
---     (g_adkD UserId -> f_adkE (g_adkD UserId))
---     -> Rec g_adkD rs_adkF -> f_adkE (Rec g_adkD rs_adkF)
---   userId' = rlens' (Proxy :: Proxy UserId)
+-- type Gender = "gender" :-> Text
+-- gender :: forall f_10 rs_11 .
+--           (Functor f_10, RElem Gender rs_11 (RIndex Gender rs_11))
+--        => (Text -> f_10 Text)
+--        -> Record rs_11
+--        -> f_10 (Record rs_11)
+-- gender = rlens @Gender . rfield
+-- gender' :: forall f_12 g_13 rs_14 .
+--            (Functor f_12, RElem Gender rs_14 (RIndex Gender rs_14))
+--         => (g_13 Gender -> f_12 (g_13 Gender))
+--         -> Rec g_13 rs_14
+--         -> f_12 (Rec g_13 rs_14)
+-- gender' = rlens' @Gender
 
---   type Age = "age" :-> Int
+-- type Occupation = (:->) "occupation"
+--                                    Text
+-- occupation :: forall f_15 rs_16 .
+--               (Functor f_15, RElem Occupation rs_16 (RIndex Occupation rs_16))
+--            => (Text -> f_15 Text)
+--            -> Record rs_16
+--            -> f_15 (Record rs_16)
+-- occupation = rlens @Occupation . rfield
+-- occupation' :: forall f_17 g_18 rs_19 .
+--                (Functor f_17, RElem Occupation rs_19 (RIndex Occupation rs_19))
+--             => (g_18 Occupation -> f_17 (g_18 Occupation))
+--             -> Rec g_18 rs_19
+--             -> f_17 (Rec g_18 rs_19)
+-- occupation' = rlens' @Occupation
 
---   age ::
---     forall f_adkG rs_adkH. (Functor f_adkG,
---                             RElem Age rs_adkH (RIndex Age rs_adkH)) =>
---     (Int -> f_adkG Int) -> Record rs_adkH -> f_adkG (Record rs_adkH)
---   age = rlens (Proxy :: Proxy Age)
-
---   age' ::
---     forall g_adkI f_adkJ rs_adkK. (Functor f_adkJ,
---                                    Functor g_adkI,
---                                    RElem Age rs_adkK (RIndex Age rs_adkK)) =>
---     (g_adkI Age -> f_adkJ (g_adkI Age))
---     -> Rec g_adkI rs_adkK -> f_adkJ (Rec g_adkI rs_adkK)
---   age' = rlens' (Proxy :: Proxy Age)
-
---   type Gender = "gender" :-> Text
-
---   gender ::
---     forall f_adkL rs_adkM. (Functor f_adkL,
---                             RElem Gender rs_adkM (RIndex Gender rs_adkM)) =>
---     (Text -> f_adkL Text) -> Record rs_adkM -> f_adkL (Record rs_adkM)
---   gender = rlens (Proxy :: Proxy Gender)
-
---   gender' ::
---     forall g_adkN f_adkO rs_adkP. (Functor f_adkO,
---                                    Functor g_adkN,
---                                    RElem Gender rs_adkP (RIndex Gender rs_adkP)) =>
---     (g_adkN Gender -> f_adkO (g_adkN Gender))
---     -> Rec g_adkN rs_adkP -> f_adkO (Rec g_adkN rs_adkP)
---   gender' = rlens' (Proxy :: Proxy Gender)
-
---   type Occupation = "occupation" :-> Text
-
---   occupation ::
---     forall f_adkQ rs_adkR. (Functor f_adkQ,
---                             RElem Occupation rs_adkR (RIndex Occupation rs_adkR)) =>
---     (Text -> f_adkQ Text) -> Record rs_adkR -> f_adkQ (Record rs_adkR)
---   occupation = rlens (Proxy :: Proxy Occupation)
-
---   occupation' ::
---     forall g_adkS f_adkT rs_adkU. (Functor f_adkT,
---                                    Functor g_adkS,
---                                    RElem Occupation rs_adkU (RIndex Occupation rs_adkU)) =>
---     (g_adkS Occupation -> f_adkT (g_adkS Occupation))
---     -> Rec g_adkS rs_adkU -> f_adkT (Rec g_adkS rs_adkU)
---   occupation' = rlens' (Proxy :: Proxy Occupation)
-
---   type ZipCode = "zip code" :-> Text
-
---   zipCode ::
---     forall f_adkV rs_adkW. (Functor f_adkV,
---                             RElem ZipCode rs_adkW (RIndex ZipCode rs_adkW)) =>
---     (Text -> f_adkV Text) -> Record rs_adkW -> f_adkV (Record rs_adkW)
---   zipCode = rlens (Proxy :: Proxy ZipCode)
-
---   zipCode' ::
---     forall g_adkX f_adkY rs_adkZ. (Functor f_adkY,
---                                    Functor g_adkX,
---                                    RElem ZipCode rs_adkZ (RIndex ZipCode rs_adkZ)) =>
---     (g_adkX ZipCode -> f_adkY (g_adkX ZipCode))
---     -> Rec g_adkX rs_adkZ -> f_adkY (Rec g_adkX rs_adkZ)
---   zipCode' = rlens' (Proxy :: Proxy ZipCode)
+-- type ZipCode = "zip code" :-> Text
+-- zipCode :: forall f_20 rs_21 .
+--            (Functor f_20, RElem ZipCode rs_21 (RIndex ZipCode rs_21))
+--         => (Text -> f_20 Text)
+--         -> Record rs_21
+--         -> f_20 (Record rs_21)
+-- zipCode = rlens @ZipCode . rfield
+-- zipCode' :: forall f_22 g_23 rs_24 .
+--             (Functor f_22, RElem ZipCode rs_24 (RIndex ZipCode rs_24))
+--          => (g_23 ZipCode -> f_22 (g_23 ZipCode))
+--          -> Rec g_23 rs_24
+--          -> f_22 (Rec g_23 rs_24)
+-- zipCode' = rlens' @ZipCode
 -- #+end_src
 
 -- ** Thanks

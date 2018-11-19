@@ -1,6 +1,8 @@
 {-# LANGUAGE CPP, DataKinds, OverloadedStrings, QuasiQuotes,
-             TemplateHaskell, TypeOperators #-}
+             ScopedTypeVariables, TemplateHaskell, TypeApplications,
+             TypeOperators #-}
 module Main (manualGeneration, main) where
+import Control.Exception (ErrorCall, catch)
 import Control.Monad (unless)
 import Data.Functor.Identity
 import Data.Char
@@ -12,6 +14,7 @@ import Language.Haskell.TH as TH
 import Language.Haskell.TH.Syntax (addDependentFile)
 import Frames
 import Frames.CSV (produceCSV)
+import Frames.CSV (defaultParser, produceTokens, defaultSep, readColHeaders)
 import DataCSV
 import Pipes.Prelude (toListM)
 import PrettyTH
@@ -21,6 +24,13 @@ import Test.Hspec as H
 import Test.HUnit.Lang (assertFailure)
 
 import qualified LatinTest as Latin
+import qualified Issue114 as Issue114
+import qualified NoHeader
+import qualified Categorical
+
+import qualified UncurryFold
+import qualified UncurryFoldNoHeader
+import qualified UncurryFoldPartialData
 
 -- | Extract all example @(CSV, generatedCode)@ pairs from
 -- @test/examples.toml@
@@ -73,11 +83,19 @@ instance Show Code where show (Code x) = x
 instance Eq Code where
   Code a == Code b = filter (not . isSpace) a == filter (not . isSpace) b
 
+shouldBeWithinEpsilon :: Double -> Double -> Expectation
+shouldBeWithinEpsilon actual expected =
+  unless (abs (actual - expected) < 1e-6)
+         (assertFailure
+           (show actual
+            ++ " is not very close to the expected value "
+            ++ show expected))
+
 main :: IO ()
 main = do
   hspec $
     do
-#if __GLASGOW_HASKELL__ < 804
+#if __GLASGOW_HASKELL__ >= 804
        describe "Haskell type generation" $
          mapM_ (\(CsvExample k _ g, g') -> it k (Code g' `shouldBe` Code g)) csvTests
 #endif
@@ -139,3 +157,47 @@ main = do
                            inCoreAoS (readTable fp) :: IO (Frame NoTruncateRow)
          it "Doesn't truncate after missing data" $
            F.length frameMissing `shouldBe` 4
+       describe "Parses Issue 114 Data" $ do
+         fnames <- H.runIO Issue114.testNames
+         it "Extracts facility_name" $
+           fnames `shouldBe` ["LILLIAN B. SMITH, ET AL", "MUSSER, B W \"B\""]
+       describe "Supports user-supplied column names" $ do
+         res0 <- H.runIO (NoHeader.getJobAndSchooling 0)
+         it "Extracts job from row 0" $
+           fst <$> res0 `shouldBe` Just "gov.administrators"
+         it "Extracts schooling from row 0" $
+           maybe 99 snd res0 `shouldBeWithinEpsilon` 13.11
+         res9 <- H.runIO (NoHeader.getJobAndSchooling 9)
+         it "Extracts job from row 9" $
+           fst <$> res9 `shouldBe` Just "mining.engineers"
+         it "Extracts schooling from row 9" $
+           maybe 99 snd res9 `shouldBeWithinEpsilon` 14.64
+         resWithHeader <- H.runIO UncurryFold.averageRatio
+         resNoHeader <- H.runIO UncurryFoldNoHeader.averageRatio
+         it "Produces identical numerics independent of column names" $
+           resWithHeader `shouldBe` resNoHeader
+       describe "Can read into Maybe values" $ do
+         (n,avg) <- H.runIO UncurryFoldPartialData.incomeOfUnknownPrestige
+         it "Found the expected number of partial rows" $
+           n `shouldBe` 4
+         it "Computed the average income correctly" $
+           avg `shouldBe` 3344.5
+       describe "Can generate categorical types" $ do
+         mSmall <- H.runIO Categorical.fifthMonthSmall
+         it "Generates enumerated types for small cardinality sets" $
+           mSmall `shouldBe` Just Categorical.SmallMonthMay
+         mLarge <- H.runIO Categorical.fifthMonthLarge
+         it "Falls back to Text when the number of variants grows" $
+           mLarge `shouldBe` Just (T.pack "May")
+         mCustom <- H.runIO Categorical.fifthMonthCustom
+         it "Can parse into manually-specified categorical variables" $
+           mCustom `shouldBe` Just Categorical.MyMay
+       describe "Detects parse failures" $ do
+         caught <- H.runIO $
+           (runSafeT $ do
+             _ <- readColHeaders @Columns
+                    defaultParser
+                    (produceTokens "test/data/multiline.csv" defaultSep)
+             return False)
+            `catch` \(_ :: ErrorCall) -> return True
+         it "Fails on embedded newlines" caught

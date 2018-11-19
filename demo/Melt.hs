@@ -23,7 +23,7 @@ type Val = "value" :-> Field '[Age, Weight]
 -- functions to values whose type is 'Field ts'.
 testField :: [Record '[Name, "value" :-> Field '[Age, Weight]]]
 testField = filter
-              (onField [pr|Ord,Num|] (> 50) . rget (rlens [pr|Val|]))
+              ((> 50) . rgetField @Val))
               (testMelt testRec1)
 
 testRec2 :: Record '[Name, Age, Weight]

@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, DataKinds, TypeFamilies, TypeOperators #-}
+{-# LANGUAGE CPP, DataKinds, PolyKinds, TypeFamilies, TypeOperators #-}
 -- | Helpers for working with type-level lists.
 module Frames.TypeLevel where
 #if __GLASGOW_HASKELL__ < 800
@@ -21,3 +21,9 @@ type family AllAre a ts :: Constraint where
 type family ReplaceAll a xs where
   ReplaceAll a '[] = '[]
   ReplaceAll a (x ': xs) = a ': ReplaceAll a xs
+
+-- | Replace the second component of every tuple in a type-level list
+-- with a constant.
+type family ReplaceAllSnd a (xs :: [(k1,k2)]) where
+  ReplaceAllSnd a '[] = '[]
+  ReplaceAllSnd a ('(s,x) ': xs) = '(s,a) ': ReplaceAllSnd a xs

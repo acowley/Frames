@@ -1,3 +1,21 @@
+# 0.6.0
+Support external CSV tokenizers
+
+Internal functionality is now defined more cleanly atop a stream of rows already broken into columns (rather than a stream of rows that we quietly break into columns ourself). This permits the use of external parsers such as provided by the new [Frames-dsv](https://hackage.haskell.org/package/Frames-dsv) package that supplies a CSV parser built atop `hw-dsv`.
+
+The built-in CSV parser remains for ease of installation.
+
+# 0.5.1
+GHC 8.6 compatibility
+
+# 0.5.0
+
+- Renamed the `rgetf` and `rputf` exported by the `Frames` module to `rgetField` and `rputField`. This avoids clashing with the same names exported by `vinyl` and further advances the process of eliminating the old `Frames` `Col` type in favor of `vinyl`'s `ElField`.
+
+- Add a `ShowCSV` class rather than leaning on overburdened `Show` instances.
+
+- Add support for categorical column types: values of these types are one of a small number of textual values. Because they can only take on a small number of different text values, we can compactly represent values of these types as standard Haskell sum types.
+
 # 0.4.0
 
 - Added table joins in `Data.Vinyl.Joins` (Chris Hammill)
