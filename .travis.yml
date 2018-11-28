@@ -42,6 +42,8 @@ matrix:
 
   allow_failures:
     - compiler: "ghc-head"
+    # The discrimination package does not currently compile with GHC-8.6
+    - compiler: "ghc-8.6.2"
 
 before_install:
   - HC=${CC}
