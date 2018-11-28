@@ -218,7 +218,7 @@ test-suite spec
   main-is:             Spec.hs
   other-modules:       DataCSV PrettyTH Temp LatinTest Issue114 NoHeader
                        UncurryFold UncurryFoldNoHeader UncurryFoldPartialData
-                       Categorical
+                       Categorical Chunks
   build-depends:       base, text, hspec, Frames, template-haskell,
                        temporary, directory, htoml, regex-applicative, pretty,
                        unordered-containers, pipes, HUnit, vinyl,
