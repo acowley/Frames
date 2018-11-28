@@ -15,6 +15,7 @@ import Language.Haskell.TH.Syntax (addDependentFile)
 import Frames
 import Frames.CSV (produceCSV)
 import Frames.CSV (defaultParser, produceTokens, defaultSep, readColHeaders)
+import qualified Chunks
 import DataCSV
 import Pipes.Prelude (toListM)
 import PrettyTH
@@ -201,3 +202,11 @@ main = do
              return False)
             `catch` \(_ :: ErrorCall) -> return True
          it "Fails on embedded newlines" caught
+       describe "Chunking" $ do
+         let everyTenthEducation = [13.11,12.39,15.97,12.79,12.09,11.13,8.5,7.64,8.78,6.92,10.0]
+         inCoreChunks <- H.runIO Chunks.chunkInCore
+         it "Can split in-memory data into chunks" $
+           inCoreChunks `shouldBe` everyTenthEducation
+         streamedChunks <- H.runIO Chunks.chunkStream
+         it "Can split an input stream into Frame chunks" $
+           streamedChunks `shouldBe` everyTenthEducation

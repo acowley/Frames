@@ -149,7 +149,8 @@ instance forall s a rs.
 -- which provides an easier-to-use function that indexes into the
 -- table in a row-major fashion.
 inCoreSoA :: forall m rs. (PrimMonad m, RecVec rs)
-          => P.Producer (Record rs) m () -> m (Int, V.Rec (((->) Int) :. ElField) rs)
+          => P.Producer (Record rs) m ()
+          -> m (Int, V.Rec (((->) Int) :. ElField) rs)
 inCoreSoA xs =
   do mvs <- allocRec (Proxy :: Proxy rs) initialCapacity
      let feed (!i, !sz, !mvs') row
@@ -220,3 +221,39 @@ toFrame xs = runST $ inCoreAoS (P.each xs)
 filterFrame :: RecVec rs => (Record rs -> Bool) -> FrameRec rs -> FrameRec rs
 filterFrame p f = runST $ inCoreAoS $ P.each f P.>-> P.filter p
 {-# INLINE filterFrame #-}
+
+-- | Process a stream of 'Record's into a stream of 'Frame's that each
+-- contains no more than the given number of records.
+produceFrameChunks :: forall rs m. (RecVec rs, PrimMonad m)
+                   => Int
+                   -> P.Producer (Record rs) m ()
+                   -> P.Producer (FrameRec rs) m ()
+produceFrameChunks chunkSize = go
+  where go src = do mutVecs <- P.lift (allocRec (Proxy :: Proxy rs) chunkSize)
+                    goChunk src mutVecs 0
+        goChunk src mutVecs !i
+          | i >= chunkSize =
+              do chunk <- P.lift (freezeFrame i mutVecs)
+                 P.yield chunk
+                 go src
+          | otherwise =
+            do maybeRow <- P.lift (P.next src)
+               case maybeRow of
+                 Left _ -> do
+                   P.lift (freezeFrame i mutVecs) >>= P.yield
+                 Right (r,src') -> do
+                   P.lift (writeRec (Proxy::Proxy rs) i mutVecs r)
+                   goChunk src' mutVecs (i+1)
+        freezeFrame :: Int -> Record (VectorMs m rs) -> m (FrameRec rs)
+        freezeFrame n =
+          fmap (toAoS n . produceRec (Proxy::Proxy rs))
+          . freezeRec (Proxy::Proxy rs) n
+{-# INLINABLE produceFrameChunks #-}
+
+-- | Split a 'Frame' into chunks of no more than the given number of
+-- records. The underlying memory is shared with the original 'Frame'.
+frameChunks :: Int -> FrameRec rs -> [FrameRec rs]
+frameChunks chunkSize whole = map aux [ 0, chunkSize .. frameLength whole - 1 ]
+  where aux i = Frame (min (frameLength whole - i) chunkSize)
+                      (frameRow whole . (+ i))
+{-# INLINABLE frameChunks #-}
