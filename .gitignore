@@ -29,5 +29,6 @@
 .stack-work
 *~
 /dist-newstyle
+/demo/framestack/framestack.cabal
 /.direnv.*
 /.envrc

@@ -7,53 +7,31 @@ import Lens.Micro
 import qualified Pipes as P
 import qualified Pipes.Prelude as P
 
-tableTypes "Row" "data/data1.csv"
+tableTypes "Row" "../../data/data1.csv"
 
 tbl :: IO [Row]
-tbl = runSafeT . P.toListM $ readTable "data/data1.csv"
+tbl = runSafeT . P.toListM $ readTable "../../data/data1.csv"
+
 
 ageDoubler :: (Age ∈ rs) => Record rs -> Record rs
 ageDoubler = age %~ (* 2)
 
 tbl2 :: IO [Row]
-tbl2 = runSafeT . P.toListM $ readTable "data/data2.csv"
+tbl2 = runSafeT . P.toListM $ readTable "../../data/data2.csv"
 
 tbl2a :: IO [ColFun Maybe Row]
-tbl2a = runSafeT . P.toListM $ readTableMaybe "data/data2.csv"
-
-{-
-
-REPL examples:
-
-λ> tbl >>= mapM_ print
-{name :-> "joe", age :-> 21}
-{name :-> "sue", age :-> 23}
-{name :-> "bob", age :-> 44}
-{name :-> "laura", age :-> 18}
-
-λ> tbl2 >>= mapM_ print
-{name :-> "joe", age :-> 21}
-{name :-> "sue", age :-> 23}
-{name :-> "laura", age :-> 18}
-
-λ> tbl2a >>= mapM_ (putStrLn . showRecF)
-{Just (name :-> "joe"), Just (age :-> 21)}
-{Just (name :-> "sue"), Just (age :-> 23)}
-{Just (name :-> "bob"), Nothing}
-{Just (name :-> "laura"), Just (age :-> 18)}
-
--}
+tbl2a = runSafeT . P.toListM $ readTableMaybe "../../data/data2.csv"
 
 -- Sample data from http://support.spatialkey.com/spatialkey-sample-csv-data/
 -- Note: We have to replace carriage returns (\r) with line feed
 -- characters (\n) for the text library's line parsing to work.
-tableTypes "Ins" "data/FL2.csv"
+tableTypes "Ins" "../../data/FL2.csv"
 
 insuranceTbl :: MonadSafe m => P.Producer Ins m ()
-insuranceTbl = readTable "data/FL2.csv"
+insuranceTbl = readTable "../../data/FL2.csv"
 
 insMaybe :: MonadSafe m => P.Producer (ColFun Maybe Ins) m ()
-insMaybe = readTableMaybe "data/FL2.csv"
+insMaybe = readTableMaybe "../../data/FL2.csv"
 
 type TinyIns = Record [PolicyID, PointLatitude, PointLongitude]
 

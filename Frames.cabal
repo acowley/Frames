@@ -15,7 +15,7 @@ copyright:           Copyright (C) 2014-2018 Anthony Cowley
 category:            Data
 build-type:          Simple
 extra-source-files:  benchmarks/*.hs benchmarks/*.py
-                     demo/Main.hs CHANGELOG.md README.md
+                     demo/framestack/app/Main.hs CHANGELOG.md README.md
                      data/GetData.hs
                      test/examples.toml
                      test/data/managers.csv test/data/employees.csv
@@ -142,7 +142,7 @@ executable demo
     build-depends: base, list-t, microlens, transformers, Frames,
                    vector, text, template-haskell, ghc-prim, readable,
                    pipes
-  hs-source-dirs: demo
+  hs-source-dirs: demo/framestack/app
   default-language: Haskell2010
   ghc-options: -O2
   -- ghc-options: -O2 -fllvm
