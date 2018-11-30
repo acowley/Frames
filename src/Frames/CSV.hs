@@ -8,7 +8,7 @@
 -- to those types.
 module Frames.CSV where
 import Control.Exception (try, IOException)
-import Control.Monad (when)
+import Control.Monad (when, unless)
 import qualified Data.ByteString.Char8 as B8
 import qualified Data.Foldable as F
 import Data.List (intercalate)
@@ -140,25 +140,35 @@ reassembleRFC4180QuotedParts sep quoteChar = go
 -- | Infer column types from a prefix (up to 1000 lines) of a CSV
 -- file.
 prefixInference :: (ColumnTypeable a, Monoid a, Monad m)
-                => ParserOptions
-                -> P.Parser T.Text m [a]
-prefixInference opts = P.draw >>= \case
+                => P.Parser [T.Text] m [a]
+prefixInference = P.draw >>= \case
   Nothing -> return []
   Just row1 -> P.foldAll (\ts -> zipWith (<>) ts . inferCols)
                          (inferCols row1)
                          id
-  where inferCols = map inferType . tokenizeRow opts
+  where inferCols = map inferType
 
 -- | Extract column names and inferred types from a CSV file.
 readColHeaders :: (ColumnTypeable a, Monoid a, Monad m)
-               => ParserOptions -> P.Producer T.Text m () -> m [(T.Text, a)]
+               => ParserOptions -> P.Producer [T.Text] m () -> m [(T.Text, a)]
 readColHeaders opts = P.evalStateT $
-  do headerRow <- maybe ((tokenizeRow opts
-                         . fromMaybe (error "Empty Producer has no header row")) <$> P.draw)
+  do headerRow <- maybe (fromMaybe err <$> P.draw)
                         pure
                         (headerOverride opts)
-     colTypes <- prefixInference opts
+     colTypes <- prefixInference
+     unless (length headerRow == length colTypes) (error errNumColumns)
      return (zip headerRow colTypes)
+  where err = error "Empty Producer has no header row"
+        errNumColumns =
+          unlines
+          [ ""
+          , "Error parsing CSV: "
+          , "  Number of columns in header differs from number of columns"
+          , "  found in the remaining file. This may be due to newlines"
+          , "  being present within the data itself (not just separating"
+          , "  rows). If support for embedded newlines is required, "
+          , "  consider using the Frames-dsv package in conjunction with"
+          , "  Frames to make use of a different CSV parser."]
 
 -- * Loading CSV Data
 
@@ -194,6 +204,16 @@ pipeLines pgetLine fp = Safe.withFile fp ReadMode $ \h ->
 produceTextLines :: P.MonadSafe m => FilePath -> P.Producer T.Text m ()
 produceTextLines = pipeLines (try . T.hGetLine)
 
+-- | Produce lines of tokens that were separated by the given
+-- separator.
+produceTokens :: P.MonadSafe m
+              => FilePath
+              -> Separator
+              -> P.Producer [T.Text] m ()
+produceTokens fp sep = produceTextLines fp >-> P.map tokenize
+  where tokenize = tokenizeRow popts
+        popts = defaultParser { columnSeparator = sep }
+
 -- | Consume lines of 'T.Text', writing them to a file.
 consumeTextLines :: P.MonadSafe m => FilePath -> P.Consumer T.Text m r
 consumeTextLines fp = Safe.withFile fp WriteMode $ \h ->
@@ -202,8 +222,9 @@ consumeTextLines fp = Safe.withFile fp WriteMode $ \h ->
 
 -- | Produce the lines of a latin1 (or ISO8859 Part 1) encoded file as
 -- ’T.Text’ values.
-readFileLatin1Ln :: P.MonadSafe m => FilePath -> P.Producer T.Text m ()
-readFileLatin1Ln = pipeLines (try . fmap T.decodeLatin1 . B8.hGetLine)
+readFileLatin1Ln :: P.MonadSafe m => FilePath -> P.Producer [T.Text] m ()
+readFileLatin1Ln fp = pipeLines (try . fmap T.decodeLatin1 . B8.hGetLine) fp
+                      >-> P.map (tokenizeRow defaultParser)
 
 -- | Read a 'RecF' from one line of CSV.
 readRow :: ReadRec rs
@@ -216,17 +237,19 @@ readTableMaybeOpt :: (P.MonadSafe m, ReadRec rs, RMap rs)
                   -> FilePath
                   -> P.Producer (Rec (Maybe :. ElField) rs) m ()
 readTableMaybeOpt opts csvFile =
-  produceTextLines csvFile >-> pipeTableMaybeOpt opts
+  produceTokens csvFile (columnSeparator opts) >-> pipeTableMaybeOpt opts
 {-# INLINE readTableMaybeOpt #-}
 
 -- | Stream lines of CSV data into rows of ’Rec’ values values where
 -- any given entry can fail to parse.
 pipeTableMaybeOpt :: (Monad m, ReadRec rs, RMap rs)
                   => ParserOptions
-                  -> P.Pipe T.Text (Rec (Maybe :. ElField) rs) m ()
+                  -> P.Pipe [T.Text] (Rec (Maybe :. ElField) rs) m ()
 pipeTableMaybeOpt opts = do
   when (isNothing (headerOverride opts)) (() <$ P.await)
-  P.map (rmap (either (const (Compose Nothing)) (Compose . Just) . getCompose) . readRow opts)
+  P.map (rmap (either (const (Compose Nothing))
+                      (Compose . Just) . getCompose)
+         . readRec)
 {-# INLINE pipeTableMaybeOpt #-}
 
 -- | Stream lines of CSV data into rows of ’Rec’ values values where
@@ -249,7 +272,7 @@ readTableMaybe = readTableMaybeOpt defaultParser
 -- | Stream lines of CSV data into rows of ’Rec’ values where any
 -- given entry can fail to parse.
 pipeTableMaybe :: (Monad m, ReadRec rs, RMap rs)
-               => P.Pipe T.Text (Rec (Maybe :. ElField) rs) m ()
+               => P.Pipe [T.Text] (Rec (Maybe :. ElField) rs) m ()
 pipeTableMaybe = pipeTableMaybeOpt defaultParser
 {-# INLINE pipeTableMaybe #-}
 
@@ -296,7 +319,7 @@ readTableOpt opts csvFile = readTableMaybeOpt opts csvFile P.>-> go
 -- | Pipe lines of CSV text into rows for which each column was
 -- successfully parsed.
 pipeTableOpt :: (ReadRec rs, RMap rs, Monad m)
-             => ParserOptions -> P.Pipe T.Text (Record rs) m ()
+             => ParserOptions -> P.Pipe [T.Text] (Record rs) m ()
 pipeTableOpt opts = pipeTableMaybeOpt opts >-> P.map recMaybe >-> P.concat
 {-# INLINE pipeTableOpt #-}
 
@@ -310,7 +333,7 @@ readTable = readTableOpt defaultParser
 -- | Pipe lines of CSV text into rows for which each column was
 -- successfully parsed.
 pipeTable :: (ReadRec rs, RMap rs, Monad m)
-          => P.Pipe T.Text (Record rs) m ()
+          => P.Pipe [T.Text] (Record rs) m ()
 pipeTable = pipeTableOpt defaultParser
 {-# INLINE pipeTable #-}
 

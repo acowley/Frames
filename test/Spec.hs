@@ -1,6 +1,8 @@
 {-# LANGUAGE CPP, DataKinds, OverloadedStrings, QuasiQuotes,
-             TemplateHaskell, TypeOperators #-}
+             ScopedTypeVariables, TemplateHaskell, TypeApplications,
+             TypeOperators #-}
 module Main (manualGeneration, main) where
+import Control.Exception (ErrorCall, catch)
 import Control.Monad (unless)
 import Data.Functor.Identity
 import Data.Char
@@ -12,6 +14,7 @@ import Language.Haskell.TH as TH
 import Language.Haskell.TH.Syntax (addDependentFile)
 import Frames
 import Frames.CSV (produceCSV)
+import Frames.CSV (defaultParser, produceTokens, defaultSep, readColHeaders)
 import DataCSV
 import Pipes.Prelude (toListM)
 import PrettyTH
@@ -189,3 +192,12 @@ main = do
          mCustom <- H.runIO Categorical.fifthMonthCustom
          it "Can parse into manually-specified categorical variables" $
            mCustom `shouldBe` Just Categorical.MyMay
+       describe "Detects parse failures" $ do
+         caught <- H.runIO $
+           (runSafeT $ do
+             _ <- readColHeaders @Columns
+                    defaultParser
+                    (produceTokens "test/data/multiline.csv" defaultSep)
+             return False)
+            `catch` \(_ :: ErrorCall) -> return True
+         it "Fails on embedded newlines" caught

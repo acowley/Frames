@@ -1,0 +1,8 @@
+RowNum,Description,X,Y
+1,"simple",10,10
+2,"""quoted""",20,20
+3,"multi
+line
+text
+field",30,30
+4,"simple again",40,40

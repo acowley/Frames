@@ -1,13 +1,6 @@
-{-# LANGUAGE PolyKinds #-}
-{-# LANGUAGE BangPatterns,
-             CPP,
-             DataKinds,
-             EmptyCase,
-             FlexibleInstances,
-             ScopedTypeVariables,
-             TupleSections,
-             TypeFamilies,
-             TypeOperators,
+{-# LANGUAGE BangPatterns, CPP, DataKinds, EmptyCase,
+             FlexibleInstances, PolyKinds, ScopedTypeVariables,
+             TupleSections, TypeFamilies, TypeOperators,
              UndecidableInstances #-}
 -- | Efficient in-memory (in-core) storage of tabular data.
 module Frames.InCore where

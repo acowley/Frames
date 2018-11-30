@@ -150,8 +150,9 @@ data RowGen (a :: [GHC.Type]) =
            -- ^ A record field that mentions the phantom type list of
            -- possible column types. Having this field prevents record
            -- update syntax from losing track of the type argument.
-         , lineReader :: P.Producer T.Text (P.SafeT IO) ()
-           -- ^ A producer of lines of ’T.Text’xs
+         , lineReader :: Separator -> P.Producer [T.Text] (P.SafeT IO) ()
+           -- ^ A producer of rows of ’T.Text’ values that were
+           -- separated by a 'Separator' value.
          }
 
 -- -- | Shorthand for a 'Proxy' value of 'ColumnUniverse' applied to the
@@ -164,12 +165,12 @@ data RowGen (a :: [GHC.Type]) =
 -- separator (a comma), infer column types from the default 'Columns'
 -- set of types, and produce a row type with name @Row@.
 rowGen :: FilePath -> RowGen CommonColumns
-rowGen = RowGen [] "" defaultSep "Row" Proxy . produceTextLines
+rowGen = RowGen [] "" defaultSep "Row" Proxy . produceTokens
 
 -- | Like 'rowGen', but will also generate custom data types for
 -- 'Categorical' variables with up to 8 distinct variants.
 rowGenCat :: FilePath -> RowGen CommonColumnsCat
-rowGenCat = RowGen [] "" defaultSep "Row" Proxy . produceTextLines
+rowGenCat = RowGen [] "" defaultSep "Row" Proxy . produceTokens
 
 -- -- | Generate a type for each row of a table. This will be something
 -- -- like @Record ["x" :-> a, "y" :-> b, "z" :-> c]@.
@@ -202,12 +203,11 @@ prefixSize = 1000
 --         colNames' | null columnNames = Nothing
 --                   | otherwise = Just (map T.pack columnNames)
 --         opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
---         lineSource = lineReader >-> P.take prefixSize
+--         lineSource = lineReader separator >-> P.take prefixSize
 
 -- | Tokenize the first line of a ’P.Producer’.
-colNamesP :: Monad m
-          => ParserOptions -> P.Producer T.Text m () -> m [T.Text]
-colNamesP opts src = either (const []) (tokenizeRow opts . fst) <$> P.next src
+colNamesP :: Monad m => P.Producer [T.Text] m () -> m [T.Text]
+colNamesP src = either (const []) fst <$> P.next src
 
 -- | Generate a type for a row of a table all of whose columns remain
 -- unparsed 'Text' values.
@@ -216,7 +216,7 @@ tableTypesText' :: forall a c.
                 => RowGen a -> DecsQ
 tableTypesText' (RowGen {..}) =
   do colNames <- runIO . P.runSafeT $
-                 maybe (colNamesP opts lineReader)
+                 maybe (colNamesP (lineReader separator))
                        pure
                        (headerOverride opts)
      let headers = zip colNames (repeat (ConT ''T.Text))
@@ -266,7 +266,7 @@ tableTypes' (RowGen {..}) =
   where colNames' | null columnNames = Nothing
                   | otherwise = Just (map T.pack columnNames)
         opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
-        lineSource = lineReader P.>-> P.take prefixSize
+        lineSource = lineReader separator P.>-> P.take prefixSize
         mkColDecs :: T.Text -> Either (String -> Q [Dec]) Type -> Q (Type, [Dec])
         mkColDecs colNm colTy = do
           let safeName = tablePrefix ++ (T.unpack . sanitizeTypeName $ colNm)

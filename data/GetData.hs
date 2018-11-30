@@ -2,6 +2,7 @@
 import Codec.Archive.Zip
 import qualified Data.ByteString.Lazy.Char8 as B
 import Data.Maybe (fromJust)
+import Data.Monoid (First(..))
 import Network.HTTP.Client
 import System.Directory (createDirectoryIfMissing)
 
@@ -28,6 +29,13 @@ getAdultIncome = do m <- newManager defaultManagerSettings
                     httpLbs req m >>=
                         B.writeFile "data/adult.csv"
                       . B.append colNames
+                      . B.unlines
+                      . map (\ln -> maybe ln id
+                                    . getFirst
+                                    $ foldMap (First . ($ ln))
+                                        [ B.stripSuffix ", <=50K"
+                                        , B.stripSuffix ", >50K" ])
+                      . B.lines
                       . responseBody
   where Just req = parseUrlThrow "http://archive.ics.uci.edu/ml/machine-learning-databases/adult/adult.data"
         colNames = "age, workclass, fnlwgt, education, education-num, \
