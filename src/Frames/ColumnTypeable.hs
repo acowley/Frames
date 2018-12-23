@@ -6,6 +6,7 @@ import Data.Maybe (fromMaybe)
 import Data.Readable (Readable(fromText))
 import Data.Typeable (Proxy(..), typeRep, Typeable)
 import qualified Data.Text as T
+import Data.Int (Int32, Int64)
 import Data.Vinyl.Functor (Const(..))
 import Language.Haskell.TH
 
@@ -58,10 +59,21 @@ discardConfidence (Definitely x) = x
 parse' :: (MonadPlus m, Parseable a) => T.Text -> m a
 parse' = fmap discardConfidence . parse
 
+parseIntish :: (Readable a, MonadPlus f) => T.Text -> f (Parsed a)
+parseIntish t =
+  Definitely <$> fromText (fromMaybe t (T.stripSuffix (T.pack ".0") t))
+
 instance Parseable Bool where
+
 instance Parseable Int where
-  parse t = Definitely <$>
-            fromText (fromMaybe t (T.stripSuffix (T.pack ".0") t))
+  parse = parseIntish
+instance Parseable Int32 where
+  parse = parseIntish
+instance Parseable Int64 where
+  parse = parseIntish
+instance Parseable Integer where
+  parse = parseIntish
+
 instance Parseable Float where
 instance Parseable Double where
   -- Some CSV's export Doubles in a format like '1,000.00', filtering
