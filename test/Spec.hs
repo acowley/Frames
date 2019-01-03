@@ -7,7 +7,7 @@ import Control.Monad (unless)
 import Data.Functor.Identity
 import Data.Char
 import qualified Data.Foldable as F
-import Data.List (find)
+import Data.List (find, isPrefixOf)
 import Data.Monoid (First(..))
 import qualified Data.Text as T
 import Language.Haskell.TH as TH
@@ -82,7 +82,16 @@ type NoTruncateRow = Record ["id" :-> Int, "foo" :-> Int]
 newtype Code = Code String
 instance Show Code where show (Code x) = x
 instance Eq Code where
-  Code a == Code b = filter (not . isSpace) a == filter (not . isSpace) b
+  Code a == Code b = clean a == clean b
+    where clean = go (removePrefix moduleNames) . filter (not . isSpace)
+          go _ [] = []
+          go f s@(c:cs) = case removePrefix moduleNames s of
+                            Nothing -> c : go f cs
+                            Just n -> go f (drop n s)
+          moduleNames = [ "GHC.Maybe." ]
+          removePrefix [] _ = Nothing
+          removePrefix (w:ws) s | w `isPrefixOf` s = Just (length w)
+                                | otherwise = removePrefix ws s
 
 shouldBeWithinEpsilon :: Double -> Double -> Expectation
 shouldBeWithinEpsilon actual expected =
