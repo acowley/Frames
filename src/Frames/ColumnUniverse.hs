@@ -156,9 +156,11 @@ instance (RPureConstrained Parseable ts, FoldRec ts ts,
   inferType = bestRep
   {-# INLINABLE inferType #-}
 
+#if !MIN_VERSION_vinyl(0,11,0)
 instance forall ts. (RPureConstrained Show ts, RecApplicative ts)
   => Show (CoRec ColInfo ts) where
   show x = "(Col " ++ onCoRec @Show show x ++")"
+#endif  
 
 -- * Common Columns
 

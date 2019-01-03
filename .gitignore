@@ -32,3 +32,4 @@
 /demo/framestack/framestack.cabal
 /.direnv.*
 /.envrc
+/.ghc.environment*
