@@ -6,7 +6,6 @@ packages:
 extra-deps:
 - git: https://github.com/acowley/Frames.git
   commit: 191de8964dfc71119c62087ae81d362726114677
-  subdirs:
-    - Vinyl
-    - .
+- git: https://github.com/VinylRecords/Vinyl.git
+  commit: e16ba6461bb12aa942bfd2cd41604be76dfc9eb7
 
