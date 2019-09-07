@@ -1,4 +1,4 @@
-{ compiler ? "ghc863"
+{ compiler ? "ghc865"
 , withHoogle ? true
 }:
 
