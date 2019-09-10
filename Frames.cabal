@@ -212,6 +212,15 @@ executable kata04
   hs-source-dirs: demo
   default-language: Haskell2010
 
+executable modcsv
+  if !flag(demos)
+    buildable: False
+  main-is: ModifyCSV.hs
+  if flag(demos)
+    build-depends: base, Frames, microlens, pipes
+  hs-source-dirs: demo
+  default-language: Haskell2010
+
 test-suite spec
   type:                exitcode-stdio-1.0
   hs-source-dirs:      test
