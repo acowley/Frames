@@ -62,7 +62,7 @@ library
                        TypeOperators, ConstraintKinds, StandaloneDeriving,
                        UndecidableInstances, ScopedTypeVariables,
                        OverloadedStrings, TypeApplications
-  build-depends:       base >=4.8 && <4.13,
+  build-depends:       base >=4.8 && <4.14,
                        ghc-prim >=0.3 && <0.6,
                        primitive >= 0.6 && < 0.7,
                        text >= 1.1.1.0,
