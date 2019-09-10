@@ -132,10 +132,11 @@ main = do
          -- The test data isn't formatted quite how we'd do it: text
          -- fields aren't quoted, and salaries represented as Doubles
          -- do not have decimal points.
-         let csvInput' = T.replace "Joe" "\"Joe\""
-                       . T.replace "Sarah" "\"Sarah\""
-                       . T.replace "\"80,000\"" "80000.0"
-                       $ T.pack csvInput
+         -- let csvInput' = T.replace "Joe" "\"Joe\""
+         --               . T.replace "Sarah" "\"Sarah\""
+         --               . T.replace "\"80,000\"" "80000.0"
+         --               $ T.pack csvInput
+         let csvInput' = T.replace "\"80,000\"" "80000.0" (T.pack csvInput)
          it "Produces expected output" $
            T.unlines (map T.pack csvOutput) `shouldBe` csvInput'
          it "Produces parseable output" $
