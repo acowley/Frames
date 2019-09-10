@@ -364,12 +364,12 @@ produceCSV recs = do
 -- streaming input that you wish to use to produce streaming output.
 pipeToCSV :: forall ts m.
              (Monad m, ColumnHeaders ts, RecordToList ts,
-              RecMapMethod Show ElField ts)
+              RecMapMethod ShowCSV ElField ts)
           => P.Pipe (Record ts) T.Text m ()
 pipeToCSV = P.yield (T.intercalate "," (map T.pack header)) >> go
   where header = columnHeaders (Proxy :: Proxy (Record ts))
         go :: P.Pipe (Record ts) T.Text m ()
-        go = P.map (T.intercalate "," . map T.pack . showFields)
+        go = P.map (T.intercalate "," . showFieldsCSV)
 
 -- | Write a header row with column names followed by a line of text
 -- for each 'Record' to the given file.

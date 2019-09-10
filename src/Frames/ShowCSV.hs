@@ -14,3 +14,4 @@ instance ShowCSV Bool where
 instance ShowCSV Int where
 instance ShowCSV Double where
 instance ShowCSV Text where
+  showCSV = id
