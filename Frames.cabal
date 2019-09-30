@@ -64,7 +64,7 @@ library
                        OverloadedStrings, TypeApplications
   build-depends:       base >=4.8 && <4.14,
                        ghc-prim >=0.3 && <0.6,
-                       primitive >= 0.6 && < 0.7,
+                       primitive >= 0.6 && < 0.8,
                        text >= 1.1.1.0,
                        template-haskell,
                        transformers,
