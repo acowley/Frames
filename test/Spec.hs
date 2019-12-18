@@ -1,20 +1,28 @@
 {-# LANGUAGE CPP, DataKinds, OverloadedStrings, QuasiQuotes,
              ScopedTypeVariables, TemplateHaskell, TypeApplications,
-             TypeOperators #-}
+             TypeOperators, FlexibleContexts, TypeFamilies #-}
 module Main (manualGeneration, main) where
 import Control.Exception (ErrorCall, catch)
-import Control.Monad (unless)
+import Control.Monad (unless, mzero)
 import Data.Functor.Identity
 import Data.Char
+import qualified Data.Char as C
 import qualified Data.Foldable as F
 import Data.List (find, isPrefixOf)
 import Data.Monoid (First(..))
+import Data.Proxy (Proxy(..))
 import qualified Data.Text as T
+import qualified Data.Vector as V
+import Data.Vinyl (RPureConstrained, RecApplicative)
+import Data.Vinyl.CoRec (foldCoRec, FoldRec)
 import Language.Haskell.TH as TH
 import Language.Haskell.TH.Syntax (addDependentFile)
 import Frames
+import Frames.ColumnTypeable (Parsed(..), Parseable)
+import Frames.ColumnUniverse (bestRep)
 import Frames.CSV (produceCSV)
 import Frames.CSV (defaultParser, produceTokens, defaultSep, readColHeaders)
+import Frames.InCore (VectorFor)
 import qualified Chunks
 import DataCSV
 import Pipes.Prelude (toListM)
@@ -100,6 +108,50 @@ shouldBeWithinEpsilon actual expected =
            (show actual
             ++ " is not very close to the expected value "
             ++ show expected))
+
+inferType
+  :: forall ts.
+    ( RPureConstrained Parseable ts
+    , FoldRec ts ts
+    , RecApplicative ts
+    , T.Text ∈ ts
+    )
+  => Proxy ts -> [Text] -> Parsed Type
+inferType _ inputs =
+  foldCoRec parsedTypeRep (foldMap (bestRep @ts) inputs)
+
+inferTypeCommon, inferTypeCustom :: [Text] -> Parsed Type
+inferTypeCommon = inferType (Proxy @CommonColumns)
+inferTypeCustom = inferType (Proxy @MyColumns)
+
+isInferredType :: String -> Parsed Type -> Bool
+isInferredType typeName (Definitely (ConT typeName'))
+  = typeName' == mkName typeName
+isInferredType _ _ = False
+
+typeIsUncertain :: Parsed Type -> Bool
+typeIsUncertain (Possibly _) = True
+typeIsUncertain (Definitely _) = False
+
+-- Custom data type, as defined in demo/TutorialZipCode.hs
+data ZipT = ZipUS Int Int Int Int Int
+          | ZipWorld Char Char Char Char Char
+  deriving (Eq, Ord, Show)
+
+type instance VectorFor ZipT = V.Vector
+
+instance Readable ZipT  where
+  fromText t
+      | T.length t == 5 = let cs@[v,w,x,y,z] = T.unpack t
+                          in if all C.isDigit cs
+                             then let [a,b,c,d,e] = map C.digitToInt cs
+                               in pure $ ZipUS a b c d e
+                             else return $ ZipWorld v w x y z
+      | otherwise = mzero
+
+instance Parseable ZipT where
+
+type MyColumns = ZipT ': CommonColumns
 
 main :: IO ()
 main = do
@@ -220,3 +272,86 @@ main = do
          streamedChunks <- H.runIO Chunks.chunkStream
          it "Can split an input stream into Frame chunks" $
            streamedChunks `shouldBe` everyTenthEducation
+
+       describe "Column type inference" $ do
+         it "Selects Bool to represent boolean-like values" $ do
+           inferTypeCommon ["1"] `shouldSatisfy` isInferredType "Bool"
+           inferTypeCommon ["0"] `shouldSatisfy` isInferredType "Bool"
+           inferTypeCommon ["T"] `shouldSatisfy` isInferredType "Bool"
+           inferTypeCommon ["F"] `shouldSatisfy` isInferredType "Bool"
+           inferTypeCommon ["True"] `shouldSatisfy` isInferredType "Bool"
+           inferTypeCommon ["False"] `shouldSatisfy` isInferredType "Bool"
+         it "Selects Int to r(Proxy @CommonColumns) epresent integer-like values" $ do
+           inferTypeCommon ["2"] `shouldSatisfy` isInferredType "Int"
+           inferTypeCommon ["3"] `shouldSatisfy` isInferredType "Int"
+           inferTypeCommon ["1337"] `shouldSatisfy` isInferredType "Int"
+           inferTypeCommon ["-1"] `shouldSatisfy` isInferredType "Int"
+           inferTypeCommon [T.pack $ show (maxBound :: Int)] `shouldSatisfy` isInferredType "Int"
+           inferTypeCommon [T.pack $ show (minBound :: Int)] `shouldSatisfy` isInferredType "Int"
+           inferTypeCommon [T.pack $ show ((maxBound :: Int) + 1)] `shouldSatisfy` isInferredType "Int"  -- hmm... should this be Integer?
+           inferTypeCommon ["0.0"] `shouldSatisfy` isInferredType "Int"
+           inferTypeCommon ["1.0"] `shouldSatisfy` isInferredType "Int"
+           inferTypeCommon ["2.0"] `shouldSatisfy` isInferredType "Int"
+           inferTypeCommon ["-1.0"] `shouldSatisfy` isInferredType "Int"
+         it "Selects Double to represent double-like values" $ do
+           inferTypeCommon ["0.000001"] `shouldSatisfy` isInferredType "Double"
+           inferTypeCommon ["1.1"] `shouldSatisfy` isInferredType "Double"
+           inferTypeCommon ["2.000001"] `shouldSatisfy` isInferredType "Double"
+           inferTypeCommon ["1337.1337"] `shouldSatisfy` isInferredType "Double"
+           inferTypeCommon ["-1.1"] `shouldSatisfy` isInferredType "Double"
+           inferTypeCommon ["-1337.0003"] `shouldSatisfy` isInferredType "Double"
+         it "Selects Text otherwise" $ do
+           inferTypeCommon ["foo"] `shouldSatisfy` isInferredType "Text"
+           inferTypeCommon ["-"] `shouldSatisfy` isInferredType "Text"
+           inferTypeCommon ["."] `shouldSatisfy` isInferredType "Text"
+           inferTypeCommon ["Here be some data"] `shouldSatisfy` isInferredType "Text"
+           inferTypeCommon ["7.7.7"] `shouldSatisfy` isInferredType "Text"
+           inferTypeCommon ["7.0-"] `shouldSatisfy` isInferredType "Text"
+         it "Is inconclusive about empty data" $
+           foldCoRec parsedTypeRep (bestRep @CommonColumns "") `shouldBe` Possibly (ConT $ mkName "Text")
+
+         it "Selects Bool when multiple boolean-like values are seen" $ do
+           inferTypeCommon ["0", "1"] `shouldSatisfy` isInferredType "Bool"
+           inferTypeCommon ["1", "0"] `shouldSatisfy` isInferredType "Bool"
+           inferTypeCommon ["1", "0", "0", "1"] `shouldSatisfy` isInferredType "Bool"
+           inferTypeCommon ["T", "F"] `shouldSatisfy` isInferredType "Bool"
+           inferTypeCommon ["T", "F", "0", "1"] `shouldSatisfy` isInferredType "Bool"
+         it "Selects Int over Bool when values include those beyond 0 and 1" $ do
+           inferTypeCommon ["1", "2"]`shouldSatisfy` isInferredType  "Int"
+           inferTypeCommon ["2", "1"]`shouldSatisfy` isInferredType  "Int"
+           inferTypeCommon ["2", "1", "0"]`shouldSatisfy` isInferredType  "Int"
+           inferTypeCommon ["2.0", "1.0", "0.0"]`shouldSatisfy` isInferredType  "Int"
+         it "Selects Double over Int when at least one decimal is seen" $ do
+           inferTypeCommon ["1.1", "2", "3"] `shouldSatisfy` isInferredType "Double"
+           inferTypeCommon ["1.0", "2", "3.1"] `shouldSatisfy` isInferredType "Double"
+           inferTypeCommon ["1", "2", "3.1"] `shouldSatisfy` isInferredType "Double"
+           inferTypeCommon ["1", "2", "3.00001", ""] `shouldSatisfy` isInferredType "Double" -- hmm... should this be 'Maybe Double'?
+         it "Falls back on Text when at least one non-numeric is seen" $ do
+           inferTypeCommon ["foo"] `shouldSatisfy` isInferredType "Text"
+           inferTypeCommon ["1", "foo"] `shouldSatisfy` isInferredType "Text"
+           inferTypeCommon ["True", "foo"] `shouldSatisfy` isInferredType "Text"
+           inferTypeCommon ["1", "2", "foo"] `shouldSatisfy` isInferredType "Text"
+           inferTypeCommon ["1", "2", "3.00001", "foo"] `shouldSatisfy` isInferredType "Text"
+           inferTypeCommon ["1", "2", "", "3.00001", "foo"] `shouldSatisfy` isInferredType "Text"
+
+         it "Makes the same inferences of common data types after a custom type is added" $ do
+           inferTypeCustom ["1"] `shouldSatisfy` isInferredType "Bool"
+           inferTypeCustom ["False"] `shouldSatisfy` typeIsUncertain -- Uncertain because it looks like a 'world' zipcode
+           inferTypeCustom ["False", "True"] `shouldSatisfy` typeIsUncertain
+           inferTypeCustom ["False", "True", "True"] `shouldSatisfy` typeIsUncertain
+           inferTypeCustom ["False", "True", "True", "False"] `shouldSatisfy` typeIsUncertain -- At this point surely it should decide it's Bool? But it's not currently that smart.
+           inferTypeCustom ["F"] `shouldSatisfy` isInferredType "Bool"
+           inferTypeCustom ["3"] `shouldSatisfy` isInferredType "Int"
+           inferTypeCustom ["-1.0"] `shouldSatisfy` isInferredType "Int"
+           inferTypeCustom ["0.000001"] `shouldSatisfy` isInferredType "Double"
+           inferTypeCustom ["-1337.0003"] `shouldSatisfy` isInferredType "Double"
+           inferTypeCustom ["foo"] `shouldSatisfy` isInferredType "Text"
+           inferTypeCustom ["Here be some data"] `shouldSatisfy` isInferredType "Text"
+           inferTypeCustom ["7.0-"] `shouldSatisfy` isInferredType "Text"
+           foldCoRec parsedTypeRep (bestRep @MyColumns "") `shouldBe` Possibly (ConT $ mkName "Text")
+
+         it "Infers a ZipT where appropriate" $ do
+           inferTypeCustom ["12345"] `shouldSatisfy` typeIsUncertain -- May be Int, ZipT, or Text
+           inferTypeCustom ["12345", "abcde"] `shouldSatisfy` typeIsUncertain
+           inferTypeCustom ["12345", "abcde", "54321"] `shouldSatisfy` typeIsUncertain
+           -- inferTypeCustom ["abcde"] `shouldSatisfy` isInferredType "ZipT" -- TODO: this is still inferring `Possibly (ConT Text)`. It should pick the more specific `ZipT` instead.

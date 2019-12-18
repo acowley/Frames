@@ -129,4 +129,5 @@ instance KnownNat n => Parseable (Categorical n) where
           maxVariants :: Int
           maxVariants = fromIntegral (toInteger (natVal' (proxy# :: Proxy# n)))
   representableAsType (S.toList . categories . parsedValue -> cats) =
-    Const (Left (\n -> declareCategorical n (Just n) (map T.unpack cats)))
+    Const . TypeGenerator $
+      \n -> declareCategorical n (Just n) (map T.unpack cats)

@@ -1,4 +1,4 @@
-{-# LANGUAGE BangPatterns, DefaultSignatures, LambdaCase,
+{-# LANGUAGE BangPatterns, DefaultSignatures, LambdaCase, TypeApplications,
              ScopedTypeVariables #-}
 module Frames.ColumnTypeable where
 import Control.Monad (MonadPlus)
@@ -42,12 +42,12 @@ class Parseable a where
   default parseCombine :: MonadPlus m => Parsed a -> Parsed a -> m (Parsed a)
   parseCombine = const . return
 
-  representableAsType :: Parsed a -> Const (Either (String -> Q [Dec]) Type) a
+  representableAsType :: Parsed a -> Const TypeInfo a
   default
     representableAsType :: Typeable a
-                        => Parsed a -> Const (Either (String -> Q [Dec]) Type) a
+                        => Parsed a -> Const TypeInfo a
   representableAsType =
-    const (Const (Right (ConT (mkName (show (typeRep (Proxy :: Proxy a)))))))
+    const . Const . ExistingType . ConT . mkName . show . typeRep $ Proxy @a
 
 -- | Discard any estimate of a parse's ambiguity.
 discardConfidence :: Parsed a -> a
@@ -85,5 +85,35 @@ instance Parseable T.Text where
 -- types, and provides a mechanism to infer which type best represents
 -- some textual data.
 class ColumnTypeable a where
-  colType :: a -> Either (String -> Q [Dec]) Type
+  colType :: a -> TypeInfo
   inferType :: T.Text -> a
+
+data TypeInfo
+  = TypeGenerator (String -> Q [Dec])
+  | ExistingType Type
+
+instance Show TypeInfo where
+  show (TypeGenerator _) = "cat"
+  show (ExistingType t) = show t
+
+existingTypeWithName :: Name -> TypeInfo
+existingTypeWithName = ExistingType . ConT
+
+existingTypeNamed :: String -> TypeInfo
+existingTypeNamed = existingTypeWithName . mkName
+
+getType :: TypeInfo -> Type
+getType (TypeGenerator _) = ConT . mkName $ "Categorical"
+getType (ExistingType t) = t
+
+getExistingType :: TypeInfo -> Maybe Type
+getExistingType (TypeGenerator _) = Nothing
+getExistingType (ExistingType t) = Just t
+
+getColType :: String -> TypeInfo -> Type
+getColType qualName (TypeGenerator _) = ConT (mkName qualName)
+getColType _ (ExistingType t) = t
+
+getExtraDecs :: String -> TypeInfo -> Q [Dec]
+getExtraDecs qualName (TypeGenerator typeGen) = typeGen qualName
+getExtraDecs _ _ = pure []

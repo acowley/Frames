@@ -1,6 +1,6 @@
 {-# LANGUAGE CPP, DataKinds, GADTs, KindSignatures, OverloadedStrings,
              QuasiQuotes, RecordWildCards, RoleAnnotations,
-             ScopedTypeVariables, TemplateHaskell, TupleSections,
+             ScopedTypeVariables, TemplateHaskell, TupleSections, FlexibleContexts,
              TypeApplications, TypeOperators #-}
 -- | Code generation of types relevant to Frames use-cases. Generation
 -- may be driven by an automated inference process or manual use of
@@ -90,11 +90,11 @@ lowerHead = fmap aux . T.uncons
 
 -- | For each column, we declare a type synonym for its type, and a
 -- Proxy value of that type.
-colDec :: T.Text -> String -> T.Text
-       -> (Either (String -> Q [Dec]) Type)
-       -> Q (Type, [Dec])
+colDec :: T.Text -> String -> T.Text -> TypeInfo -> Q (Type, [Dec])
 colDec prefix rowName colName colTypeGen = do
-  (colTy, extraDecs) <- either colDecsHelper (pure . (,[])) colTypeGen
+  let qualName = rowName <> T.unpack (capitalize1 colName)
+  let colTy = getColType qualName colTypeGen
+  extraDecs <- getExtraDecs qualName colTypeGen
   let colTypeQ = [t|$(litT . strTyLit $ T.unpack colName) :-> $(return colTy)|]
   syn <- mkColSynDec colTypeQ colTName'
   lenses <- mkColLensDec colTName' colTy colPName
@@ -102,9 +102,6 @@ colDec prefix rowName colName colTypeGen = do
   where colTName = sanitizeTypeName (prefix <> capitalize1 colName)
         colPName = fromMaybe "colDec impossible" (lowerHead colTName)
         colTName' = mkName $ T.unpack colTName
-        colDecsHelper f =
-          let qualName = rowName ++ T.unpack (capitalize1 colName)
-          in (ConT (mkName qualName),) <$> f qualName
 
 -- | Splice for manually declaring a column of a given type. For
 -- example, @declareColumn "x2" ''Double@ will declare a type synonym
@@ -214,13 +211,13 @@ colNamesP src = either (const []) fst <$> P.next src
 tableTypesText' :: forall a c.
                    (c ~ CoRec ColInfo a, ColumnTypeable c, Monoid c)
                 => RowGen a -> DecsQ
-tableTypesText' (RowGen {..}) =
+tableTypesText' RowGen {..} =
   do colNames <- runIO . P.runSafeT $
                  maybe (colNamesP (lineReader separator))
                        pure
                        (headerOverride opts)
      let headers = zip colNames (repeat (ConT ''T.Text))
-     (colTypes, colDecs) <- (second concat . unzip)
+     (colTypes, colDecs) <- second concat . unzip
                             <$> mapM (uncurry mkColDecs) headers
      let recTy = TySynD (mkName rowTypeName) [] (recDec colTypes)
          optsName = case rowTypeName of
@@ -238,7 +235,7 @@ tableTypesText' (RowGen {..}) =
           mColNm <- lookupTypeName (tablePrefix ++ safeName)
           case mColNm of
             Just n -> pure (ConT n, [])
-            Nothing -> colDec (T.pack tablePrefix) rowTypeName colNm (Right colTy)
+            Nothing -> colDec (T.pack tablePrefix) rowTypeName colNm (ExistingType colTy)
 
 -- | Generate a type for a row of a table. This will be something like
 -- @Record ["x" :-> a, "y" :-> b, "z" :-> c]@. Additionally generates
@@ -248,12 +245,12 @@ tableTypesText' (RowGen {..}) =
 -- rlens \@Foo@, and @foo' = rlens' \@Foo@.
 tableTypes' :: forall a c. (c ~ CoRec ColInfo a, ColumnTypeable c, Monoid c)
             => RowGen a -> DecsQ
-tableTypes' (RowGen {..}) =
+tableTypes' RowGen {..} =
   do headers <- runIO . P.runSafeT
                 $ readColHeaders opts lineSource :: Q [(T.Text, c)]
-     (colTypes, colDecs) <- (second concat . unzip)
-                            <$> mapM (uncurry mkColDecs)
-                                     (map (second colType) headers)
+     (colTypes, colDecs) <- second concat . unzip
+                            <$> mapM (uncurry mkColDecs . second colType)
+                                     headers
      let recTy = TySynD (mkName rowTypeName) [] (recDec colTypes)
          optsName = case rowTypeName of
                       [] -> error "Row type name shouldn't be empty"
@@ -267,7 +264,7 @@ tableTypes' (RowGen {..}) =
                   | otherwise = Just (map T.pack columnNames)
         opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
         lineSource = lineReader separator P.>-> P.take prefixSize
-        mkColDecs :: T.Text -> Either (String -> Q [Dec]) Type -> Q (Type, [Dec])
+        mkColDecs :: T.Text -> TypeInfo -> Q (Type, [Dec])
         mkColDecs colNm colTy = do
           let safeName = tablePrefix ++ (T.unpack . sanitizeTypeName $ colNm)
           mColNm <- lookupTypeName safeName

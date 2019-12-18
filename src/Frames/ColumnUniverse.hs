@@ -6,8 +6,8 @@
              TypeFamilies, TypeOperators, UndecidableInstances #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module Frames.ColumnUniverse (
-  CoRec, Columns, ColumnUniverse, ColInfo,
-  CommonColumns, CommonColumnsCat, parsedTypeRep
+  CoRec, Columns, ColumnUniverse, ColInfo(..),
+  CommonColumns, CommonColumnsCat, parsedTypeRep, bestRep
 ) where
 import Data.Maybe (fromMaybe)
 import Data.Semigroup (Semigroup((<>)))
@@ -41,23 +41,21 @@ tryParseAll = rtraverse getCompose funs
 
 -- | Information necessary for synthesizing row types and comparing
 -- types.
-newtype ColInfo a = ColInfo (Either (String -> Q [Dec]) Type, Parsed a)
+newtype ColInfo a = ColInfo (TypeInfo, Parsed a)
 instance Show a => Show (ColInfo a) where
   show (ColInfo (t,p)) = "(ColInfo {"
-                         ++ either (const "cat") show t
+                         ++ show t
                          ++ ", "
                          ++ show (discardConfidence p) ++"})"
 
 parsedToColInfo :: Parseable a => Parsed a -> ColInfo a
-parsedToColInfo x = case getConst rep of
-                      Left dec -> ColInfo (Left dec, x)
-                      Right ty ->
-                        ColInfo (Right ty, x)
+parsedToColInfo x =
+  let ty = getConst rep
+  in ColInfo (ty, x)
   where rep = representableAsType x
 
 parsedTypeRep :: ColInfo a -> Parsed Type
-parsedTypeRep (ColInfo (t,p)) =
-  const (either (const (ConT (mkName "Categorical"))) id t) <$> p
+parsedTypeRep (ColInfo (t,p)) = getType t <$ p
 
 -- | Map 'Type's we know about (with a special treatment of
 -- synthesized types for categorical variables) to 'Int's for ordering
@@ -95,7 +93,7 @@ lubTypes :: Parsed (Maybe Type) -> Parsed (Maybe Type) -> Maybe Ordering
 lubTypes x y = compare <$> orderParsePriorities y <*> orderParsePriorities x
 
 instance (T.Text ∈ ts, RPureConstrained Parseable ts) => Monoid (CoRec ColInfo ts) where
-  mempty = CoRec (ColInfo ( Right (ConT (mkName "Text")), Possibly T.empty))
+  mempty = CoRec (ColInfo (existingTypeNamed "Text", Possibly T.empty))
   mappend x y = x <> y
 
 -- | A helper For the 'Semigroup' instance below.
@@ -104,7 +102,7 @@ mergeEqTypeParses :: forall ts. (RPureConstrained Parseable ts, T.Text ∈ ts)
 mergeEqTypeParses x@(CoRec _) y = fromMaybe definitelyText
                                 $ coRecTraverse getCompose
                                                 (coRecMapC @Parseable aux x)
-  where definitelyText = CoRec (ColInfo (Right (ConT (mkName "Text")), Definitely T.empty))
+  where definitelyText = CoRec (ColInfo (existingTypeNamed "Text", Definitely T.empty))
         aux :: forall a. (Parseable a, NatToInt (RIndex a ts))
             => ColInfo a -> (Maybe :. ColInfo) a
         aux (ColInfo (_, pX)) =
@@ -118,8 +116,8 @@ mergeEqTypeParses x@(CoRec _) y = fromMaybe definitelyText
 instance (T.Text ∈ ts, RPureConstrained Parseable ts)
   => Semigroup (CoRec ColInfo ts) where
   x@(CoRec (ColInfo (tyX, pX))) <> y@(CoRec (ColInfo (tyY, pY))) =
-    case lubTypes (const (either (const Nothing) Just tyX) <$> pX)
-                  (const (either (const Nothing) Just tyY) <$> pY) of
+    case lubTypes (getExistingType tyX <$ pX)
+                  (getExistingType tyY <$ pY) of
       Just GT -> x
       Just LT -> y
       Just EQ -> mergeEqTypeParses x y
