@@ -1,10 +1,12 @@
-{-# LANGUAGE DataKinds, FlexibleContexts, QuasiQuotes, TemplateHaskell #-}
+{-# LANGUAGE DataKinds, FlexibleContexts, QuasiQuotes, TemplateHaskell, TypeApplications #-}
 module UncurryFoldNoHeader where
-import qualified Control.Foldl as L
-import Data.Vinyl (rcast)
-import Data.Vinyl.Curry (runcurryX)
-import Frames
-import Frames.TH (rowGen, RowGen(..))
+import qualified Control.Foldl                 as L
+import           Data.Vinyl                     ( rcast )
+import           Data.Vinyl.Curry               ( runcurryX )
+import           Frames
+import           Frames.TH                      ( rowGen
+                                                , RowGen(..)
+                                                )
 
 -- Data set from http://vincentarelbundock.github.io/Rdatasets/datasets.html
 tableTypes' (rowGen "test/data/prestigeNoHeader.csv")
