@@ -1,4 +1,4 @@
-{-# LANGUAGE DataKinds, KindSignatures, MagicHash,
+{-# LANGUAGE CPP, DataKinds, KindSignatures, MagicHash,
              ScopedTypeVariables, TemplateHaskell, TypeFamilies,
              ViewPatterns #-}
 -- | Support for representing so-called categorical variables: a
@@ -108,7 +108,11 @@ declareCategorical (cap -> name) (fmap cap -> prefix) variants =
           InstanceD Nothing [] (AppT (ConT ''ShowCSV) (ConT nameName))
                     [FunD 'showCSV (onVariants showCSVClause)]
         iVectorFor =
+#if __GLASGOW_HASKELL__ >= 808          
+          TySynInstD (TySynEqn Nothing (AppT (ConT ''VectorFor) (ConT nameName)) (ConT ''VU.Vector))
+#else
           TySynInstD ''VectorFor (TySynEqn [ConT nameName] (ConT ''VU.Vector))
+#endif
         iNFData =
           let argName = mkName "x"
           in InstanceD Nothing [] (AppT (ConT ''NFData) (ConT nameName))

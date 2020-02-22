@@ -1,9 +1,9 @@
-{-# LANGUAGE DataKinds, FlexibleContexts, QuasiQuotes, TemplateHaskell #-}
+{-# LANGUAGE DataKinds, FlexibleContexts, QuasiQuotes, TemplateHaskell, TypeApplications #-}
 module UncurryFold where
-import qualified Control.Foldl as L
-import Data.Vinyl (rcast)
-import Data.Vinyl.Curry (runcurryX)
-import Frames
+import qualified Control.Foldl                 as L
+import           Data.Vinyl                     ( rcast )
+import           Data.Vinyl.Curry               ( runcurryX )
+import           Frames
 
 -- Data set from http://vincentarelbundock.github.io/Rdatasets/datasets.html
 tableTypes "Row" "test/data/prestige.csv"

@@ -10,7 +10,9 @@ module Frames.ColumnUniverse (
   CommonColumns, CommonColumnsCat, parsedTypeRep
 ) where
 import Data.Maybe (fromMaybe)
+#if __GLASGOW_HASKELL__ < 808
 import Data.Semigroup (Semigroup((<>)))
+#endif
 import qualified Data.Text as T
 import Data.Vinyl
 import Data.Vinyl.CoRec

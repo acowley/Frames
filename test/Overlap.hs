@@ -1,6 +1,9 @@
-{-# LANGUAGE DataKinds, FlexibleContexts, TemplateHaskell #-}
-module Main (main) where
-import Frames
+{-# LANGUAGE DataKinds, FlexibleContexts, TemplateHaskell, TypeApplications #-}
+module Main
+  ( main
+  )
+where
+import           Frames
 
 -- These data files have overlapping column definitions. Frames should
 -- not try to re-define an existing identifier.

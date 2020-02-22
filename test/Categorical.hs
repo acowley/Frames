@@ -1,14 +1,19 @@
 {-# LANGUAGE DataKinds, FlexibleContexts, MultiParamTypeClasses,
-             OverloadedLabels, OverloadedStrings, TemplateHaskell,
-             TypeFamilies, TypeOperators #-}
+             OverloadedLabels, OverloadedStrings, TemplateHaskell, 
+             TypeApplications, TypeFamilies, TypeOperators #-}
 module Categorical where
-import Data.Vinyl.Derived
-import Data.Vinyl.XRec (toHKD)
-import Frames
-import Frames.Categorical (declareCategorical)
-import Frames.TH (rowGenCat, RowGen(..), declarePrefixedColumn)
-import Pipes (Producer, (>->))
-import qualified Pipes.Prelude as P
+import           Data.Vinyl.Derived
+import           Data.Vinyl.XRec                ( toHKD )
+import           Frames
+import           Frames.Categorical             ( declareCategorical )
+import           Frames.TH                      ( rowGenCat
+                                                , RowGen(..)
+                                                , declarePrefixedColumn
+                                                )
+import           Pipes                          ( Producer
+                                                , (>->)
+                                                )
+import qualified Pipes.Prelude                 as P
 
 -- * Automatically inferred categorical data types
 
@@ -19,17 +24,19 @@ tableTypes' (rowGenCat "test/data/catLarge.csv") { rowTypeName = "Large", tableP
 -- no more than 8 variants. In our small data file, five distinct
 -- months appear, so a data type is generated and used.
 fifthMonthSmall :: IO (Maybe SmallMonth)
-fifthMonthSmall = fmap (fmap (rvalf #month)) . runSafeEffect . P.head
-                $ load >-> P.drop 4
-  where load :: MonadSafe m => Producer Small m ()
-        load = readTableOpt smallParser "test/data/catSmall.csv"
+fifthMonthSmall =
+  fmap (fmap (rvalf #month)) . runSafeEffect . P.head $ load >-> P.drop 4
+ where
+  load :: MonadSafe m => Producer Small m ()
+  load = readTableOpt smallParser "test/data/catSmall.csv"
 
 -- When every month appears, Frames leaves that column's type as 'Text'.
 fifthMonthLarge :: IO (Maybe Text)
-fifthMonthLarge = fmap (fmap (rvalf #month)) . runSafeEffect . P.head
-                $ load >-> P.drop 4
-  where load :: MonadSafe m => Producer Large m ()
-        load = readTableOpt largeParser "test/data/catLarge.csv"
+fifthMonthLarge =
+  fmap (fmap (rvalf #month)) . runSafeEffect . P.head $ load >-> P.drop 4
+ where
+  load :: MonadSafe m => Producer Large m ()
+  load = readTableOpt largeParser "test/data/catLarge.csv"
 
 -- * Custom categorical type
 
@@ -51,7 +58,8 @@ type MyRow = Record '[MyId, MyMonth]
 -- parses. We use 'toHKD' to cut through the noise of the @(Maybe
 -- :. ElField)@ interpretation we parsed into.
 fifthMonthCustom :: IO (Maybe MyMonthData)
-fifthMonthCustom = fmap (>>= toHKD . rgetf #month) . runSafeEffect . P.head
-                 $ load >-> P.drop 4
-  where load :: MonadSafe m => Producer (ColFun Maybe MyRow) m ()
-        load = readTableMaybe "test/data/catSmall.csv"
+fifthMonthCustom =
+  fmap (>>= toHKD . rgetf #month) . runSafeEffect . P.head $ load >-> P.drop 4
+ where
+  load :: MonadSafe m => Producer (ColFun Maybe MyRow) m ()
+  load = readTableMaybe "test/data/catSmall.csv"

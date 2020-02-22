@@ -1,4 +1,4 @@
-{-# LANGUAGE DataKinds, FlexibleContexts, FlexibleInstances, GADTs,
+{-# LANGUAGE CPP, DataKinds, FlexibleContexts, FlexibleInstances, GADTs,
              LambdaCase, OverloadedStrings, RankNTypes,
              ScopedTypeVariables, TemplateHaskell, TypeApplications,
              TypeOperators #-}
@@ -13,7 +13,9 @@ import qualified Data.ByteString.Char8 as B8
 import qualified Data.Foldable as F
 import Data.List (intercalate)
 import Data.Maybe (isNothing, fromMaybe)
+#if __GLASGOW_HASKELL__ < 808
 import Data.Monoid ((<>))
+#endif
 import Data.Proxy
 import qualified Data.Text as T
 import qualified Data.Text.Encoding as T
