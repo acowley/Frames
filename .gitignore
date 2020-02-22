@@ -33,3 +33,4 @@
 /.direnv.*
 /.envrc
 /.ghc.environment*
+/.direnv/
