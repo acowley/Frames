@@ -1,4 +1,4 @@
-{-# LANGUAGE DataKinds, FlexibleContexts, TemplateHaskell #-}
+{-# LANGUAGE DataKinds, FlexibleContexts, TemplateHaskell, TypeApplications #-}
 module Main where
 import qualified Data.Vector.Unboxed as V
 import Diagrams.Backend.Rasterific

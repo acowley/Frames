@@ -1,4 +1,4 @@
-{-# language DataKinds, FlexibleContexts, TemplateHaskell #-}
+{-# language DataKinds, FlexibleContexts, TemplateHaskell, TypeApplications #-}
 -- | A demonstration of ingesting a CSV file, modifying the data (in
 -- this case multiplying a column by 2), then writing it back out to a
 -- new CSV file.

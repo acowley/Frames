@@ -108,7 +108,7 @@ declareCategorical (cap -> name) (fmap cap -> prefix) variants =
           InstanceD Nothing [] (AppT (ConT ''ShowCSV) (ConT nameName))
                     [FunD 'showCSV (onVariants showCSVClause)]
         iVectorFor =
-#if __GLASGOW_HASKELL__ >= 808          
+#if __GLASGOW_HASKELL__ >= 808
           TySynInstD (TySynEqn Nothing (AppT (ConT ''VectorFor) (ConT nameName)) (ConT ''VU.Vector))
 #else
           TySynInstD ''VectorFor (TySynEqn [ConT nameName] (ConT ''VU.Vector))

@@ -1,5 +1,5 @@
 {-# LANGUAGE BangPatterns, DataKinds, FlexibleContexts, OverloadedStrings,
-             TemplateHaskell #-}
+             TemplateHaskell, TypeApplications #-}
 import Diagrams.Backend.Rasterific
 import Diagrams (dims2D, width, height)
 import Frames
