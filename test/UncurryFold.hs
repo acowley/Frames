@@ -1,7 +1,6 @@
 {-# LANGUAGE DataKinds, FlexibleContexts, QuasiQuotes, TemplateHaskell, TypeApplications #-}
 module UncurryFold where
 import qualified Control.Foldl                 as L
-import           Data.Vinyl                     ( rcast )
 import           Data.Vinyl.Curry               ( runcurryX )
 import           Frames
 

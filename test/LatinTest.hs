@@ -10,9 +10,8 @@
 
 module LatinTest where
 
-import           Data.Vinyl    (Rec)
 import           Frames
-import           Frames.CSV    (pipeTableMaybe, readFileLatin1Ln)
+import           Frames.CSV    (readFileLatin1Ln)
 import           Pipes         (Producer, (>->))
 import qualified Pipes.Prelude as P
 
