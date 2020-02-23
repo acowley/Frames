@@ -24,7 +24,6 @@ let
   hspkgs = packageSet.override {
     overrides = self: super: {
       vinyl = pkgs.haskell.lib.dontBenchmark (super.callPackage ~/Projects/Vinyl {});
-      cabal2nix = pkgs.haskell.lib.dontCheck super.cabal2nix;
     } // overrideByVersion super;
   };
   drv = hspkgs.callPackage ./default.nix {};
