@@ -24,6 +24,7 @@ import qualified Data.Vector.Unboxed as VU
 import Frames.ColumnTypeable
 import Frames.InCore (VectorFor)
 import Frames.ShowCSV
+import Frames.Utils
 import GHC.Exts (Proxy#, proxy#)
 import GHC.TypeNats
 import Language.Haskell.TH
@@ -67,11 +68,11 @@ declareCategorical (cap -> name) (fmap cap -> prefix) variants =
   ([ dataDecl, iIsString, iReadable, iParseable
    , iShowCSV, iVectorFor, iNFData ] ++)
   <$> unboxDecls name (length variants)
-  where variantCons = map (mkName . maybe id (++) prefix . cap) variants
+  where variantCons = map (mkName . T.unpack . sanitizeTypeName . T.pack . maybe id (++) prefix . cap) variants
         onVariants :: (String -> Name -> a) -> [a]
         onVariants f =
           getZipList (f <$> ZipList variants <*> ZipList variantCons)
-        nameName = mkName name
+        nameName = mkName . T.unpack . sanitizeTypeName . T.pack $ name
         fromStringClause variant variantCon =
           Clause [LitP (StringL variant)] (NormalB (ConE variantCon)) []
         showCSVClause variant variantCon =

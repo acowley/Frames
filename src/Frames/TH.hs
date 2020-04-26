@@ -6,8 +6,8 @@
 -- may be driven by an automated inference process or manual use of
 -- the individual helpers.
 module Frames.TH where
-import Control.Arrow (first, second)
-import Data.Char (isAlpha, isAlphaNum, toLower, toUpper)
+import Control.Arrow (second)
+import Data.Char (toLower)
 import Data.Maybe (fromMaybe)
 #if __GLASGOW_HASKELL__ < 804
 import Data.Semigroup ((<>))
@@ -21,6 +21,7 @@ import Frames.ColumnTypeable
 import Frames.ColumnUniverse
 import Frames.CSV
 import Frames.Rec(Record)
+import Frames.Utils
 import qualified GHC.Types as GHC
 import Language.Haskell.TH
 import Language.Haskell.TH.Syntax
@@ -33,25 +34,6 @@ recDec :: [Type] -> Type
 recDec = AppT (ConT ''Record) . go
   where go [] = PromotedNilT
         go (t:cs) = AppT (AppT PromotedConsT t) (go cs)
-
--- | Capitalize the first letter of a 'T.Text'.
-capitalize1 :: T.Text -> T.Text
-capitalize1 = foldMap (onHead toUpper) . T.split (not . isAlphaNum)
-  where onHead f = maybe mempty (uncurry T.cons . first f) . T.uncons
-
--- | Massage a column name from a CSV file into a valid Haskell type
--- identifier.
-sanitizeTypeName :: T.Text -> T.Text
-sanitizeTypeName = unreserved . fixupStart
-                 . T.concat . T.split (not . valid) . capitalize1
-  where valid c = isAlphaNum c || c == '\'' || c == '_'
-        unreserved t
-          | t `elem` ["Type", "Class"] = "Col" <> t
-          | otherwise = t
-        fixupStart t = case T.uncons t of
-                         Nothing -> "Col"
-                         Just (c,_) | isAlpha c -> t
-                                    | otherwise -> "Col" <> t
 
 -- | Declare a type synonym for a column.
 mkColSynDec :: TypeQ -> Name -> DecQ

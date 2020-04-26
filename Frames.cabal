@@ -58,6 +58,7 @@ library
                        Frames.TypeLevel
                        Frames.Joins
                        Frames.ExtraInstances
+                       Frames.Utils
   other-extensions:    DataKinds, GADTs, KindSignatures, TypeFamilies,
                        TypeOperators, ConstraintKinds, StandaloneDeriving,
                        UndecidableInstances, ScopedTypeVariables,
@@ -227,7 +228,7 @@ test-suite spec
   main-is:             Spec.hs
   other-modules:       DataCSV PrettyTH Temp LatinTest Issue114 NoHeader
                        UncurryFold UncurryFoldNoHeader UncurryFoldPartialData
-                       Categorical Chunks
+                       Categorical Chunks Issue145
   build-depends:       base, text, hspec, Frames, template-haskell,
                        temporary, directory, htoml, regex-applicative, pretty,
                        unordered-containers, pipes, HUnit, vinyl,

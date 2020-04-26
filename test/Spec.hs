@@ -26,6 +26,7 @@ import Test.HUnit.Lang (assertFailure)
 
 import qualified LatinTest as Latin
 import qualified Issue114 as Issue114
+import qualified Issue145
 import qualified NoHeader
 import qualified Categorical
 
@@ -203,6 +204,10 @@ main = do
          mCustom <- H.runIO Categorical.fifthMonthCustom
          it "Can parse into manually-specified categorical variables" $
            mCustom `shouldBe` Just Categorical.MyMay
+         it "Can generate categorical types with space" $
+           enumFrom (minBound :: Issue145.RowCategoryName)
+             `shouldBe` [ Issue145.RowCategoryNameBarCategory
+                        , Issue145.RowCategoryNameFooCategory]
        describe "Detects parse failures" $ do
          caught <- H.runIO $
            (runSafeT $ do
