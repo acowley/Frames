@@ -26,6 +26,7 @@ extra-source-files:  benchmarks/*.hs benchmarks/*.py
                      test/data/prestigePartial.csv
                      test/data/catSmall.csv test/data/catLarge.csv
                      test/data/multiline.csv
+                     test/data/issue145.csv
                      data/left1.csv data/right1.csv data/left_summary.csv
                      data/FL2.csv
 cabal-version:       >=1.10
