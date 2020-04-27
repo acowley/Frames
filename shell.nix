@@ -1,38 +1,35 @@
-{ compiler ? "ghc865"
+{ compiler ? "ghc883"
 , withHoogle ? true
 , sources ? import ./nix/sources.nix
 }:
 let
   pkgs = import sources.nixpkgs {};
-  ghcide = (import (builtins.fetchTarball "https://github.com/hercules-ci/ghcide-nix/archive/caab5c37a80c4b706ebdc5b50ad610cc96d6b9e2.tar.gz") {}).ghcide-ghc865;
-  packageSet = pkgs.haskell.packages.${compiler};
-  overrideByVersion = if compiler == "ghc882"
-                      then super: {
-                        haskell-src = super.callHackage "haskell-src" "1.0.3.1" {};
-                        statestack = super.callHackage "statestack" "0.3" {};
-                        bytes = super.callHackage "bytes" "0.16" {};
+  overrideByVersion = if compiler == "ghc883"
+                      then self: super: {
                         list-t = pkgs.haskell.lib.dontCheck super.list-t;
-                        Chart = pkgs.haskell.lib.doJailbreak super.Chart;
-                        active = pkgs.haskell.lib.doJailbreak super.active;
-                        diagrams-core = pkgs.haskell.lib.doJailbreak super.diagrams-core;
-                        diagrams-lib = pkgs.haskell.lib.doJailbreak super.diagrams-lib;
-                        diagrams-svg = pkgs.haskell.lib.doJailbreak super.diagrams-svg;
-                        diagrams-postscript = pkgs.haskell.lib.doJailbreak super.diagrams-postscript;
-                        diagrams-rasterific = pkgs.haskell.lib.doJailbreak super.diagrams-rasterific;
-                        Chart-diagrams = pkgs.haskell.lib.doJailbreak super.Chart-diagrams;
-                      } else (_: {});
-  hspkgs = packageSet.override {
+                        hie-bios = pkgs.haskell.lib.dontCheck super.hie-bios;
+                        ghcide = pkgs.haskell.lib.dontCheck (super.callCabal2nix "ghcide" sources.ghcide {
+                          haskell-lsp-types = self.haskell-lsp-types_0_21;
+                          haskell-lsp = self.haskell-lsp_0_21;
+                        });
+                        haskell-lsp-types_0_21 = super.callCabal2nix "haskell-lsp-types" (sources.haskell-lsp + "/haskell-lsp-types") {};        
+                        haskell-lsp_0_21 = super.callCabal2nix "haskell-lsp" sources.haskell-lsp {
+                          haskell-lsp-types = self.haskell-lsp-types_0_21;
+                        };
+                      } else (_: _: {});
+
+  hspkgs = pkgs.haskell.packages.${compiler}.override {
     overrides = self: super: {
       vinyl = pkgs.haskell.lib.dontBenchmark (super.callPackage ~/Projects/Vinyl {});
-    } // overrideByVersion super;
+    } // overrideByVersion self super;
   };
   drv = hspkgs.callPackage ./default.nix {};
-  ghc = hspkgs.ghc.withHoogle (ps: drv.passthru.getBuildInputs.haskellBuildInputs ++ [ps.cabal-install]);
+  ghc = hspkgs.ghc.withHoogle (ps: drv.passthru.getBuildInputs.haskellBuildInputs);
 in
 pkgs.mkShell {
-  buildInputs = [ ghcide
-                  ghc
-                  pkgs.cabal2nix
+  buildInputs = [ ghc
+                  hspkgs.ghcide
+                  hspkgs.cabal-install
                   pkgs.llvmPackages_7.llvm
   ];
   shellHook = ''
