@@ -1,3 +1,7 @@
+# 0.6.3
+ 
+- Fix support for categorical column names that include spaces (@epn09)
+
 # 0.6.0
 Support external CSV tokenizers
 
