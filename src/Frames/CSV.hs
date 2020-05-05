@@ -1,4 +1,4 @@
-{-# LANGUAGE CPP, DataKinds, FlexibleContexts, FlexibleInstances, GADTs,
+{-# LANGUAGE CPP, DataKinds, DeriveLift, FlexibleContexts, FlexibleInstances, GADTs,
              LambdaCase, OverloadedStrings, RankNTypes,
              ScopedTypeVariables, TemplateHaskell, TypeApplications,
              TypeOperators #-}
@@ -52,16 +52,12 @@ data QuotingMode
     -- | Quoted values with the given quoting character. Quotes are escaped by doubling them.
     -- Mostly RFC4180 compliant, except doesn't support newlines in values
   | RFC4180Quoting QuoteChar
-  deriving (Eq, Show)
+  deriving (Eq, Show, Lift)
 
 data ParserOptions = ParserOptions { headerOverride :: Maybe [T.Text]
                                    , columnSeparator :: Separator
                                    , quotingMode :: QuotingMode }
   deriving (Eq, Show)
-
-instance Lift QuotingMode where
-  lift NoQuoting = [|NoQuoting|]
-  lift (RFC4180Quoting char) = [|RFC4180Quoting $(litE . charL $ char)|]
 
 instance Lift ParserOptions where
   lift (ParserOptions Nothing sep quoting) = [|ParserOptions Nothing $sep' $quoting'|]
@@ -71,6 +67,9 @@ instance Lift ParserOptions where
     where sep' = [|T.pack $(stringE $ T.unpack sep)|]
           hs' = [|map T.pack $(listE $  map (stringE . T.unpack) hs)|]
           quoting' = lift quoting
+#if MIN_VERSION_template_haskell(2,16,0)
+  liftTyped = unsafeTExpCoerce . lift
+#endif
 
 -- | Default 'ParseOptions' get column names from a header line, and
 -- use commas to separate columns.
