@@ -1,4 +1,4 @@
-{-# LANGUAGE OverloadedStrings, TemplateHaskell #-}
+{-# LANGUAGE DeriveLift, OverloadedStrings, TemplateHaskell #-}
 module DataCSV where
 import Control.Monad ((>=>))
 import Data.Bifunctor (first)
@@ -10,10 +10,14 @@ import Language.Haskell.TH.Syntax (Lift(..))
 import Text.Toml
 import Text.Toml.Types (Node (VTable, VString), Table)
 
-data CsvExample = CsvExample { name :: String, csv :: String, generated :: String }
+data CsvExample = CsvExample {
+  name :: String
+  , csv :: String
+  , generated :: String }
+  deriving Lift
 
-instance Lift CsvExample where
-  lift (CsvExample n c g) = [e| CsvExample n c g |]
+-- instance Lift CsvExample where
+--   lift (CsvExample n c g) = [e| CsvExample n c g |]
 
 examplesFrom :: FilePath -> IO [CsvExample]
 examplesFrom fp = (either error id . ((first show . parseTomlDoc "examples") >=> go))
