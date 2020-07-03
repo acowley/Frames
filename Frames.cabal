@@ -1,5 +1,5 @@
 name:                Frames
-version:             0.6.4
+version:             0.7.0
 synopsis:            Data frames For working with tabular data files
 description:         User-friendly, type safe, runtime efficient tooling for
                      working with tabular data deserialized from
@@ -64,7 +64,7 @@ library
                        TypeOperators, ConstraintKinds, StandaloneDeriving,
                        UndecidableInstances, ScopedTypeVariables,
                        OverloadedStrings, TypeApplications
-  build-depends:       base >=4.8 && <4.15,
+  build-depends:       base >=4.10 && <4.15,
                        ghc-prim >=0.3 && <0.7,
                        primitive >= 0.6 && < 0.8,
                        text >= 1.1.1.0,
@@ -78,7 +78,7 @@ library
                        pipes-parse >= 3.0 && < 3.1,
                        pipes-safe >= 2.2.6 && < 2.4,
                        bytestring,
-                       vinyl >= 0.10.0 && < 0.13,
+                       vinyl >= 0.13.0 && < 0.14,
                        discrimination,
                        contravariant,
                        hashable,

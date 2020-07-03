@@ -68,5 +68,5 @@ rgetField = getField . V.rget @t
 -- intended for use with @OverloadedLabels@.
 rputField :: forall t s a rs. (t ~ '(s,a), t ∈ rs, KnownSymbol s)
           => a -> Record rs -> Record rs
-rputField = V.rput @t . Field
+rputField = V.rput @_ @t . Field
 {-# INLINE rputField #-}

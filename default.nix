@@ -10,7 +10,7 @@
 }:
 mkDerivation {
   pname = "Frames";
-  version = "0.6.2";
+  version = "0.7.0";
   src = ./.;
   configureFlags = [ "-fdemos" ];
   isLibrary = true;

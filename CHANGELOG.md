@@ -1,3 +1,7 @@
+# 0.7.0
+
+GHC-8.10 support in Vinyl requires a major version bump.
+
 # 0.6.3
  
 - Fix support for categorical column names that include spaces (@epn09)
