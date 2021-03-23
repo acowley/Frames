@@ -25,7 +25,7 @@ import Test.Hspec as H
 import Test.HUnit.Lang (assertFailure)
 
 import qualified LatinTest as Latin
-import qualified Issue114 as Issue114
+import qualified Issue114
 import qualified Issue145
 import qualified NoHeader
 import qualified Categorical
@@ -107,10 +107,10 @@ main :: IO ()
 main = do
   hspec $
     do
-#if __GLASGOW_HASKELL__ >= 804
+
        describe "Haskell type generation" $
          mapM_ (\(CsvExample k _ g, g') -> it k (Code g' `shouldBe` Code g)) csvTests
-#endif
+
        -- describe "Multiple tables" $
        --    do _g <- H.runIO $
        --             generatedFrom "test/examples.toml" "managers_employees"
@@ -145,7 +145,7 @@ main = do
            unless (frame == frame2)
                   (assertFailure "Reparsed CSV differs from input")
        describe "Latin1 Text Encoding" $
-         do managers <- H.runIO (Latin.managers)
+         do managers <- H.runIO Latin.managers
             it "Parses" $
               managers `shouldBe` ["João", "Esperança"]
        describe "Skip Missing Data" $ do
