@@ -1,11 +1,14 @@
-# resolver: lts-10.0
-resolver: ghc-8.4.3
+resolver: lts-16.12
 
 packages:
 - '.'
 flags:
   Frames:
-    demos: true
+    demos: false
 extra-package-dbs: []
-nix:
-  shell-file: shell.nix
+extra-deps:
+  - discrimination-0.4.1
+  - vinyl-0.13.0
+  - contravariant-1.5.3
+  - primitive-0.7.1.0
+  - StateVar-1.2.1
