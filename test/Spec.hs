@@ -33,6 +33,7 @@ import qualified Categorical
 import qualified UncurryFold
 import qualified UncurryFoldNoHeader
 import qualified UncurryFoldPartialData
+import Data.Vinyl (xrec)
 
 -- | Extract all example @(CSV, generatedCode)@ pairs from
 -- @test/examples.toml@
@@ -225,3 +226,24 @@ main = do
          streamedChunks <- H.runIO Chunks.chunkStream
          it "Can split an input stream into Frame chunks" $
            streamedChunks `shouldBe` everyTenthEducation
+       describe "Printing with take and drop" $ do
+         let frame :: Frame (Record '[ "id" :-> Int, "manager" :-> Text
+                                     , "age" :-> Int, "pay" :-> Double ])
+             frame = toFrame [ xrec (1, "Joe", 53, 80000)
+                             , xrec (2, "Sarah", 44, 80000) ]
+         it "Can format a Frame to a String" $
+           showFrame "\t" frame `shouldBe`
+           unlines [
+              "id\tmanager\tage\tpay"
+            , "1\t\"Joe\"\t53\t80000.0"
+            , "2\t\"Sarah\"\t44\t80000.0" ]
+         it "Can take the first row" $
+           showFrame "\t" (takeRows 1 frame) `shouldBe`
+           unlines [
+              "id\tmanager\tage\tpay"
+            , "1\t\"Joe\"\t53\t80000.0" ]
+         it "Can drop the first row" $
+           showFrame "\t" (dropRows 1 frame) `shouldBe`
+           unlines [
+              "id\tmanager\tage\tpay"
+            , "2\t\"Sarah\"\t44\t80000.0" ]

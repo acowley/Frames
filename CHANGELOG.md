@@ -1,3 +1,9 @@
+# 0.7.1
+
+Add `showFrame`, `printFrame`, `takeRows`, and `dropRows` to the `Frames.Exploration` module. These helpers for working with `Frames` are re-exported from the `Frames` module itself.
+
+Thanks to @chfin.
+
 # 0.7.0
 
 GHC-8.10 support in Vinyl requires a major version bump.

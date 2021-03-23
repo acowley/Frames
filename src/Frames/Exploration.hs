@@ -10,8 +10,11 @@
 -- | Functions useful for interactively exploring and experimenting
 -- with a data set.
 module Frames.Exploration (pipePreview, select, lenses, recToList,
-                           pr, pr1) where
+                           pr, pr1, showFrame, printFrame,
+                           takeRows, dropRows) where
 import Data.Char (isSpace, isUpper)
+import qualified Data.Foldable as F
+import Data.List (intercalate)
 import Data.Proxy
 import qualified Data.Vinyl as V
 import qualified Data.Vinyl.Class.Method as V
@@ -21,8 +24,11 @@ import GHC.TypeLits (Symbol)
 import Language.Haskell.TH
 import Language.Haskell.TH.Quote
 import Pipes hiding (Proxy)
+import qualified Pipes as P
 import qualified Pipes.Prelude as P
 import Pipes.Safe (SafeT, runSafeT, MonadMask)
+import Frames.Frame (Frame(Frame))
+import Frames.RecF (columnHeaders, ColumnHeaders)
 
 -- * Preview Results
 
@@ -90,7 +96,7 @@ recToList :: forall a (rs :: [(Symbol,*)]).
              (V.RecMapMethod ((~) a) ElField rs, V.RecordToList rs)
           => Record rs -> [a]
 recToList = V.recordToList . V.rmapMethod @((~) a) aux
-  where aux :: a ~ (V.PayloadType ElField t)  => V.ElField t -> Const a t
+  where aux :: a ~ V.PayloadType ElField t  => V.ElField t -> Const a t
         aux (Field x) = Const x
 
 -- * Helpers
@@ -107,3 +113,34 @@ splitOn d = go
 -- | Remove white space from both ends of a 'String'.
 strip :: String -> String
 strip = takeWhile (not . isSpace) . dropWhile isSpace
+
+-- | @takeRows n frame@ produces a new 'Frame' made up of the first
+-- @n@ rows of @frame@.
+takeRows :: Int -> Frame (Record rs) -> Frame (Record rs)
+takeRows n (Frame len rows) = Frame (min n len) rows
+
+-- | @dropRows n frame@ produces a new 'Frame' just like @frame@, but
+-- not including its first @n@ rows.
+dropRows :: Int -> Frame (Record rs) -> Frame (Record rs)
+dropRows n (Frame len rows) = Frame (max 0 (len - n)) (\i -> rows (i + n))
+
+-- | Format a 'Frame' to a 'String'.
+showFrame :: forall rs.
+  (ColumnHeaders rs, V.RecMapMethod Show ElField rs, V.RecordToList rs)
+  => String -- ^ Separator between fields
+  -> Frame (Record rs) -- ^ The 'Frame' to be formatted to a 'String'
+  -> String
+showFrame sep frame =
+  unlines (intercalate sep (columnHeaders (Proxy :: Proxy (Record rs))) : rows)
+  where rows = P.toList (F.mapM_ (P.yield . intercalate sep . showFields) frame)
+
+-- | Print a 'Frame' to 'System.IO.stdout'.
+printFrame :: forall rs.
+  (ColumnHeaders rs, V.RecMapMethod Show ElField rs, V.RecordToList rs)
+  => String -- ^ Separator between fields
+  -> Frame (Record rs) -- ^ The 'Frame' to be printed to @stdout@
+  -> IO ()
+printFrame sep frame = do
+  putStrLn (intercalate sep (columnHeaders (Proxy :: Proxy (Record rs))))
+  P.runEffect (rows >-> P.stdoutLn)
+  where rows = F.mapM_ (P.yield . intercalate sep . showFields) frame
