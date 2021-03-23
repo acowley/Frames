@@ -1,28 +1,4 @@
 {
-    "ghcide": {
-        "branch": "master",
-        "description": "A library for building Haskell IDE tooling",
-        "homepage": "",
-        "owner": "digital-asset",
-        "repo": "ghcide",
-        "rev": "39605333c34039241768a1809024c739df3fb2bd",
-        "sha256": "1iysrmj50w3w4ykv70ps6yr21x39mka80zpr9c8airzxb4930ar0",
-        "type": "tarball",
-        "url": "https://github.com/digital-asset/ghcide/archive/39605333c34039241768a1809024c739df3fb2bd.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
-    "haskell-lsp": {
-        "branch": "master",
-        "description": "Haskell library for the Microsoft Language Server Protocol",
-        "homepage": null,
-        "owner": "alanz",
-        "repo": "haskell-lsp",
-        "rev": "0.21.0.0",
-        "sha256": "0qp9g4hscqqb40pcbm2gdyynz06h3j57kgjfklxk0y3p5dl07na2",
-        "type": "tarball",
-        "url": "https://github.com/alanz/haskell-lsp/archive/0.21.0.0.tar.gz",
-        "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
-    },
     "niv": {
         "branch": "master",
         "description": "Easy dependency management for Nix projects",
@@ -41,10 +17,10 @@
         "homepage": "https://github.com/NixOS/nixpkgs",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "2747f1a5c346211f699d1bbbed599540b2fdf7cd",
-        "sha256": "1602mph8gzvfipkcls8pafkmg9jyj36x67zjlfqfk3ajdky69xmh",
+        "rev": "ff2bad16d8a845d7ebf25196d2d2f97678710143",
+        "sha256": "1bp0gngkfs87padixlpm3zs9cs3lz2ilxjnacxmg6910wrjhqpbx",
         "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs/archive/2747f1a5c346211f699d1bbbed599540b2fdf7cd.tar.gz",
+        "url": "https://github.com/NixOS/nixpkgs/archive/ff2bad16d8a845d7ebf25196d2d2f97678710143.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     },
     "nixpkgs-chan": {
@@ -52,11 +28,11 @@
         "description": "A read-only mirror of NixOS/nixpkgs tracking the released channels. Send issues and PRs to",
         "homepage": "https://github.com/NixOS/nixpkgs",
         "owner": "NixOS",
-        "repo": "nixpkgs-channels",
-        "rev": "8686922e68dfce2786722acad9593ad392297188",
-        "sha256": "1pc92s1nbr9hlsmzlf8w2pc90rlma649y3fvyfww0sbcwn0lb65n",
+        "repo": "nixpkgs",
+        "rev": "102eb68ceecbbd32ab1906a53ef5a7269dc9794a",
+        "sha256": "1mlrd419vaz9vw5k0lymb8nasxziqv0yd4f2v7p14mlxcin3g7c3",
         "type": "tarball",
-        "url": "https://github.com/NixOS/nixpkgs-channels/archive/8686922e68dfce2786722acad9593ad392297188.tar.gz",
+        "url": "https://github.com/NixOS/nixpkgs/archive/102eb68ceecbbd32ab1906a53ef5a7269dc9794a.tar.gz",
         "url_template": "https://github.com/<owner>/<repo>/archive/<rev>.tar.gz"
     }
 }

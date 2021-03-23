@@ -1,46 +1,28 @@
-{ compiler ? "ghc883"
+{ compiler ? "ghc8104"
 , withHoogle ? true
 , sources ? import ./nix/sources.nix
 }:
 let
-  pkgs = import sources.nixpkgs {};
+  pkgs = import sources.nixpkgs-chan {};
   overrideByVersion = if compiler == "ghc8101"
-                      then self: super: 
-                        with {inherit (pkgs.haskell.lib) doJailbreak dontCheck;}; {
-                          list-t = dontCheck super.list-t;
-                          active = doJailbreak super.active;
-                          diagrams-core = dontCheck (doJailbreak super.diagrams-core);
-                          diagrams-lib = dontCheck (doJailbreak super.diagrams-lib);
-                          diagrams-rasterific = doJailbreak super.diagrams-rasterific;
-                          diagrams-solve = doJailbreak super.diagrams-solve;
-                          diagrams-svg = doJailbreak super.diagrams-svg;
-                          diagrams-postscript = doJailbreak super.diagrams-postscript;
-                          haskell-src = doJailbreak super.haskell-src;
-                          monoid-extras = doJailbreak super.monoid-extras;
-                          size-based = doJailbreak super.size-based;
-                          statestack = doJailbreak super.statestack;
-                          svg-builder = doJailbreak super.svg-builder;
-                          dual-tree = doJailbreak super.dual-tree;
-                        }
-                      else # compiler == "ghc883"
-                        self: super: {
-                          list-t = pkgs.haskell.lib.dontCheck super.list-t;
-                          hie-bios = pkgs.haskell.lib.dontCheck super.hie-bios;
-                          ghcide = pkgs.haskell.lib.dontCheck (super.callCabal2nix "ghcide" sources.ghcide {
-                            haskell-lsp-types = self.haskell-lsp-types_0_21;
-                            haskell-lsp = self.haskell-lsp_0_21;
-                            ghc-check = self.ghc-check_0_1_0_3;
-                          });
-                          ghc-check_0_1_0_3 = super.callHackage "ghc-check" "0.1.0.3" {};
-                          haskell-lsp-types_0_21 = super.callCabal2nix "haskell-lsp-types" (sources.haskell-lsp + "/haskell-lsp-types") {};        
-                          haskell-lsp_0_21 = super.callCabal2nix "haskell-lsp" sources.haskell-lsp {
-                            haskell-lsp-types = self.haskell-lsp-types_0_21;
-                          };
-                      };
+                      then self: super: { }
+                      else self: super: { };
 
   hspkgs = pkgs.haskell.packages.${compiler}.override {
     overrides = self: super: {
       vinyl = pkgs.haskell.lib.dontBenchmark (super.callPackage ~/Projects/Vinyl {});
+      statestack = pkgs.haskell.lib.doJailbreak super.statestack;
+      svg-builder = pkgs.haskell.lib.doJailbreak super.svg-builder;
+      size-based = pkgs.haskell.lib.doJailbreak super.size-based;
+      monoid-extras = pkgs.haskell.lib.doJailbreak super.monoid-extras;
+      active = pkgs.haskell.lib.doJailbreak super.active;
+      dual-tree = pkgs.haskell.lib.doJailbreak super.dual-tree;
+      diagrams-core = pkgs.haskell.lib.doJailbreak super.diagrams-core;
+      diagrams-lib = pkgs.haskell.lib.doJailbreak super.diagrams-lib;
+      diagrams-postscript = pkgs.haskell.lib.doJailbreak super.diagrams-postscript;
+      SVGFonts = pkgs.haskell.lib.doJailbreak super.SVGFonts;
+      diagrams-svg = pkgs.haskell.lib.doJailbreak super.diagrams-svg;
+      diagrams-rasterific = pkgs.haskell.lib.doJailbreak super.diagrams-rasterific;
     } // overrideByVersion self super;
   };
   drv = hspkgs.callPackage ./default.nix {};
@@ -48,11 +30,15 @@ let
 in
 pkgs.mkShell {
   buildInputs = [ ghc
+                  hspkgs.haskell-language-server
                   hspkgs.cabal-install
-                  pkgs.llvmPackages_7.llvm
-  ] ++ pkgs.lib.optional (compiler == "ghc883") hspkgs.ghcide;
-  shellHook = ''
-    source <(grep '^export NIX_' ${ghc}/bin/ghc)
-    source <(echo 'export HIE_HOOGLE_DATABASE='$(grep -F -- '--database' ${ghc}/bin/hoogle | sed 's/.* --database \(.*\.hoo\).*/\1/'))
-  '';
+                  # pkgs.llvmPackages_7.llvm
+                  pkgs.llvmPackages_latest.llvm
+                ]
+  # hspkgs.ghcide
+  ;
+  # shellHook = ''
+  #   source <(grep '^export NIX_' ${ghc}/bin/ghc)
+  #   source <(echo 'export HIE_HOOGLE_DATABASE='$(grep -F -- '--database' ${ghc}/bin/hoogle | sed 's/.* --database \(.*\.hoo\).*/\1/'))
+  # '';
 }
