@@ -49,8 +49,11 @@ instance (NFData a) =>
 instance NFData1 VF.Identity where
   liftRnf r = r . getIdentity
 
+#if MIN_VERSION_vinyl(0,13,1)
+#else
 instance (NFData (f r), NFData (Rec f rs)) => NFData (Rec f (r ': rs)) where
   rnf (x :& xs) = rnf x `seq` rnf xs
+#endif
 
 instance NFData (Rec f '[]) where
   rnf RNil = ()
