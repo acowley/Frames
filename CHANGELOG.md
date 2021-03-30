@@ -1,8 +1,8 @@
 # 0.7.1
 
-Add `showFrame`, `printFrame`, `takeRows`, and `dropRows` to the `Frames.Exploration` module. These helpers for working with `Frames` are re-exported from the `Frames` module itself.
+- Add `showFrame`, `printFrame`, `takeRows`, and `dropRows` to the `Frames.Exploration` module. These helpers for working with `Frames` are re-exported from the `Frames` module itself. Thanks to @chfin.
 
-Thanks to @chfin.
+- GHC-9.0.1 support.
 
 # 0.7.0
 

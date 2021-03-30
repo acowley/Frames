@@ -1,4 +1,4 @@
-{ compiler ? "ghc8104"
+{ compiler ? null
 , withHoogle ? true
 , sources ? import ./nix/sources.nix
 }:
@@ -8,7 +8,9 @@ let
                       then self: super: { }
                       else self: super: { };
 
-  hspkgs = pkgs.haskell.packages.${compiler}.override {
+  hspkgs = (if isNull compiler 
+            then pkgs.haskellPackages
+            else pkgs.haskell.packages.${compiler}).override {
     overrides = self: super: {
       vinyl = pkgs.haskell.lib.dontBenchmark (super.callPackage ~/Projects/Vinyl {});
       statestack = pkgs.haskell.lib.doJailbreak super.statestack;

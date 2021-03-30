@@ -30,7 +30,7 @@ extra-source-files:  benchmarks/*.hs benchmarks/*.py
                      data/left1.csv data/right1.csv data/left_summary.csv
                      data/FL2.csv
 cabal-version:       >=1.10
-tested-with:         GHC == 8.4.4 || == 8.6.5 || == 8.8.4 || == 8.10.4
+tested-with:         GHC == 8.4.4 || == 8.6.5 || == 8.8.4 || == 8.10.4 || == 9.0.1
 
 source-repository head
   type:     git
@@ -64,8 +64,8 @@ library
                        TypeOperators, ConstraintKinds, StandaloneDeriving,
                        UndecidableInstances, ScopedTypeVariables,
                        OverloadedStrings, TypeApplications
-  build-depends:       base >=4.10 && <4.15,
-                       ghc-prim >=0.3 && <0.7,
+  build-depends:       base >=4.10 && <4.16,
+                       ghc-prim >=0.3 && <0.8,
                        primitive >= 0.6 && < 0.8,
                        text >= 1.1.1.0,
                        template-haskell,
