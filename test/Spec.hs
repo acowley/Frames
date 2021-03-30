@@ -10,7 +10,7 @@ import qualified Data.Foldable as F
 import Data.List (find, isPrefixOf)
 import Data.Monoid (First(..))
 import qualified Data.Text as T
-import Language.Haskell.TH as TH
+import qualified Language.Haskell.TH as TH
 import Language.Haskell.TH.Syntax (addDependentFile)
 import Frames
 import Frames.CSV (produceCSV)
@@ -40,9 +40,9 @@ import Data.Vinyl (xrec)
 csvTests :: [(CsvExample, String)]
 csvTests = $(do addDependentFile "test/examples.toml"
                 csvExamples <- TH.runIO (examplesFrom "test/examples.toml")
-                ListE <$> mapM (\x@(CsvExample _ c _) ->
-                                  [e|(x,$(generateCode "Row" c))|])
-                               csvExamples)
+                TH.ListE <$> mapM (\x@(CsvExample _ c _) ->
+                                     [e|(x,$(generateCode "Row" c))|])
+                                  csvExamples)
 
 -- | Detect type-compatible re-used names and do not attempt to
 -- re-generate definitions for them. This does not do the right thing
@@ -68,7 +68,7 @@ csvTests = $(do addDependentFile "test/examples.toml"
 --
 -- Note that to load this file into a REPL may require some fiddling
 -- with the path to the examples file in the 'csvTests' splice above.
-manualGeneration :: String -> Q Exp
+manualGeneration :: String -> TH.Q TH.Exp
 manualGeneration k = do csvExamples <- TH.runIO (examplesFrom "test/examples.toml")
                         maybe (error ("Table " ++ k ++ " not found"))
                               (generateCode "Row")
