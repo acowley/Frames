@@ -1,3 +1,4 @@
+{-# LANGUAGE InstanceSigs #-}
 {-# LANGUAGE CPP, DataKinds, DeriveLift, FlexibleContexts, FlexibleInstances, GADTs,
              LambdaCase, OverloadedStrings, RankNTypes,
              ScopedTypeVariables, TemplateHaskell, TypeApplications,
@@ -68,7 +69,11 @@ instance Lift ParserOptions where
           hs' = [|map T.pack $(listE $  map (stringE . T.unpack) hs)|]
           quoting' = lift quoting
 #if MIN_VERSION_template_haskell(2,16,0)
+#if MIN_VERSION_template_haskell(2,17,0)
+  liftTyped = liftCode . unsafeTExpCoerce . lift
+#else
   liftTyped = unsafeTExpCoerce . lift
+#endif
 #endif
 
 -- | Default 'ParseOptions' get column names from a header line, and
