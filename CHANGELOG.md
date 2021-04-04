@@ -1,3 +1,7 @@
+# 0.XXX
+
+- Add `writeCSVopts` that accepts options to specify the CSV delimiter.
+
 # 0.7.1
 
 - Add `showFrame`, `printFrame`, `takeRows`, and `dropRows` to the `Frames.Exploration` module. These helpers for working with `Frames` are re-exported from the `Frames` module itself. Thanks to @chfin.
