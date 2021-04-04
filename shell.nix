@@ -3,7 +3,8 @@
 , sources ? import ./nix/sources.nix
 }:
 let
-  pkgs = import sources.nixpkgs-chan {};
+  nixConfig = { allowBroken = true; };
+  pkgs = import sources.nixpkgs-chan { config = nixConfig; };
   overrideByVersion = if compiler == "ghc8101"
                       then self: super: { }
                       else self: super: { };
@@ -12,7 +13,6 @@ let
             then pkgs.haskellPackages
             else pkgs.haskell.packages.${compiler}).override {
     overrides = self: super: {
-      vinyl = pkgs.haskell.lib.dontBenchmark (super.callPackage ~/Projects/Vinyl {});
       statestack = pkgs.haskell.lib.doJailbreak super.statestack;
       svg-builder = pkgs.haskell.lib.doJailbreak super.svg-builder;
       size-based = pkgs.haskell.lib.doJailbreak super.size-based;
