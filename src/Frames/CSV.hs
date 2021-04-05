@@ -360,9 +360,17 @@ produceCSV :: forall f ts m.
               (ColumnHeaders ts, Foldable f, Monad m, RecordToList ts,
               RecMapMethod ShowCSV ElField ts)
            => f (Record ts) -> P.Producer String m ()
-produceCSV recs = do
-  P.yield (intercalate "," (columnHeaders (Proxy :: Proxy (Record ts))))
-  F.mapM_ (P.yield . T.unpack . T.intercalate "," . showFieldsCSV) recs
+produceCSV = produceDSV defaultParser
+
+produceDSV :: forall f ts m.
+              (ColumnHeaders ts, Foldable f, Monad m, RecordToList ts,
+              RecMapMethod ShowCSV ElField ts)
+           => ParserOptions -> f (Record ts) -> P.Producer String m ()
+produceDSV opts recs = do
+  P.yield (intercalate (T.unpack separator) (columnHeaders (Proxy :: Proxy (Record ts))))
+  F.mapM_ (P.yield . T.unpack . T.intercalate separator . showFieldsCSV) recs
+  where
+    separator = columnSeparator opts
 
 -- | 'P.yield' a header row with column names followed by a line of
 -- text for each 'Record' with each field separated by a comma. This
@@ -382,5 +390,12 @@ pipeToCSV = P.yield (T.intercalate "," (map T.pack header)) >> go
 writeCSV :: (ColumnHeaders ts, Foldable f, RecordToList ts,
              RecMapMethod ShowCSV ElField ts)
          => FilePath -> f (Record ts) -> IO ()
-writeCSV fp recs = P.runSafeT . P.runEffect $
-                   produceCSV recs >-> P.map T.pack >-> consumeTextLines fp
+writeCSV  = writeDSV defaultParser
+
+-- | Write a header row with column names followed by a line of text
+-- for each 'Record' to the given file.
+writeDSV :: (ColumnHeaders ts, Foldable f, RecordToList ts,
+             RecMapMethod ShowCSV ElField ts)
+         => ParserOptions -> FilePath -> f (Record ts) -> IO ()
+writeDSV opts fp recs = P.runSafeT . P.runEffect $
+                   produceDSV opts recs >-> P.map T.pack >-> consumeTextLines fp
