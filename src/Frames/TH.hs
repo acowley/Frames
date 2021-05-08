@@ -129,6 +129,9 @@ data RowGen (a :: [GHC.Type]) =
            -- ^ A record field that mentions the phantom type list of
            -- possible column types. Having this field prevents record
            -- update syntax from losing track of the type argument.
+         , inferencePrefix :: Int
+           -- ^ Number of rows to inspect to infer a type for each
+           -- column. Defaults to 1000.
          , lineReader :: Separator -> P.Producer [T.Text] (P.SafeT IO) ()
            -- ^ A producer of rows of ’T.Text’ values that were
            -- separated by a 'Separator' value.
@@ -144,12 +147,12 @@ data RowGen (a :: [GHC.Type]) =
 -- separator (a comma), infer column types from the default 'Columns'
 -- set of types, and produce a row type with name @Row@.
 rowGen :: FilePath -> RowGen CommonColumns
-rowGen = RowGen [] "" defaultSep "Row" Proxy . produceTokens
+rowGen = RowGen [] "" defaultSep "Row" Proxy 1000 . produceTokens
 
 -- | Like 'rowGen', but will also generate custom data types for
 -- 'Categorical' variables with up to 8 distinct variants.
 rowGenCat :: FilePath -> RowGen CommonColumnsCat
-rowGenCat = RowGen [] "" defaultSep "Row" Proxy . produceTokens
+rowGenCat = RowGen [] "" defaultSep "Row" Proxy 1000 . produceTokens
 
 -- -- | Generate a type for each row of a table. This will be something
 -- -- like @Record ["x" :-> a, "y" :-> b, "z" :-> c]@.
@@ -193,13 +196,13 @@ colNamesP src = either (const []) fst <$> P.next src
 tableTypesText' :: forall a c.
                    (c ~ CoRec ColInfo a, ColumnTypeable c, Monoid c)
                 => RowGen a -> DecsQ
-tableTypesText' (RowGen {..}) =
+tableTypesText' RowGen {..} =
   do colNames <- runIO . P.runSafeT $
                  maybe (colNamesP (lineReader separator))
                        pure
                        (headerOverride opts)
      let headers = zip colNames (repeat (ConT ''T.Text))
-     (colTypes, colDecs) <- (second concat . unzip)
+     (colTypes, colDecs) <- second concat . unzip
                             <$> mapM (uncurry mkColDecs) headers
      let recTy = TySynD (mkName rowTypeName) [] (recDec colTypes)
          optsName = case rowTypeName of
@@ -245,7 +248,7 @@ tableTypes' (RowGen {..}) =
   where colNames' | null columnNames = Nothing
                   | otherwise = Just (map T.pack columnNames)
         opts = ParserOptions colNames' separator (RFC4180Quoting '\"')
-        lineSource = lineReader separator P.>-> P.take prefixSize
+        lineSource = lineReader separator P.>-> P.take inferencePrefix
         mkColDecs :: T.Text -> Either (String -> Q [Dec]) Type -> Q (Type, [Dec])
         mkColDecs colNm colTy = do
           let safeName = tablePrefix ++ (T.unpack . sanitizeTypeName $ colNm)
