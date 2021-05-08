@@ -39,7 +39,7 @@ import qualified Pipes.Prelude as P
 import qualified Pipes.Parse as P
 import qualified Pipes.Safe as P
 import qualified Pipes.Safe.Prelude as Safe
-import System.IO (Handle, IOMode(ReadMode, WriteMode))
+import System.IO (Handle, IOMode(ReadMode, WriteMode), hPrint, stderr)
 
 -- * Parsing
 
@@ -335,6 +335,37 @@ readTable :: (P.MonadSafe m, ReadRec rs, RMap rs)
           => FilePath -> P.Producer (Record rs) m ()
 readTable = readTableOpt defaultParser
 {-# INLINE readTable #-}
+
+readRecEither :: (ReadRec rs, RMap rs)
+              => [T.Text] -> Either (Rec (Either T.Text :. ElField) rs) (Record rs)
+readRecEither tokens = let tmp = readRec tokens
+                       in case rtraverse getCompose tmp of
+                            Right r -> Right r
+                            _ -> Left tmp
+
+-- | Similar to 'readTable' except that rows that fail to parse are
+-- printed to @stderr@ with columns that failed to parse printed as
+-- @"Left rawtext"@ while those that were successfully parsed are
+-- shown as @"Right text"@.
+readTableDebug :: forall m rs.
+                  (P.MonadSafe m, ReadRec rs, RMap rs,
+                   RecMapMethod ShowCSV (Either T.Text :. ElField) rs,
+                   RecordToList rs)
+               => FilePath -> P.Producer (Record rs) m ()
+readTableDebug csvFile =
+  produceTokens csvFile (columnSeparator opts) >-> go >-> debugAll
+  where opts = defaultParser
+        go = do
+          when (isNothing (headerOverride opts)) (() <$ P.await)
+          P.map readRecEither
+        debugAll = do
+          P.await >>= either (P.liftIO . hPrint stderr . debugOne) P.yield
+          debugAll
+        debugOne = recordToList . rmapMethod @ShowCSV (aux . getCompose)
+        aux :: (ShowCSV (PayloadType ElField a))
+            => Either T.Text (ElField a) -> Const T.Text a
+        aux (Right (Field x)) = Const ("Right " <> showCSV x)
+        aux (Left txt) = Const ("Left " <> txt)
 
 -- | Pipe lines of CSV text into rows for which each column was
 -- successfully parsed.

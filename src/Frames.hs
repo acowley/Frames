@@ -40,7 +40,7 @@ import Data.Vinyl.TypeLevel (AllConstrained, AllSatisfied, AllAllSat,
                              RDelete, RecAll)
 import Frames.Col ((:->), pattern Col)
 import Frames.ColumnUniverse
-import Frames.CSV (readTable, readTableOpt, readTableMaybe, pipeTable, pipeTableMaybe)
+import Frames.CSV (readTable, readTableOpt, readTableMaybe, readTableDebug, pipeTable, pipeTableMaybe)
 import Frames.Exploration
 import Frames.Frame
 import qualified Frames.InCore as I
