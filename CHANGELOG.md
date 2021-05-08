@@ -1,6 +1,8 @@
-# 0.XXX
+# 0.7.2
 
 - Add `writeCSVopts` that accepts options to specify the CSV delimiter.
+- Add `inferencePrefix` that controls how many lines of the input file are used for column type inference (default is 1000).
+- Add `readTableDebug` that loads and parses a data frame as `readTable`, but additionally prints lines that failed to parse to `stderr`.
 
 # 0.7.1
 
