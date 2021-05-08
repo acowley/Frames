@@ -9,9 +9,6 @@ module Frames.TH where
 import Control.Arrow (second)
 import Data.Char (toLower)
 import Data.Maybe (fromMaybe)
-#if __GLASGOW_HASKELL__ < 804
-import Data.Semigroup ((<>))
-#endif
 import Data.Proxy (Proxy(..))
 import qualified Data.Text as T
 import Data.Vinyl
