@@ -61,4 +61,20 @@ is also provided for comparison.
 This is a trivial program, but shows that performance is comparable to
 Pandas, and the memory savings of a compiled program are substantial.
 
-[[https://pbs.twimg.com/media/B71az_CCUAAgscq.png]]
+First with Pandas,
+
+#+begin_src bash
+$ nix-shell -p 'python3.withPackages (p: [p.pandas])' --run '$(which time) -f "%Uuser %Ssystem %Eelapsed %PCPU; %Mmaxresident KB" python benchmarks/panda.py'
+28.087476512228815
+-81.90356506136422
+0.67user 0.04system 0:00.72elapsed 99%CPU; 79376maxresident KB
+#+end_src
+
+Then with Frames,
+
+#+begin_src bash
+$ $(which time) -f '%Uuser %Ssystem %Eelapsed %PCPU; %Mmaxresident KB' dist-newstyle/build/x86_64-linux/ghc-8.10.4/Frames-0.7.2/x/benchdemo/build/benchdemo/benchdemo
+28.087476512228815
+-81.90356506136422
+0.36user 0.00system 0:00.37elapsed 100%CPU; 5088maxresident KB
+#+end_src
