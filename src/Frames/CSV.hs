@@ -244,7 +244,6 @@ readTableMaybeOpt :: (P.MonadSafe m, ReadRec rs, RMap rs)
                   -> P.Producer (Rec (Maybe :. ElField) rs) m ()
 readTableMaybeOpt opts csvFile =
   produceTokens csvFile (columnSeparator opts) >-> pipeTableMaybeOpt opts
-{-# INLINE readTableMaybeOpt #-}
 
 -- | Stream lines of CSV data into rows of ’Rec’ values values where
 -- any given entry can fail to parse.
@@ -256,7 +255,6 @@ pipeTableMaybeOpt opts = do
   P.map (rmap (either (const (Compose Nothing))
                       (Compose . Just) . getCompose)
          . readRec)
-{-# INLINE pipeTableMaybeOpt #-}
 
 -- | Stream lines of CSV data into rows of ’Rec’ values values where
 -- any given entry can fail to parse. In the case of a parse failure, the
@@ -267,20 +265,17 @@ pipeTableEitherOpt :: (Monad m, ReadRec rs)
 pipeTableEitherOpt opts = do
   when (isNothing (headerOverride opts)) (() <$ P.await)
   P.map (readRow opts)
-{-# INLINE pipeTableEitherOpt #-}
 
 -- | Produce rows where any given entry can fail to parse.
 readTableMaybe :: (P.MonadSafe m, ReadRec rs, RMap rs)
                => FilePath -> P.Producer (Rec (Maybe :. ElField) rs) m ()
 readTableMaybe = readTableMaybeOpt defaultParser
-{-# INLINE readTableMaybe #-}
 
 -- | Stream lines of CSV data into rows of ’Rec’ values where any
 -- given entry can fail to parse.
 pipeTableMaybe :: (Monad m, ReadRec rs, RMap rs)
                => P.Pipe [T.Text] (Rec (Maybe :. ElField) rs) m ()
 pipeTableMaybe = pipeTableMaybeOpt defaultParser
-{-# INLINE pipeTableMaybe #-}
 
 -- | Stream lines of CSV data into rows of ’Rec’ values where any
 -- given entry can fail to parse. In the case of a parse failure, the
@@ -288,7 +283,6 @@ pipeTableMaybe = pipeTableMaybeOpt defaultParser
 pipeTableEither :: (Monad m, ReadRec rs)
                 => P.Pipe T.Text (Rec (Either T.Text :. ElField) rs) m ()
 pipeTableEither = pipeTableEitherOpt defaultParser
-{-# INLINE pipeTableEither #-}
 
 -- -- | Returns a `MonadPlus` producer of rows for which each column was
 -- -- successfully parsed. This is typically slower than 'readTableOpt'.
@@ -305,14 +299,12 @@ pipeTableEither = pipeTableEitherOpt defaultParser
 --               False -> let r = recMaybe . readRow opts <$> T.hGetLine h
 --                        in liftIO r >>= maybe go (flip mplus go . return)
 --      go
--- {-# INLINE readTableOpt' #-}
 
 -- -- | Returns a `MonadPlus` producer of rows for which each column was
 -- -- successfully parsed. This is typically slower than 'readTable'.
 -- readTable' :: forall m rs. (P.MonadSafe m, ReadRec rs)
 --            => FilePath -> m (Record rs)
 -- readTable' = readTableOpt' defaultParser
--- {-# INLINE readTable' #-}
 
 -- | Returns a producer of rows for which each column was successfully
 -- parsed.
@@ -320,21 +312,18 @@ readTableOpt :: (P.MonadSafe m, ReadRec rs, RMap rs)
              => ParserOptions -> FilePath -> P.Producer (Record rs) m ()
 readTableOpt opts csvFile = readTableMaybeOpt opts csvFile P.>-> go
   where go = P.await >>= maybe go (\x -> P.yield x >> go) . recMaybe
-{-# INLINE readTableOpt #-}
 
 -- | Pipe lines of CSV text into rows for which each column was
 -- successfully parsed.
 pipeTableOpt :: (ReadRec rs, RMap rs, Monad m)
              => ParserOptions -> P.Pipe [T.Text] (Record rs) m ()
 pipeTableOpt opts = pipeTableMaybeOpt opts >-> P.map recMaybe >-> P.concat
-{-# INLINE pipeTableOpt #-}
 
 -- | Returns a producer of rows for which each column was successfully
 -- parsed.
 readTable :: (P.MonadSafe m, ReadRec rs, RMap rs)
           => FilePath -> P.Producer (Record rs) m ()
 readTable = readTableOpt defaultParser
-{-# INLINE readTable #-}
 
 readRecEither :: (ReadRec rs, RMap rs)
               => [T.Text] -> Either (Rec (Either T.Text :. ElField) rs) (Record rs)
@@ -372,7 +361,6 @@ readTableDebug csvFile =
 pipeTable :: (ReadRec rs, RMap rs, Monad m)
           => P.Pipe [T.Text] (Record rs) m ()
 pipeTable = pipeTableOpt defaultParser
-{-# INLINE pipeTable #-}
 
 -- * Writing CSV Data
 
