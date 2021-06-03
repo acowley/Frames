@@ -78,7 +78,7 @@ library
                        pipes-parse >= 3.0 && < 3.1,
                        pipes-safe >= 2.2.6 && < 2.4,
                        bytestring,
-                       vinyl >= 0.13.0 && < 0.14,
+                       vinyl >= 0.13.0 && < 0.15,
                        discrimination,
                        contravariant,
                        hashable,
