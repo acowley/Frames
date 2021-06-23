@@ -179,15 +179,15 @@ outerJoin a b =
 outerJoinStatus :: forall fs rs rs' rs2  rs2' ors.
   (fs    ⊆ rs
     , fs   ⊆ rs2
-    , fs   ⊆ '[MergeStatus]
+    -- , fs   ⊆ '[MergeStatus]
     , rs ⊆ (rs ++ rs2')
     , rs' ⊆ rs
     , rs' ~ RDeleteAll fs rs
     , rs2' ⊆ rs2
     , rs2' ~ RDeleteAll fs rs2
-    , ors ~ (rs ++ rs2'++ '[MergeStatus])
+    , ors ~ (rs ++ rs2' ++ '[MergeStatusField])
     -- , ors :~: (rs' ++ rs2)
-    , ors :~: (rs' ++ rs2 ++ '[MergeStatus])
+    , ors :~: (rs' ++ rs2 ++ '[MergeStatusField])
     , RecApplicative rs2'
     , RecApplicative rs
     , RecApplicative rs'
@@ -195,6 +195,7 @@ outerJoinStatus :: forall fs rs rs' rs2  rs2' ors.
     , RMap rs
     , RMap rs2
     , RMap ors
+    -- RecVec => Tooling to allocate, grow, write to, freeze, and index into records of vectors.
     , RecVec rs
     , RecVec rs2'
     , RecVec ors
@@ -207,8 +208,8 @@ outerJoinStatus :: forall fs rs rs' rs2  rs2' ors.
 outerJoinStatus a b =
   concat
   -- mergeFun => how to join two rows
-  ((outer grouping mergeFun mergeLeftEmpty mergeRightEmpty
-    proj1 proj2 (toList a) (toList b))) <+> (MergeFromLeft &: RNil)
+  (outer grouping mergeFun mergeLeftEmpty mergeRightEmpty
+    proj1 proj2 (toList a) (toList b))
   where
     {-# INLINE proj1 #-}
     proj1 = rcast @fs
@@ -216,12 +217,12 @@ outerJoinStatus a b =
     proj2 = rcast @fs
     {-# INLINE mergeFun #-}
     --  <+> MergeBoth
-    mergeFun l r = justsFromRec $ mergeRecStatus @fs l r
+    mergeFun l r = justsFromRec $ mergeRecStatus @fs l r  <+> (MergeFromRight &: RNil)
     {-# INLINE mergeLeftEmpty #-}
-    mergeLeftEmpty l = justsFromRec l <+> mkNothingsRec @rs2' <+> (MergeFromRight &: RNil)
+    mergeLeftEmpty l = justsFromRec l <+> mkNothingsRec @rs2' <+> justsFromRec (MergeFromRight &: RNil)
     {-# INLINE mergeRightEmpty #-}
     -- <+> MergeFromLeft
-    mergeRightEmpty r = rcast @ors (mkNothingsRec @rs' <+> justsFromRec r <+> (MergeFromLeft &: RNil))
+    mergeRightEmpty r = rcast @ors (mkNothingsRec @rs' <+> justsFromRec (r <+> MergeFromLeft &: RNil))
 
 mergeRecStatus :: forall fs rs rs2 rs2'.
   (fs ⊆ rs2
@@ -230,10 +231,10 @@ mergeRecStatus :: forall fs rs rs2 rs2'.
   , rs ⊆ (rs ++ rs2')) =>
   Record rs ->
   Record rs2 ->
-  Record (rs ++ rs2' ++ '[MergeStatusField])
+  Record (rs ++ rs2')
 {-# INLINE mergeRecStatus #-}
 mergeRecStatus rec1 rec2 =
-  rec1 <+> rec2' <+> MergeFromLeft
+  rec1 <+> rec2'
   where
     rec2' = rcast @rs2' rec2
 
