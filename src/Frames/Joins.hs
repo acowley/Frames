@@ -27,8 +27,8 @@ import Data.Vinyl.TypeLevel
 import Data.Vinyl
 import Data.Vinyl.Functor
 import Frames.ShowCSV
-import Frames.Col ((:->))
--- ((:->))
+import Frames.Col
+-- for ((:->)) and col
 
 data MergeStatus = MergeFromLeft | MergeFromRight | MergeBoth deriving (Show, ShowCSV)
 
@@ -217,9 +217,9 @@ outerJoinStatus a b =
     proj2 = rcast @fs
     {-# INLINE mergeFun #-}
     --  <+> MergeBoth
-    mergeFun l r = justsFromRec $ mergeRecStatus @fs l r  <+> (MergeFromRight &: RNil)
+    mergeFun l r = justsFromRec $ mergeRecStatus @fs l r  <+> (Col MergeFromRight &: RNil)
     {-# INLINE mergeLeftEmpty #-}
-    mergeLeftEmpty l = justsFromRec l <+> mkNothingsRec @rs2' <+> justsFromRec (MergeFromRight &: RNil)
+    mergeLeftEmpty l = justsFromRec l <+> mkNothingsRec @rs2' <+> justsFromRec (Col MergeFromRight &: RNil)
     {-# INLINE mergeRightEmpty #-}
     -- <+> MergeFromLeft
     mergeRightEmpty r = rcast @ors (mkNothingsRec @rs' <+> justsFromRec (r <+> MergeFromLeft &: RNil))
