@@ -1,10 +1,10 @@
 { compiler ? null
 , withHoogle ? true
 , sources ? import ./nix/sources.nix
+, nixConfig ? { allowBroken = true; }
+, pkgs ? import sources.nixpkgs-chan { config = nixConfig; }
 }:
 let
-  nixConfig = { allowBroken = true; };
-  pkgs = import sources.nixpkgs-chan { config = nixConfig; };
   overrideByVersion = if compiler == "ghc8101"
                       then self: super: { }
                       else self: super: { };
