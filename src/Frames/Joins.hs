@@ -2,7 +2,8 @@
              KindSignatures, MultiParamTypeClasses, PolyKinds,
              ScopedTypeVariables, TypeFamilies, TypeOperators,
              UndecidableInstances, TemplateHaskell, QuasiQuotes,
-             Rank2Types, TypeApplications, AllowAmbiguousTypes #-}
+             Rank2Types, TypeApplications, AllowAmbiguousTypes,
+             DeriveAnyClass #-}
 
 -- | Functions for performing SQL style table joins on
 -- @Frame@ objects. Uses Data.Discrimination under the hood
@@ -15,7 +16,7 @@ module Frames.Joins (innerJoin
                     , rightJoin)
 
 where
-import Data.Discrimination
+import Data.Discrimination (outer, leftOuter, Grouping(..), inner, rightOuter)
 import Data.Foldable as F
 import Frames.Frame
 import Frames.Rec
@@ -25,6 +26,15 @@ import Frames.InCore (RecVec)
 import Data.Vinyl.TypeLevel
 import Data.Vinyl
 import Data.Vinyl.Functor
+import Frames.ShowCSV
+import Frames.Col
+-- for ((:->)) and col
+
+data MergeStatus = MergeFromLeft | MergeFromRight | MergeBoth deriving (Show, ShowCSV)
+
+type MergeStatusField = "mergeStatus" :-> MergeStatus
+
+-- type AbsTime2 = "absTime2" :-> Text  -- :: (Symbol, *)
 
 mergeRec :: forall fs rs rs2 rs2'.
   (fs ⊆ rs2
@@ -149,6 +159,84 @@ outerJoin a b =
     mergeLeftEmpty l = justsFromRec l <+> mkNothingsRec @rs2'
     {-# INLINE mergeRightEmpty #-}
     mergeRightEmpty r = rcast @ors (mkNothingsRec @rs' <+> justsFromRec r)
+
+-- https://hackage.haskell.org/package/discrimination-0.4.1/docs/Data-Discrimination.html#v:outer
+-- len(total[total.merge_status == "both"]), len(total[total.merge_status != "both"]),
+-- like outerJoin but with status as in pandas
+-- outer
+  -- :: Discriminating f
+  -- => f d           -- ^ the discriminator to use
+  -- -> (a -> b -> c) -- ^ how to join two rows
+  -- -> (a -> c)      -- ^ row present on the left, missing on the right
+  -- -> (b -> c)      -- ^ row present on the right, missing on the left
+  -- -> (a -> d)      -- ^ selector for the left table
+  -- -> (b -> d)      -- ^ selector for the right table
+  -- -> [a]           -- ^ left table
+  -- -> [b]           -- ^ right table
+  -- -> [[c]]
+  -- (<+>) :: Rec f as -> Rec f bs -> Rec f (as ++ bs)
+  -- https://hackage.haskell.org/package/vinyl-0.13.3/docs/Data-Vinyl-Core.html#v:-60--43--62-
+outerJoinStatus :: forall fs rs rs' rs2  rs2' ors.
+  (fs    ⊆ rs
+    , fs   ⊆ rs2
+    -- , fs   ⊆ '[MergeStatus]
+    , rs ⊆ (rs ++ rs2')
+    , rs' ⊆ rs
+    , rs' ~ RDeleteAll fs rs
+    , rs2' ⊆ rs2
+    , rs2' ~ RDeleteAll fs rs2
+    , ors ~ (rs ++ rs2' ++ '[MergeStatusField])
+    -- , ors :~: (rs' ++ rs2)
+    , ors :~: (rs' ++ rs2 ++ '[MergeStatusField])
+    , RecApplicative rs2'
+    , RecApplicative rs
+    , RecApplicative rs'
+    , Grouping (Record fs)
+    , RMap rs
+    , RMap rs2
+    , RMap ors
+    -- RecVec => Tooling to allocate, grow, write to, freeze, and index into records of vectors.
+    , RecVec rs
+    , RecVec rs2'
+    , RecVec ors
+    ) =>
+  Frame (Record rs)  -- ^ The left frame
+  -> Frame (Record rs2) -- ^ The right frame
+  -- TODO here we should give the name of the status column
+  -- -> FieldRec
+  -> [Rec (Maybe :. ElField) ors] -- ^ A list of the merged records, now in the Maybe functor
+outerJoinStatus a b =
+  concat
+  -- mergeFun => how to join two rows
+  (outer grouping mergeFun mergeLeftEmpty mergeRightEmpty
+    proj1 proj2 (toList a) (toList b))
+  where
+    {-# INLINE proj1 #-}
+    proj1 = rcast @fs
+    {-# INLINE proj2 #-}
+    proj2 = rcast @fs
+    {-# INLINE mergeFun #-}
+    --  <+> MergeBoth
+    mergeFun l r = justsFromRec $ mergeRecStatus @fs l r  <+> (Col MergeFromRight &: RNil)
+    {-# INLINE mergeLeftEmpty #-}
+    mergeLeftEmpty l = justsFromRec l <+> mkNothingsRec @rs2' <+> justsFromRec (Col MergeFromRight &: RNil)
+    {-# INLINE mergeRightEmpty #-}
+    -- <+> MergeFromLeft
+    mergeRightEmpty r = rcast @ors (mkNothingsRec @rs' <+> justsFromRec (r <+> MergeFromLeft &: RNil))
+
+mergeRecStatus :: forall fs rs rs2 rs2'.
+  (fs ⊆ rs2
+  , rs2' ⊆ rs2
+  , rs2' ~ RDeleteAll fs rs2
+  , rs ⊆ (rs ++ rs2')) =>
+  Record rs ->
+  Record rs2 ->
+  Record (rs ++ rs2')
+{-# INLINE mergeRecStatus #-}
+mergeRecStatus rec1 rec2 =
+  rec1 <+> rec2'
+  where
+    rec2' = rcast @rs2' rec2
 
 -- | Perform an right join operation on two frames.
 --
