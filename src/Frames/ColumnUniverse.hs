@@ -10,9 +10,9 @@ module Frames.ColumnUniverse (
   CommonColumns, CommonColumnsCat, parsedTypeRep
 ) where
 import Data.Maybe (fromMaybe)
-#if __GLASGOW_HASKELL__ < 808
-import Data.Semigroup (Semigroup((<>)))
-#endif
+
+
+
 import qualified Data.Text as T
 import Data.Vinyl
 import Data.Vinyl.CoRec
@@ -21,6 +21,7 @@ import Data.Vinyl.TypeLevel (RIndex, NatToInt)
 import Frames.ColumnTypeable
 import Frames.Categorical
 import Language.Haskell.TH
+import Data.Either (fromRight)
 
 -- | Extract a function to test whether some value of a given type
 -- could be read from some 'T.Text'.
@@ -28,7 +29,7 @@ inferParseable :: Parseable a => T.Text -> (Maybe :. Parsed) a
 inferParseable = Compose . parse
 
 -- | Helper to call 'inferParseable' on variants of a 'CoRec'.
-inferParseable' :: Parseable a => (((->) T.Text) :. (Maybe :. Parsed)) a
+inferParseable' :: Parseable a => ((->) T.Text :. (Maybe :. Parsed)) a
 inferParseable' = Compose inferParseable
 
 -- * Record Helpers
@@ -36,7 +37,7 @@ inferParseable' = Compose inferParseable
 tryParseAll :: forall ts. (RecApplicative ts, RPureConstrained Parseable ts)
             => T.Text -> Rec (Maybe :. Parsed) ts
 tryParseAll = rtraverse getCompose funs
-  where funs :: Rec (((->) T.Text) :. (Maybe :. Parsed)) ts
+  where funs :: Rec ((->) T.Text :. (Maybe :. Parsed)) ts
         funs = rpureConstrained @Parseable inferParseable'
 
 -- * Column Type Inference
@@ -58,8 +59,7 @@ parsedToColInfo x = case getConst rep of
   where rep = representableAsType x
 
 parsedTypeRep :: ColInfo a -> Parsed Type
-parsedTypeRep (ColInfo (t,p)) =
-  const (either (const (ConT (mkName "Categorical"))) id t) <$> p
+parsedTypeRep (ColInfo (t,p)) = fromRight (ConT (mkName "Categorical")) t <$ p
 
 -- | Map 'Type's we know about (with a special treatment of
 -- synthesized types for categorical variables) to 'Int's for ordering
@@ -120,8 +120,8 @@ mergeEqTypeParses x@(CoRec _) y = fromMaybe definitelyText
 instance (T.Text ∈ ts, RPureConstrained Parseable ts)
   => Semigroup (CoRec ColInfo ts) where
   x@(CoRec (ColInfo (tyX, pX))) <> y@(CoRec (ColInfo (tyY, pY))) =
-    case lubTypes (const (either (const Nothing) Just tyX) <$> pX)
-                  (const (either (const Nothing) Just tyY) <$> pY) of
+    case lubTypes (either (const Nothing) Just tyX <$ pX)
+                  (either (const Nothing) Just tyY <$ pY) of
       Just GT -> x
       Just LT -> y
       Just EQ -> mergeEqTypeParses x y
@@ -142,7 +142,7 @@ bestRep :: forall ts.
             RecApplicative ts, T.Text ∈ ts)
         => T.Text -> CoRec ColInfo ts
 bestRep t
-  | T.null t || t == "NA" = (CoRec (parsedToColInfo (Possibly T.empty)))
+  | T.null t || t == "NA" = CoRec (parsedToColInfo (Possibly T.empty))
   | otherwise = coRecMapC @Parseable parsedToColInfo
               . fromMaybe (CoRec (Possibly T.empty :: Parsed T.Text))
               . firstField
@@ -158,11 +158,11 @@ instance (RPureConstrained Parseable ts, FoldRec ts ts,
   inferType = bestRep
   {-# INLINABLE inferType #-}
 
-#if !MIN_VERSION_vinyl(0,11,0)
-instance forall ts. (RPureConstrained Show ts, RecApplicative ts)
-  => Show (CoRec ColInfo ts) where
-  show x = "(Col " ++ onCoRec @Show show x ++")"
-#endif  
+
+
+
+
+
 
 -- * Common Columns
 

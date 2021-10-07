@@ -233,9 +233,8 @@ tableTypes' :: forall a c. (c ~ CoRec ColInfo a, ColumnTypeable c, Monoid c)
 tableTypes' (RowGen {..}) =
   do headers <- runIO . P.runSafeT
                 $ readColHeaders opts lineSource :: Q [(T.Text, c)]
-     (colTypes, colDecs) <- (second concat . unzip)
-                            <$> mapM (uncurry mkColDecs)
-                                     (map (second colType) headers)
+     (colTypes, colDecs) <- second concat . unzip
+                            <$> mapM (uncurry mkColDecs . second colType) headers
      let recTy = TySynD (mkName rowTypeName) [] (recDec colTypes)
          optsName = case rowTypeName of
                       [] -> error "Row type name shouldn't be empty"
