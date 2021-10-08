@@ -1,7 +1,7 @@
 {-# LANGUAGE BangPatterns, DefaultSignatures, LambdaCase,
              ScopedTypeVariables #-}
 module Frames.ColumnTypeable where
-import Control.Monad (MonadPlus)
+import Control.Monad (MonadPlus, mplus)
 import Data.Maybe (fromMaybe)
 import Data.Readable (Readable(fromText))
 import Data.Typeable (Proxy(..), typeRep, Typeable)
@@ -80,6 +80,13 @@ instance Parseable Double where
   -- out commas lets us parse those sucessfully
   parse = fmap Definitely . fromText . T.filter (/= ',')
 instance Parseable T.Text where
+
+-- | This instance does not work well with inference! A @Maybe a@ can
+-- always parse as a @Nothing@. However, it is helpful to have
+-- specific columns of a record have 'Maybe' types if you are writing
+-- out your column types yourself.
+instance (Typeable a, Parseable a) => Parseable (Maybe a) where
+  parse = (`mplus` pure (Possibly Nothing)) . fmap (fmap Just) . parse
 
 -- | This class relates a universe of possible column types to Haskell
 -- types, and provides a mechanism to infer which type best represents

@@ -107,6 +107,24 @@ declarePrefixedColumn colName prefix colTypeName =
         colTy = ConT colTypeName
         colTypeQ = [t|$(litT . strTyLit $ T.unpack colName) :-> $(return colTy)|]
 
+-- | Splice for manually declaring a column of a given type. Works
+-- like 'declarePrefixedColumn', but uses a quote for the payload type
+-- rather than a specific 'Name'. This lets you declare a column with
+-- a type like, @Maybe Int@, where @Maybe Int@ is a 'Type' but not a
+-- 'Name'. For example, with @-XOverloadedStrings@ and
+-- @-XQuasiQuotes@,
+--
+-- > declarePrefixedColumnType "x2" "my" [t|Maybe Int|]
+declarePrefixedColumnType :: T.Text -> T.Text -> Q Type -> DecsQ
+declarePrefixedColumnType colName prefix payloadType =
+  (:) <$> mkColSynDec colTypeQ colTName'
+      <*> (payloadType >>= \colTy -> mkColLensDec colTName' colTy colPName)
+  where prefix' = capitalize1 prefix
+        colTName = sanitizeTypeName (prefix' <> capitalize1 colName)
+        colPName = fromMaybe "colDec impossible" (lowerHead colTName)
+        colTName' = mkName $ T.unpack colTName
+        colTypeQ = [t|$(litT . strTyLit $ T.unpack colName) :-> $payloadType|]
+
 -- * Default CSV Parsing
 
 -- | Control how row and named column types are generated. The type

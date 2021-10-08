@@ -1,8 +1,8 @@
-{-# LANGUAGE PolyKinds #-}
 {-# LANGUAGE DataKinds, FlexibleContexts, FlexibleInstances,
-             MultiParamTypeClasses, QuasiQuotes, RankNTypes,
-             TemplateHaskell, TypeApplications, TypeFamilies,
-             TypeOperators, UndecidableInstances #-}
+             MultiParamTypeClasses, OverloadedStrings, PolyKinds,
+             QuasiQuotes, RankNTypes, TemplateHaskell,
+             TypeApplications, TypeFamilies, TypeOperators,
+             UndecidableInstances #-}
 -- | An example of dealing with rows that contain missing data. We may
 -- want to fill in the gaps with default values.
 import Data.Monoid (First(..))
@@ -11,6 +11,7 @@ import Data.Vinyl.Functor (Compose(..), (:.))
 import Data.Vinyl.Class.Method
 
 import Frames
+import Frames.TH (declarePrefixedColumnType)
 
 import Pipes (cat, Producer, (>->))
 import Pipes.Prelude as P
@@ -74,6 +75,23 @@ holesFilled = readTableMaybe "data/missing.csv" >-> P.map (fromJust . holeFiller
 
 showFilledHoles :: IO ()
 showFilledHoles = runSafeT (pipePreview holesFilled 10 cat)
+
+-- Perhaps we want to parse possibly missing data in a particular
+-- column. Here, @col_a@ may or may not have an integer, while @col_b@
+-- definitely has a text field. The row type itself, @RowMaybeA@ is
+-- /not/ interpreted as a @Maybe :. ElField@ (the composition of
+-- 'Maybe' and 'ElField').
+
+declarePrefixedColumnType "col_a" "withHoles" [t|Maybe Int|]
+declarePrefixedColumnType "col_b" "withHoles" [t|Text|]
+
+type RowMaybeA = Rec ElField '["col_a" :-> Maybe Int, "col_b" :-> Text]
+
+holesIncluded :: MonadSafe m => Producer RowMaybeA m ()
+holesIncluded = readTable "data/missing.csv"
+
+showWithHoles :: IO ()
+showWithHoles = runSafeT (pipePreview holesIncluded 10 cat)
 
 main :: IO ()
 main = return ()
