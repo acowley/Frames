@@ -76,7 +76,11 @@ declareCategorical (cap -> name) (fmap cap -> prefix) variants =
         fromStringClause variant variantCon =
           Clause [LitP (StringL variant)] (NormalB (ConE variantCon)) []
         showCSVClause variant variantCon =
+#if MIN_VERSION_template_haskell(2,18,0)
+          Clause [ConP variantCon [] []]
+#else
           Clause [ConP variantCon []]
+#endif
                  (NormalB (AppE (VarE 'T.pack) (LitE (StringL variant))))
                  []
         readableGuarded :: Name -> String -> Name -> (Guard, Exp)
