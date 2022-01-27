@@ -24,7 +24,8 @@
   outputs = { self, nixpkgs, hls, flake-utils, ... }@inputs:
     flake-utils.lib.eachSystem ["x86_64-linux"] (system: let
 
-      compiler = "8107";
+      # compiler = "8107";
+      compiler = "921";
       pkgs = import nixpkgs {
         inherit system;
         config = { allowUnfree = true; allowBroken = true; };
@@ -33,28 +34,28 @@
         overrides = haskellOverlay;
         };
 
-      haskellOverlay = final: prev: with pkgs.haskell.lib; {
-          statestack = doJailbreak prev.statestack;
-          svg-builder = doJailbreak prev.svg-builder;
+      haskellOverlay = hfinal: hprev: with pkgs.haskell.lib; {
+          statestack = doJailbreak hprev.statestack;
+          svg-builder = doJailbreak hprev.svg-builder;
           # see https://github.com/JonasDuregard/sized-functors/pull/10 
           # https://github.com/
-          size-based = doJailbreak (overrideSrc prev.size-based {
+          size-based = doJailbreak (overrideSrc hprev.size-based {
             version = "unstable-2022-01-20";
             src = pkgs.fetchzip {
               url = "https://github.com/byorgey/sized-functors/archive/master.tar.gz";
               sha256 = "sha256-pVJbEGF4/lvXmWIypwkMQBYygOx3TQwLJbMpfdYovdY=";
             };
           });
-          monoid-extras = pkgs.haskell.lib.doJailbreak prev.monoid-extras;
-          active = pkgs.haskell.lib.doJailbreak prev.active;
-          dual-tree = pkgs.haskell.lib.doJailbreak prev.dual-tree;
-          diagrams-core = pkgs.haskell.lib.doJailbreak prev.diagrams-core;
-          diagrams-lib = pkgs.haskell.lib.doJailbreak prev.diagrams-lib;
-          diagrams-postscript = pkgs.haskell.lib.doJailbreak prev.diagrams-postscript;
-          SVGFonts = pkgs.haskell.lib.doJailbreak prev.SVGFonts;
-          diagrams-svg = pkgs.haskell.lib.doJailbreak prev.diagrams-svg;
-          diagrams-rasterific = pkgs.haskell.lib.doJailbreak prev.diagrams-rasterific;
-          Chart = pkgs.haskell.lib.overrideSrc prev.Chart {
+          monoid-extras = pkgs.haskell.lib.doJailbreak hprev.monoid-extras;
+          active = pkgs.haskell.lib.doJailbreak hprev.active;
+          dual-tree = pkgs.haskell.lib.doJailbreak hprev.dual-tree;
+          diagrams-core = pkgs.haskell.lib.doJailbreak hprev.diagrams-core;
+          diagrams-lib = pkgs.haskell.lib.doJailbreak hprev.diagrams-lib;
+          diagrams-postscript = pkgs.haskell.lib.doJailbreak hprev.diagrams-postscript;
+          SVGFonts = pkgs.haskell.lib.doJailbreak hprev.SVGFonts;
+          diagrams-svg = pkgs.haskell.lib.doJailbreak hprev.diagrams-svg;
+          diagrams-rasterific = pkgs.haskell.lib.doJailbreak hprev.diagrams-rasterific;
+          Chart = pkgs.haskell.lib.overrideSrc hprev.Chart {
             version = "unstable-2022-01-20";
             src = "${pkgs.fetchzip {
               url = "https://github.com/teto/haskell-chart/archive/d990ab39ac8a400ad8007d66caabc8355e30fdf7.tar.gz";
@@ -67,7 +68,16 @@
             #   hash = "sha256-39fvIUPaF7LqgXvoP4uDROoXu3kh48/tTD662j0yDuk=";
             # };
           };
-          readable = pkgs.haskell.lib.overrideSrc prev.readable {
+          vinyl = dontHaddock (appendConfigureFlags (hprev.vinyl) [ "--ghc-options=-XFlexibleContexts" ]);
+          # vinyl = overrideSrc hprev.vinyl {
+          #   version = "unstable-2022-01-20";
+          #   src = pkgs.fetchzip {
+          #     url = "https://github.com/VinylRecords/Vinyl/archive/322476778d11223ac40f1e1c3faddc007eaef72a.tar.gz";
+          #     sha256 = "sha256-i5eY1Nd5/OvQAlhR6lxeNbg19Dw4CoAZp+Mp2fO85PI=";
+          #   };
+          # };
+          linear = hprev.callHackage "linear" "1.21.8" {};
+          readable = pkgs.haskell.lib.overrideSrc hprev.readable {
             version = "unstable-2022-01-20";
             src = pkgs.fetchFromGitHub {
               owner = "teto";
