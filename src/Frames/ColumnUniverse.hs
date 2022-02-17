@@ -98,7 +98,7 @@ lubTypes x y = compare <$> orderParsePriorities y <*> orderParsePriorities x
 
 instance (T.Text ∈ ts, RPureConstrained Parseable ts) => Monoid (CoRec ColInfo ts) where
   mempty = CoRec (ColInfo ( Right (ConT (mkName "Text")), Possibly T.empty))
-  mappend x y = x <> y
+  mappend = (<>)
 
 -- | A helper For the 'Semigroup' instance below.
 mergeEqTypeParses :: forall ts. (RPureConstrained Parseable ts, T.Text ∈ ts)
