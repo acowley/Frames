@@ -28,29 +28,13 @@
         "type": "github"
       }
     },
-    "flake-compat_2": {
-      "flake": false,
-      "locked": {
-        "lastModified": 1627913399,
-        "narHash": "sha256-hY8g6H2KFL8ownSiFeMOjwPC8P0ueXpCVEbxgda3pko=",
-        "owner": "edolstra",
-        "repo": "flake-compat",
-        "rev": "12c64ca55c1014cdc1b16ed5a804aa8576601ff2",
-        "type": "github"
-      },
-      "original": {
-        "owner": "edolstra",
-        "repo": "flake-compat",
-        "type": "github"
-      }
-    },
     "flake-utils": {
       "locked": {
-        "lastModified": 1642700792,
-        "narHash": "sha256-XqHrk7hFb+zBvRg6Ghl+AZDq03ov6OshJLiSWOoX5es=",
+        "lastModified": 1644229661,
+        "narHash": "sha256-1YdnJAsNy69bpcjuoKdOYQX0YxZBiCYZo4Twxerqv7k=",
         "owner": "numtide",
         "repo": "flake-utils",
-        "rev": "846b2ae0fc4cc943637d3d1def4454213e203cba",
+        "rev": "3cecb5b042f7f209c56ffd8371b2711a290ec797",
         "type": "github"
       },
       "original": {
@@ -129,27 +113,6 @@
         "type": "github"
       }
     },
-    "hackage-sources": {
-      "inputs": {
-        "constraints-extras": "constraints-extras",
-        "fourmolu": "fourmolu",
-        "ghc-exactprint": "ghc-exactprint",
-        "hlint": "hlint",
-        "lsp": "lsp",
-        "lsp-test": "lsp-test",
-        "lsp-types": "lsp-types",
-        "retrie": "retrie"
-      },
-      "locked": {
-        "narHash": "sha256-/F3itZJSZDnaxRGpkTffHDkxC7PloYqxVTW//bP3i20=",
-        "path": "./flake_hackage",
-        "type": "path"
-      },
-      "original": {
-        "path": "./flake_hackage",
-        "type": "path"
-      }
-    },
     "hlint": {
       "flake": false,
       "locked": {
@@ -164,19 +127,26 @@
     },
     "hls": {
       "inputs": {
-        "flake-compat": "flake-compat_2",
+        "constraints-extras": "constraints-extras",
+        "flake-compat": "flake-compat",
         "flake-utils": "flake-utils_2",
+        "fourmolu": "fourmolu",
+        "ghc-exactprint": "ghc-exactprint",
         "gitignore": "gitignore",
-        "hackage-sources": "hackage-sources",
+        "hlint": "hlint",
+        "lsp": "lsp",
+        "lsp-test": "lsp-test",
+        "lsp-types": "lsp-types",
         "nixpkgs": "nixpkgs",
-        "pre-commit-hooks": "pre-commit-hooks"
+        "pre-commit-hooks": "pre-commit-hooks",
+        "retrie": "retrie"
       },
       "locked": {
-        "lastModified": 1643153469,
-        "narHash": "sha256-guAwIlhm8aKmooq46OxnR5U23ORMlzfA5LILeWirCS0=",
+        "lastModified": 1644883223,
+        "narHash": "sha256-OMhftt6Bd046AsHihdscHq+xCNvAhhPTjHqcH3Lip4M=",
         "owner": "haskell",
         "repo": "haskell-language-server",
-        "rev": "f62ec3ec76bd972395a40689bb60c8e6c11957c3",
+        "rev": "34e9914f4edaa83c2e4a80dcba0c6375d4911da9",
         "type": "github"
       },
       "original": {
@@ -253,11 +223,11 @@
     },
     "nixpkgs_3": {
       "locked": {
-        "lastModified": 1643080866,
-        "narHash": "sha256-iO3Z6jw0HEiie8UnXVpq1SxphprDYBXrVzubEa5D4eE=",
+        "lastModified": 1644525281,
+        "narHash": "sha256-D3VuWLdnLmAXIkooWAtbTGSQI9Fc1lkvAr94wTxhnTU=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "c07b471b52be8fbc49a7dc194e9b37a6e19ee04d",
+        "rev": "48d63e924a2666baf37f4f14a18f19347fbd54a2",
         "type": "github"
       },
       "original": {
@@ -300,7 +270,6 @@
     },
     "root": {
       "inputs": {
-        "flake-compat": "flake-compat",
         "flake-utils": "flake-utils",
         "hls": "hls",
         "nixpkgs": "nixpkgs_3"
