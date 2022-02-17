@@ -1,5 +1,5 @@
 name:                Frames
-version:             0.7.2
+version:             0.7.3
 synopsis:            Data frames For working with tabular data files
 description:         User-friendly, type safe, runtime efficient tooling for
                      working with tabular data deserialized from
@@ -30,7 +30,7 @@ extra-source-files:  benchmarks/*.hs benchmarks/*.py
                      data/left1.csv data/right1.csv data/left_summary.csv
                      data/FL2.csv
 cabal-version:       >=1.10
-tested-with:         GHC == 8.6.5 || == 8.8.4 || == 8.10.4 || == 9.0.1
+tested-with:         GHC == 8.6.5 || == 8.8.4 || == 8.10.7 || == 9.0.1 || == 9.2.1
 
 source-repository head
   type:     git
@@ -87,7 +87,7 @@ library
                        vector-th-unbox >= 0.2.1.6
   hs-source-dirs:      src
   default-language:    Haskell2010
-  ghc-options:         -Wall -XFlexibleContexts
+  ghc-options:         -Wall
 
 -- Get the large-ish data files used in the demo and benchmark
 executable getdata
@@ -234,7 +234,7 @@ test-suite spec
                        temporary, directory, htoml, regex-applicative, pretty,
                        unordered-containers, pipes, HUnit, vinyl,
                        foldl >= 1.3 && < 1.5,
-                       attoparsec, lens
+                       attoparsec, lens, bytestring
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall
   default-language:    Haskell2010
 

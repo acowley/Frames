@@ -60,7 +60,7 @@ jobs:
       matrix:
         # stack: ["2.3.1"]
         stack: ["latest"]
-        ghc: ["8.10.4"]
+        ghc: ["8.10.7"]
 
     steps:
     - uses: actions/checkout@v2
