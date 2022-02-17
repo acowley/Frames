@@ -2,10 +2,12 @@
 module DataCSV where
 import Control.Monad ((>=>))
 import Data.Bifunctor (first)
+import qualified Data.ByteString as BS
 import qualified Data.HashMap.Lazy as H
 import Data.Maybe (catMaybes)
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
+import Data.Text.Encoding (decodeUtf8)
 import Language.Haskell.TH.Syntax (Lift(..))
 import Text.Toml
 import Text.Toml.Types (Node (VTable, VString), Table)
@@ -20,8 +22,11 @@ data CsvExample = CsvExample {
 --   lift (CsvExample n c g) = [e| CsvExample n c g |]
 
 examplesFrom :: FilePath -> IO [CsvExample]
-examplesFrom fp = (either error id . ((first show . parseTomlDoc "examples") >=> go))
-                <$> T.readFile fp
+examplesFrom fp =
+  (either error id
+   . ((first show . parseTomlDoc "examples") >=> go)
+   . decodeUtf8)
+  <$> BS.readFile fp
   where go :: Table -> Either String [CsvExample]
         go = fmap catMaybes . mapM (uncurry ex . first T.unpack) . H.toList
         ex :: String -> Node -> Either String (Maybe CsvExample)
