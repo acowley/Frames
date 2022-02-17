@@ -95,7 +95,11 @@ executable getdata
     buildable: False
   main-is: GetData.hs
   if flag(demos)
-    build-depends: base, bytestring, http-client >= 0.4.3, zip-archive, directory
+    build-depends:
+      base, bytestring,
+      http-client >= 0.4.3,
+      http-client-tls,
+      zip-archive, directory
   hs-source-dirs: data
   default-language: Haskell2010
   ghc-options: -Wall

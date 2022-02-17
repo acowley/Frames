@@ -4,13 +4,14 @@ import qualified Data.ByteString.Lazy.Char8 as B
 import Data.Maybe (fromJust)
 import Data.Monoid (First(..))
 import Network.HTTP.Client
+import Network.HTTP.Client.TLS (tlsManagerSettings)
 import System.Directory (createDirectoryIfMissing)
 
 getPrestige :: IO ()
-getPrestige = do m <- newManager defaultManagerSettings
+getPrestige = do m <- newManager tlsManagerSettings
                  httpLbs req m >>=
                    B.writeFile "data/prestige.csv" . responseBody
-  where Just req = parseUrlThrow "http://vincentarelbundock.github.io/Rdatasets/csv/car/Prestige.csv"
+  where Just req = parseUrlThrow "https://vincentarelbundock.github.io/Rdatasets/csv/carData/Prestige.csv"
 
 getFLinsurance :: IO ()
 getFLinsurance = do m <- newManager defaultManagerSettings

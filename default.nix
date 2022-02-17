@@ -1,11 +1,11 @@
 { mkDerivation, attoparsec, base, bytestring, Chart, Chart-diagrams
 , containers, contravariant, criterion, deepseq, diagrams-lib
 , diagrams-rasterific, directory, discrimination, foldl, ghc-prim
-, hashable, hspec, htoml, http-client, HUnit, lens, list-t
-, microlens, pipes, pipes-bytestring, pipes-group, pipes-parse
-, pipes-safe, pretty, primitive, readable, regex-applicative
-, statistics, stdenv, template-haskell, temporary, text
-, transformers, unordered-containers, vector, vector-th-unbox
+, hashable, hspec, htoml, http-client, http-client-tls, HUnit, lens
+, list-t, microlens, pipes, pipes-bytestring, pipes-group
+, pipes-parse, pipes-safe, pretty, primitive, readable
+, regex-applicative, statistics, stdenv, template-haskell, temporary
+, text, transformers, unordered-containers, vector, vector-th-unbox
 , vinyl, zip-archive
 }:
 mkDerivation {
@@ -23,8 +23,8 @@ mkDerivation {
   ];
   executableHaskellDepends = [
     base bytestring Chart Chart-diagrams containers diagrams-lib
-    diagrams-rasterific directory foldl ghc-prim http-client list-t
-    microlens pipes pipes-safe readable statistics template-haskell
+    diagrams-rasterific directory foldl ghc-prim http-client http-client-tls
+    list-t microlens pipes pipes-safe readable statistics template-haskell
     text transformers vector vinyl zip-archive
   ];
   testHaskellDepends = [
