@@ -23,11 +23,11 @@
       # compiler = "921";
       pkgs = import nixpkgs {
         inherit system;
-        overlays = [ self.overlay ];
-        config = { allowUnfree = true; allowBroken = true; };
+        overlays = [ self.overlay.${system} ];
+        # config = { allowUnfree = true; allowBroken = true; };
       };
 
-      hspkgs = (pkgs.haskell.packages."ghc${compiler}").override {
+      hspkgs = pkgs.haskell.packages."ghc${compiler}".override {
         overrides = pkgs.frameHaskellOverlay;
       };
 
@@ -62,102 +62,61 @@
         hspkgs.cabal-install
         pkgs.llvmPackages_latest.llvm
       ];
-  # shellHook = ''
-  #   source <(grep '^export NIX_' ${ghc}/bin/ghc)
-  #   source <(echo 'export HIE_HOOGLE_DATABASE='$(grep -F -- '--database' ${ghc}/bin/hoogle | sed 's/.* --database \(.*\.hoo\).*/\1/'))
-  # '';
     };
+
     overlay = final: prev: {
-      frameHaskellOverlay = hfinal: hprev: with prev.haskell.lib; {
-        statestack = doJailbreak hprev.statestack;
-        svg-builder = doJailbreak hprev.svg-builder;
-        # see https://github.com/JonasDuregard/sized-functors/pull/10 
-        # https://github.com/
-        size-based = doJailbreak (overrideSrc hprev.size-based {
-          version = "unstable-2022-01-20";
-          src = final.fetchzip {
-            url = "https://github.com/byorgey/sized-functors/archive/master.tar.gz";
-            sha256 = "sha256-pVJbEGF4/lvXmWIypwkMQBYygOx3TQwLJbMpfdYovdY=";
+      frameHaskellOverlay = hfinal: hprev:
+        let doJailbreak = prev.haskell.lib.doJailbreak;
+            overrideSrc = prev.haskell.lib.overrideSrc;
+            dontHaddock = prev.haskell.lib.dontHaddock;
+            dontCheck = prev.haskell.lib.dontCheck;
+        in {
+          statestack = doJailbreak hprev.statestack;
+          svg-builder = doJailbreak hprev.svg-builder;
+          # see https://github.com/JonasDuregard/sized-functors/pull/10
+          # https://github.com/
+          size-based = doJailbreak (overrideSrc hprev.size-based {
+            version = "unstable-2022-01-20";
+            src = final.fetchzip {
+              url = "https://github.com/byorgey/sized-functors/archive/master.tar.gz";
+              sha256 = "sha256-pVJbEGF4/lvXmWIypwkMQBYygOx3TQwLJbMpfdYovdY=";
+            };
+          });
+          monoid-extras = doJailbreak hprev.monoid-extras;
+          active = doJailbreak hprev.active;
+          dual-tree = doJailbreak hprev.dual-tree;
+          diagrams-core = doJailbreak hprev.diagrams-core;
+          diagrams-lib = doJailbreak hprev.diagrams-lib;
+          diagrams-postscript = doJailbreak hprev.diagrams-postscript;
+          SVGFonts = doJailbreak hprev.SVGFonts;
+          diagrams-svg = doJailbreak hprev.diagrams-svg;
+          diagrams-rasterific = doJailbreak hprev.diagrams-rasterific;
+          Chart = doJailbreak hprev.Chart;
+          linear = hprev.callHackage "linear" "1.21.8" {};
+          vinyl = overrideSrc hprev.vinyl {
+            version = "0.14.1";
+            src = prev.fetchFromGitHub {
+              owner = "VinylRecords";
+              repo = "Vinyl";
+              rev = "892d597f9dd8e96c0853269ab78141ae2e03aa2c";
+              hash = "sha256-ONw+8D1r4xX9+KgYOFpTNhk+pCsNZW8DbbAzOheSkS0=";
+            };
           };
-        });
-        monoid-extras = doJailbreak hprev.monoid-extras;
-        active = doJailbreak hprev.active;
-        dual-tree = doJailbreak hprev.dual-tree;
-        diagrams-core = doJailbreak hprev.diagrams-core;
-        diagrams-lib = doJailbreak hprev.diagrams-lib;
-        diagrams-postscript = doJailbreak hprev.diagrams-postscript;
-        SVGFonts = doJailbreak hprev.SVGFonts;
-        diagrams-svg = doJailbreak hprev.diagrams-svg;
-        diagrams-rasterific = doJailbreak hprev.diagrams-rasterific;
-        Chart = doJailbreak hprev.Chart;
-        linear = hprev.callHackage "linear" "1.21.8" {};
-        vinyl = overrideSrc hprev.vinyl {
-          src = prev.fetchFromGitHub {
-            owner = "VinylRecords";
-            repo = "Vinyl";
-            rev = "892d597f9dd8e96c0853269ab78141ae2e03aa2c";
-            hash = "sha256-ONw+8D1r4xX9+KgYOFpTNhk+pCsNZW8DbbAzOheSkS0=";
-          };
-        } // if compiler == "921" then {
-          basement = dontHaddock hprev.basement;
-          lens-family-core = dontHaddock super.lens-family-core;
-          microlens = dontHaddock super.microlens;
-          readable = dontHaddock (doJailbreak super.readable);
-          QuickCheck = dontCheck super.QuickCheck;
-          operational = dontHaddock super.operational;
-          optparse-applicative = dontCheck super.optparse-applicative;
-          generic-deriving = dontHaddock super.generic-deriving;
-        } else {
-          readable = doJailbreak hprev.readable;
-        };
-      };
-    }
-  })#  // {
-  #   overlay = final: prev: {
-  #     frameHaskellOverlay = hfinal: hprev: with prev.haskell.lib; {
-  #       statestack = doJailbreak hprev.statestack;
-  #       svg-builder = doJailbreak hprev.svg-builder;
-  #       # see https://github.com/JonasDuregard/sized-functors/pull/10 
-  #       # https://github.com/
-  #       size-based = doJailbreak (overrideSrc hprev.size-based {
-  #         version = "unstable-2022-01-20";
-  #         src = final.fetchzip {
-  #           url = "https://github.com/byorgey/sized-functors/archive/master.tar.gz";
-  #           sha256 = "sha256-pVJbEGF4/lvXmWIypwkMQBYygOx3TQwLJbMpfdYovdY=";
-  #         };
-  #       });
-  #       monoid-extras = doJailbreak hprev.monoid-extras;
-  #       active = doJailbreak hprev.active;
-  #       dual-tree = doJailbreak hprev.dual-tree;
-  #       diagrams-core = doJailbreak hprev.diagrams-core;
-  #       diagrams-lib = doJailbreak hprev.diagrams-lib;
-  #       diagrams-postscript = doJailbreak hprev.diagrams-postscript;
-  #       SVGFonts = doJailbreak hprev.SVGFonts;
-  #       diagrams-svg = doJailbreak hprev.diagrams-svg;
-  #       diagrams-rasterific = doJailbreak hprev.diagrams-rasterific;
-  #       Chart = doJailbreak hprev.Chart;
-  #       linear = hprev.callHackage "linear" "1.21.8" {};
-  #       vinyl = overrideSrc hprev.vinyl {
-  #         src = prev.fetchFromGitHub {
-  #           owner = "VinylRecords";
-  #           repo = "Vinyl";
-  #           rev = "892d597f9dd8e96c0853269ab78141ae2e03aa2c";
-  #           hash = "sha256-ONw+8D1r4xX9+KgYOFpTNhk+pCsNZW8DbbAzOheSkS0=";
-  #         };
-  #       } // if compiler == "921" then {
-  #         basement = dontHaddock hprev.basement;
-  #         lens-family-core = dontHaddock super.lens-family-core;
-  #         microlens = dontHaddock super.microlens;
-  #         readable = dontHaddock (doJailbreak super.readable);
-  #         QuickCheck = dontCheck super.QuickCheck;
-  #         operational = dontHaddock super.operational;
-  #         optparse-applicative = dontCheck super.optparse-applicative;
-  #         generic-deriving = dontHaddock super.generic-deriving;
-  #       } else {
-  #         readable = doJailbreak hprev.readable;
-  #       };
-  #     };
-  #   };
-  # }
-  ;
+        } // (if compiler == "921"
+              then {
+                # Temporary fixes for breakage with ghc-9.2.1
+                basement = dontHaddock hprev.basement;
+                lens-family-core = dontHaddock hprev.lens-family-core;
+                microlens = dontHaddock hprev.microlens;
+                readable = dontHaddock (doJailbreak hprev.readable);
+                QuickCheck = dontCheck hprev.QuickCheck;
+                operational = dontHaddock hprev.operational;
+                optparse-applicative = dontCheck hprev.optparse-applicative;
+                generic-deriving = dontHaddock hprev.generic-deriving;
+              } else {
+                readable = doJailbreak hprev.readable;
+              }
+        );
+    };
+  });
 }
