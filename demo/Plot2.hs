@@ -44,6 +44,7 @@ main = do ((age_,inc,n), _) <- runSafeT $
           putStrLn $ "The average farmer/fisher is "++
                      show (fromIntegral age_ / n) ++
                      " and made " ++ show (fromIntegral inc / n)
+          mkPlot
   where aux !(!sumAge, !sumIncome, n) f = (sumAge + f^.age, sumIncome + f^.capitalGain, n+1)
 
 -- Independent folds
