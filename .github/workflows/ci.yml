@@ -36,7 +36,7 @@ jobs:
 
     - name: Freeze
       run: |
-       cabal configure --enable-tests --enable-benchmarks --test-show-details=direct --write-ghc-environment-files=always --allow-newer bytestring
+       cabal configure --enable-tests --test-show-details=direct --write-ghc-environment-files=always --allow-newer bytestring
        cabal freeze
 
     - uses: actions/cache@v1
@@ -47,7 +47,7 @@ jobs:
 
     - name: Build
       run: |
-        cabal configure --enable-tests --enable-benchmarks --test-show-details=direct --write-ghc-environment-files=always --allow-newer bytestring
+        cabal configure --enable-tests --test-show-details=direct --write-ghc-environment-files=always --allow-newer bytestring
         cabal build all
 
     - name: Test
