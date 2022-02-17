@@ -32,7 +32,10 @@
       };
 
       drv = hspkgs.callPackage ./default.nix {};
-      ghc = hspkgs.ghc.withHoogle (ps: drv.passthru.getBuildInputs.haskellBuildInputs);
+      ghc = (if compiler == "921"
+             then hspkgs.ghc.withPackages
+             else hspkgs.ghc.withHoogle)
+              (ps: drv.passthru.getBuildInputs.haskellBuildInputs);
 
       # modifier used in haskellPackages.developPackage
       myModifier = drv:
@@ -58,10 +61,11 @@
     devShell = pkgs.mkShell {
       buildInputs = [
         ghc
-        hls.packages.${system}."haskell-language-server-${compiler}"
         hspkgs.cabal-install
         pkgs.llvmPackages_latest.llvm
-      ];
+      ] ++
+      pkgs.lib.optional (compiler != "921")
+        hls.packages.${system}."haskell-language-server-${compiler}";
     };
 
     overlay = final: prev: {
@@ -105,14 +109,30 @@
         } // (if compiler == "921"
               then {
                 # Temporary fixes for breakage with ghc-9.2.1
+                attoparsec = dontCheck hprev.attoparsec;
+                base-compat-batteries = dontCheck hprev.base-compat-batteries;
                 basement = dontHaddock hprev.basement;
+                blaze-builder = dontCheck hprev.blaze-builder;
+                blaze-markup = dontCheck hprev.blaze-markup;
+                case-insensitive = dontCheck hprev.case-insensitive;
+                cassava = dontCheck hprev.cassava;
+                conduit-extra = dontCheck hprev.conduit-extra;
+                criterion = dontCheck hprev.criterion;
+                cryptonite = dontHaddock hprev.cryptonite;
+                fast-logger = dontCheck hprev.fast-logger;
+                htoml = dontCheck hprev.htoml;
                 lens-family-core = dontHaddock hprev.lens-family-core;
+                ListLike = dontCheck hprev.ListLike;
                 microlens = dontHaddock hprev.microlens;
+                microstache = dontCheck hprev.microstache;
                 readable = dontHaddock (doJailbreak hprev.readable);
                 QuickCheck = dontCheck hprev.QuickCheck;
                 operational = dontHaddock hprev.operational;
                 optparse-applicative = dontCheck hprev.optparse-applicative;
                 generic-deriving = dontHaddock hprev.generic-deriving;
+                streaming-commons = dontCheck hprev.streaming-commons;
+                utf8-string = dontCheck hprev.utf8-string;
+                word8 = dontCheck hprev.word8;
               } else {
                 readable = doJailbreak hprev.readable;
               }
