@@ -36,7 +36,6 @@ instance Eq r => Eq (Frame r) where
 -- a new 'Frame' with the rows of @f1@ followed by the rows of @f2@.
 instance Monoid (Frame r) where
   mempty = Frame 0 (const $ error "index out of bounds (empty frame)")
-  f1 `mappend` f2 = f1 <> f2
 
 instance Semigroup (Frame r) where
   Frame l1 f1 <> Frame l2 f2 =

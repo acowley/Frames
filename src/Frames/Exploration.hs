@@ -14,6 +14,7 @@ module Frames.Exploration (pipePreview, select, lenses, recToList,
                            takeRows, dropRows) where
 import Data.Char (isSpace, isUpper)
 import qualified Data.Foldable as F
+import Data.Kind (Type)
 import Data.List (intercalate)
 import Data.Proxy
 import qualified Data.Vinyl as V
@@ -21,7 +22,7 @@ import qualified Data.Vinyl.Class.Method as V
 import Data.Vinyl.Functor (ElField(Field), Const(..))
 import Frames.Rec
 import GHC.TypeLits (Symbol)
-import Language.Haskell.TH
+import Language.Haskell.TH hiding (Type)
 import Language.Haskell.TH.Quote
 import Pipes hiding (Proxy)
 import qualified Pipes as P
@@ -92,7 +93,7 @@ pr1 = QuasiQuoter mkProxy undefined undefined undefined
 
 -- * ToList
 
-recToList :: forall a (rs :: [(Symbol,*)]).
+recToList :: forall a (rs :: [(Symbol, Type)]).
              (V.RecMapMethod ((~) a) ElField rs, V.RecordToList rs)
           => Record rs -> [a]
 recToList = V.recordToList . V.rmapMethod @((~) a) aux

@@ -6,6 +6,7 @@
 module Frames.InCore where
 import Control.Monad.Primitive
 import Control.Monad.ST (runST)
+import Data.Kind (Type)
 import Data.Proxy
 import Data.Text (Text)
 import qualified Data.Vector as VB
@@ -23,12 +24,12 @@ import Frames.RecF
 import GHC.Prim (RealWorld)
 #endif
 import GHC.TypeLits (KnownSymbol)
-import GHC.Types (Symbol, Type)
+import GHC.Types (Symbol)
 import qualified Pipes as P
 import qualified Pipes.Prelude as P
 
 -- | The most efficient vector type for each column data type.
-type family VectorFor t :: * -> *
+type family VectorFor t :: Type -> Type
 type instance VectorFor Bool = VU.Vector
 type instance VectorFor Int = VU.Vector
 type instance VectorFor Float = VU.Vector

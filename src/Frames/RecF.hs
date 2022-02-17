@@ -29,6 +29,7 @@ module Frames.RecF (V.rappend, V.rtraverse, rdel, CanDelete,
                     ColFun, ColumnHeaders,
                     columnHeaders) where
 -- import Data.List (intercalate)
+import Data.Kind (Type)
 import Data.Proxy
 import qualified Data.Vinyl as V
 import Data.Vinyl (Rec(..))
@@ -70,7 +71,7 @@ import GHC.TypeLits (Symbol, KnownSymbol, symbolVal)
 -- pattern x :& xs <- (frameUncons -> (x, xs)) where
 --   x :& xs = frameCons x xs
 
-class ColumnHeaders (cs::[(Symbol,*)]) where
+class ColumnHeaders (cs::[(Symbol, Type)]) where
   -- | Return the column names for a record.
   columnHeaders :: proxy (Rec f cs) -> [String]
 
@@ -88,7 +89,7 @@ type family ColFun f x where
 
 -- | Strip the column information from each element of a list of
 -- types.
-type family UnColumn (ts :: [(Symbol,*)]) where
+type family UnColumn (ts :: [(Symbol, Type)]) where
   UnColumn '[] = '[]
   UnColumn ((s :-> t) ': ts) = t ': UnColumn ts
 
