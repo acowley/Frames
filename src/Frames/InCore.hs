@@ -1,7 +1,7 @@
 {-# LANGUAGE BangPatterns, CPP, DataKinds, EmptyCase,
-             FlexibleInstances, PolyKinds, ScopedTypeVariables,
-             TupleSections, TypeFamilies, TypeOperators,
-             UndecidableInstances #-}
+             FlexibleContexts, FlexibleInstances, PolyKinds,
+             ScopedTypeVariables, TupleSections, TypeFamilies,
+             TypeOperators, UndecidableInstances #-}
 -- | Efficient in-memory (in-core) storage of tabular data.
 module Frames.InCore where
 import Control.Monad.Primitive
