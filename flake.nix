@@ -16,14 +16,16 @@
     hls.url = "github:haskell/haskell-language-server";
   };
 
-  outputs = { self, nixpkgs, hls, flake-utils}:
-    flake-utils.lib.eachDefaultSystem (system: let
-
+  outputs = { self, nixpkgs, hls, flake-utils}: let
       compiler = "8107";
       # compiler = "921";
+    in
+
+    flake-utils.lib.eachDefaultSystem (system: let
+
       pkgs = import nixpkgs {
         inherit system;
-        overlays = [ self.overlay.${system} ];
+        overlays = [ self.overlay ];
         # config = { allowUnfree = true; allowBroken = true; };
       };
 
@@ -67,6 +69,7 @@
       pkgs.lib.optional (compiler != "921")
         hls.packages.${system}."haskell-language-server-${compiler}";
     };
+  }) // {
 
     overlay = final: prev: {
       frameHaskellOverlay = hfinal: hprev:
@@ -138,5 +141,5 @@
               }
         );
     };
-  });
+  };
 }
