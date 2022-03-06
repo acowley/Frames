@@ -16,63 +16,109 @@
     hls.url = "github:haskell/haskell-language-server";
   };
 
-  outputs = { self, nixpkgs, hls, flake-utils}: let
-      compiler = "8107";
-      # compiler = "921";
-    in
+  outputs = { self, nixpkgs, hls, flake-utils}:
 
     flake-utils.lib.eachDefaultSystem (system: let
 
       pkgs = import nixpkgs {
         inherit system;
         overlays = [ self.overlay ];
-        # config = { allowUnfree = true; allowBroken = true; };
       };
 
-      hspkgs = pkgs.haskell.packages."ghc${compiler}".override {
-        overrides = pkgs.frameHaskellOverlay;
+      compilerVersionFromHsPkgs = hsPkgs:
+        pkgs.lib.replaceStrings [ "." ] [ "" ] hsPkgs.ghc.version;
+
+      hspkgs810 = pkgs.haskell.packages."ghc8107".override {
+        overrides = pkgs.frameHaskellOverlay-8107;
+      };
+      hspkgs92 = pkgs.haskell.packages."ghc921".override {
+        overrides = pkgs.frameHaskellOverlay-921;
       };
 
-      drv = hspkgs.callPackage ./default.nix {};
-      ghc = (if compiler == "921"
-             then hspkgs.ghc.withPackages
-             else hspkgs.ghc.withHoogle)
-              (ps: drv.passthru.getBuildInputs.haskellBuildInputs);
+      mkPackage = hspkgs:
+          hspkgs.developPackage {
+            root =  pkgs.lib.cleanSource ./.;
+            name = "Frames";
+            returnShellEnv = false;
+            withHoogle = true;
+          };
 
-      # modifier used in haskellPackages.developPackage
-      myModifier = drv:
-        pkgs.haskell.lib.addBuildTools drv (with hspkgs; [
-          cabal-install
-          ghcid
-          hls.packages.${system}."haskell-language-server-${compiler}"
-          hasktags
-        ]);
+      mkShell = hspkgs:
+        let
+          compilerVersion = compilerVersionFromHsPkgs hspkgs;
+          myModifier = drv:
+            pkgs.haskell.lib.addBuildTools drv (with hspkgs; [
+              cabal-install
+              ghcid
+              hls.packages.${system}."haskell-language-server-${compilerVersion}"
+              hasktags
+            ]);
+        in
+        (myModifier (mkPackage hspkgs)).envFunc {};
 
+      mkSimpleShell = compilerVersion:
+        let
+          compiler = pkgs.haskell.compiler."ghc${compilerVersion}";
+        in
+          pkgs.mkShell {
+            buildInputs = [
+              pkgs.haskell.compiler."ghc${compilerVersion}"
+              pkgs.haskell.packages."ghc${compilerVersion}".cabal-install
+              pkgs.llvmPackages_latest.llvm
+            ] ++
+            pkgs.lib.optional (compilerVersion != "921")
+              hls.packages.${system}."haskell-language-server-${compilerVersion}";
+          };
   in {
     packages = {
-      Frames = hspkgs.developPackage {
-        root =  pkgs.lib.cleanSource ./.;
-        name = "Frames";
-        returnShellEnv = false;
-        withHoogle = true;
-        overrides = pkgs.frameHaskellOverlay;
-        modifier = myModifier;
-      };
+      Frames-8107 = mkPackage hspkgs810;
+      Frames-921 = mkPackage hspkgs92;
     };
 
-    devShell = pkgs.mkShell {
-      buildInputs = [
-        ghc
-        hspkgs.cabal-install
-        pkgs.llvmPackages_latest.llvm
-      ] ++
-      pkgs.lib.optional (compiler != "921")
-        hls.packages.${system}."haskell-language-server-${compiler}";
+    devShell = mkSimpleShell "921";
+
+    devShells = {
+      Frames-8107 = mkShell hspkgs810;
+      Frames-921 = mkShell hspkgs92;
     };
   }) // {
 
     overlay = final: prev: {
-      frameHaskellOverlay = hfinal: hprev:
+      frameHaskellOverlay-921 = hfinal: hprev: (
+        (final.frameHaskellOverlay-8107 hfinal hprev) // (
+        let doJailbreak = prev.haskell.lib.doJailbreak;
+            overrideSrc = prev.haskell.lib.overrideSrc;
+            dontHaddock = prev.haskell.lib.dontHaddock;
+            dontCheck = prev.haskell.lib.dontCheck;
+        in {
+          # Temporary fixes for breakage with ghc-9.2.1
+          attoparsec = dontCheck hprev.attoparsec;
+          base-compat-batteries = dontCheck hprev.base-compat-batteries;
+          basement = dontHaddock hprev.basement;
+          blaze-builder = dontCheck hprev.blaze-builder;
+          blaze-markup = dontCheck hprev.blaze-markup;
+          case-insensitive = dontCheck hprev.case-insensitive;
+          cassava = dontCheck hprev.cassava;
+          conduit-extra = dontCheck hprev.conduit-extra;
+          criterion = dontCheck hprev.criterion;
+          cryptonite = dontHaddock hprev.cryptonite;
+          fast-logger = dontCheck hprev.fast-logger;
+          htoml = dontCheck hprev.htoml;
+          lens-family-core = dontHaddock hprev.lens-family-core;
+          ListLike = dontCheck hprev.ListLike;
+          microlens = dontHaddock hprev.microlens;
+          microstache = dontCheck hprev.microstache;
+          readable = dontHaddock (doJailbreak hprev.readable);
+          QuickCheck = dontCheck hprev.QuickCheck;
+          operational = dontHaddock hprev.operational;
+          optparse-applicative = dontCheck hprev.optparse-applicative;
+          generic-deriving = dontHaddock hprev.generic-deriving;
+          streaming-commons = dontCheck hprev.streaming-commons;
+          utf8-string = dontCheck hprev.utf8-string;
+          word8 = dontCheck hprev.word8;
+        }));
+
+      frameHaskellOverlay-8107 = hfinal: hprev:
         let doJailbreak = prev.haskell.lib.doJailbreak;
             overrideSrc = prev.haskell.lib.overrideSrc;
             dontHaddock = prev.haskell.lib.dontHaddock;
@@ -109,37 +155,8 @@
               hash = "sha256-ONw+8D1r4xX9+KgYOFpTNhk+pCsNZW8DbbAzOheSkS0=";
             };
           };
-        } // (if compiler == "921"
-              then {
-                # Temporary fixes for breakage with ghc-9.2.1
-                attoparsec = dontCheck hprev.attoparsec;
-                base-compat-batteries = dontCheck hprev.base-compat-batteries;
-                basement = dontHaddock hprev.basement;
-                blaze-builder = dontCheck hprev.blaze-builder;
-                blaze-markup = dontCheck hprev.blaze-markup;
-                case-insensitive = dontCheck hprev.case-insensitive;
-                cassava = dontCheck hprev.cassava;
-                conduit-extra = dontCheck hprev.conduit-extra;
-                criterion = dontCheck hprev.criterion;
-                cryptonite = dontHaddock hprev.cryptonite;
-                fast-logger = dontCheck hprev.fast-logger;
-                htoml = dontCheck hprev.htoml;
-                lens-family-core = dontHaddock hprev.lens-family-core;
-                ListLike = dontCheck hprev.ListLike;
-                microlens = dontHaddock hprev.microlens;
-                microstache = dontCheck hprev.microstache;
-                readable = dontHaddock (doJailbreak hprev.readable);
-                QuickCheck = dontCheck hprev.QuickCheck;
-                operational = dontHaddock hprev.operational;
-                optparse-applicative = dontCheck hprev.optparse-applicative;
-                generic-deriving = dontHaddock hprev.generic-deriving;
-                streaming-commons = dontCheck hprev.streaming-commons;
-                utf8-string = dontCheck hprev.utf8-string;
-                word8 = dontCheck hprev.word8;
-              } else {
-                readable = doJailbreak hprev.readable;
-              }
-        );
+          readable = doJailbreak hprev.readable;
+        };
     };
   };
 }

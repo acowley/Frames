@@ -113,6 +113,18 @@
         "type": "github"
       }
     },
+    "hie-bios": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-nd+FfUQVZNxJfKZkAWA3dF0JwRgXntL+1gGvyNHDbKc=",
+        "type": "tarball",
+        "url": "https://hackage.haskell.org/package/hie-bios-0.9.0/hie-bios-0.9.0.tar.gz"
+      },
+      "original": {
+        "type": "tarball",
+        "url": "https://hackage.haskell.org/package/hie-bios-0.9.0/hie-bios-0.9.0.tar.gz"
+      }
+    },
     "hlint": {
       "flake": false,
       "locked": {
@@ -133,7 +145,9 @@
         "fourmolu": "fourmolu",
         "ghc-exactprint": "ghc-exactprint",
         "gitignore": "gitignore",
+        "hie-bios": "hie-bios",
         "hlint": "hlint",
+        "implicit-hie-cradle": "implicit-hie-cradle",
         "lsp": "lsp",
         "lsp-test": "lsp-test",
         "lsp-types": "lsp-types",
@@ -142,17 +156,29 @@
         "retrie": "retrie"
       },
       "locked": {
-        "lastModified": 1644883223,
-        "narHash": "sha256-OMhftt6Bd046AsHihdscHq+xCNvAhhPTjHqcH3Lip4M=",
+        "lastModified": 1646601891,
+        "narHash": "sha256-JjkrVZsRSNr7UtoRiX3BMAX4hlXo9y7Ji902IqWcw3o=",
         "owner": "haskell",
         "repo": "haskell-language-server",
-        "rev": "34e9914f4edaa83c2e4a80dcba0c6375d4911da9",
+        "rev": "73fdd91e5a5a6a7cabdafb453f23749693029cc5",
         "type": "github"
       },
       "original": {
         "owner": "haskell",
         "repo": "haskell-language-server",
         "type": "github"
+      }
+    },
+    "implicit-hie-cradle": {
+      "flake": false,
+      "locked": {
+        "narHash": "sha256-2NmucBBI7Qi1UGXWG27XFZRCeqeRiwVFWmJKZnp6R5U=",
+        "type": "tarball",
+        "url": "https://hackage.haskell.org/package/implicit-hie-cradle-0.3.0.5/implicit-hie-cradle-0.3.0.5.tar.gz"
+      },
+      "original": {
+        "type": "tarball",
+        "url": "https://hackage.haskell.org/package/implicit-hie-cradle-0.3.0.5/implicit-hie-cradle-0.3.0.5.tar.gz"
       }
     },
     "lsp": {
@@ -223,11 +249,11 @@
     },
     "nixpkgs_3": {
       "locked": {
-        "lastModified": 1644525281,
-        "narHash": "sha256-D3VuWLdnLmAXIkooWAtbTGSQI9Fc1lkvAr94wTxhnTU=",
+        "lastModified": 1646254136,
+        "narHash": "sha256-8nQx02tTzgYO21BP/dy5BCRopE8OwE8Drsw98j+Qoaw=",
         "owner": "nixos",
         "repo": "nixpkgs",
-        "rev": "48d63e924a2666baf37f4f14a18f19347fbd54a2",
+        "rev": "3e072546ea98db00c2364b81491b893673267827",
         "type": "github"
       },
       "original": {
