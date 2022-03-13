@@ -130,6 +130,20 @@ For comparison to working with data frames in other languages, see the [tutorial
 There are various [demos](https://github.com/acowley/Frames/tree/master/demo) in the repository. Be sure to run the `getdata` build target to download the data files used by the demos! You can also download the data files manually and put them in a `data` directory in the directory from which you will be running the executables.
 
 
+## Contribute
+
+You can build Frames via [nix](www.nixos.org) with the following command:
+```
+nix build .#Frames-8107  # or nix build .#Frames-921
+```
+this creates an ./result link in the current folder.
+
+To get a development shell with all libraries, you can run:
+```
+nix develop .#Frames-921
+```
+To get just ghc and cabal in your shell, a simple `nix develop` will do.
+
 ## Benchmarks
 
 The [benchmark](https://github.com/acowley/Frames/tree/master/benchmarks/InsuranceBench.hs) shows several ways of dealing with data when you want to perform multiple traversals.
