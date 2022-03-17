@@ -63,7 +63,7 @@ pipeBenchInCore' =
      return $! P (sumLat / fromIntegral n) (sumLong / fromIntegral n)
 
 -- | Perform two consecutive folds after projecting a subset of an
--- in-memory reprsentation.
+-- in-memory representation.
 pipeBenchAoS :: IO (P Double)
 pipeBenchAoS = do tbl <- inCoreAoS' rcast tblP :: IO (Frame TinyIns)
                   let (n,sumLat) =

@@ -21,7 +21,7 @@ generateCode rowName txt =
 
 -- | Make template haskell-generated code more readable by
 -- unqualifying common names, making type operators infix, erasing
--- inferrable types, and adding a bit of whitespace.
+-- inferable types, and adding a bit of whitespace.
 makePretty :: String -> String
 makePretty = -- Add new lines before type synonym definitions
              replace' "\ntype " "\n\ntype "
@@ -29,7 +29,7 @@ makePretty = -- Add new lines before type synonym definitions
              . (!! 10) . iterate (replace infixCons)
              . replace infixNil
              . replace infixCol
-               -- Erase inferrable type
+               -- Erase inferable type
              . replace ((\x y -> x ++ " ∈ " ++ y)
                         <$> ("RElem " *> some (psym (not . isSpace)))
                         <*> ((some (psym isSpace) *> some (psym (not . isSpace)))

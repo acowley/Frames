@@ -89,7 +89,7 @@ library
   default-language:    Haskell2010
   ghc-options:         -Wall
 
--- Get the large-ish data files used in the demo and benchmark
+-- Get the largeish data files used in the demo and benchmark
 executable getdata
   if !flag(demos)
     buildable: False
