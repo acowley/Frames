@@ -97,7 +97,7 @@ tokenizeRow options =
           RFC4180Quoting quote -> reassembleRFC4180QuotedParts sep quote
 
 -- | Post processing applied to a list of tokens split by the
--- separator which should have quoted sections reassembeld
+-- separator which should have quoted sections reassembled
 reassembleRFC4180QuotedParts :: Separator -> QuoteChar -> [T.Text] -> [T.Text]
 reassembleRFC4180QuotedParts sep quoteChar = go
   where go [] = []
@@ -393,7 +393,7 @@ produceDSV opts recs = do
 
 -- | 'P.yield' a header row with column names followed by a line of
 -- text for each 'Record' with each field separated by a comma. This
--- is the same as 'produceCSV', but adapated for cases where you have
+-- is the same as 'produceCSV', but adapted for cases where you have
 -- streaming input that you wish to use to produce streaming output.
 pipeToCSV :: forall ts m.
              (Monad m, ColumnHeaders ts, RecordToList ts,
