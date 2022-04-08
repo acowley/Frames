@@ -96,7 +96,7 @@ type family UnColumn (ts :: [(Symbol, Type)]) where
 -- | Enforce a constraint on the payload type of each column.
 type AllCols c ts = AllConstrained c (UnColumn ts)
 
--- | Map a function across a 'Rec' with monomorphic (i.e., all the
+-- | Map a function across a 'Rec' with monomorphic (i.e. all the
 -- same) indices.
 mapMonoV :: (AllAre a ts, Functor f)
          => (a -> b)

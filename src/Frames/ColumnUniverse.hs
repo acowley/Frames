@@ -91,7 +91,7 @@ orderParsePriorities x =
 -- results, we are in dangerous waters: all data is parseable at
 -- /both/ types, so which do we default to? The defaulting choices
 -- made here are described in the previous paragraph. If there is no
--- defaulting rule, we give up (i.e., use 'T.Text' as a
+-- defaulting rule, we give up (i.e. use 'T.Text' as a
 -- representation).
 lubTypes :: Parsed (Maybe Type) -> Parsed (Maybe Type) -> Maybe Ordering
 lubTypes x y = compare <$> orderParsePriorities y <*> orderParsePriorities x
@@ -126,7 +126,7 @@ instance (T.Text ∈ ts, RPureConstrained Parseable ts)
       Just EQ -> mergeEqTypeParses x y
       Nothing -> mempty
 
--- | Find the best (i.e., smallest) 'CoRec' variant to represent a
+-- | Find the best (i.e. smallest) 'CoRec' variant to represent a
 -- parsed value. For inspection in GHCi after loading this module,
 -- consider this example:
 --
