@@ -72,7 +72,7 @@ tableTypes' (rowGen "data/ml-100k/u.user")
 
 -- This template haskell splice explicitly specifies the name for the
 -- inferred record type, column names, a separator string, and the
--- data file from which to infer the record type (i.e., what type
+-- data file from which to infer the record type (i.e. what type
 -- should be used to represent each column). The result of this splice
 -- is included in an [[* Splice Dump][appendix]] below so you can flip
 -- between the generated code and how it is used.
@@ -353,7 +353,7 @@ addTwoOccupation' = rsubset %~ mapFields @Num @rs' (+ 2)
 -- that it does not impose any runtime overhead. What we are doing
 -- here is saying that we will operate on a ~Frames~ row type, ~Record
 -- rs~, that has an element ~Occupation~, and that deleting this
--- element works properly (i.e., the leftover fields are a proper
+-- element works properly (i.e. the leftover fields are a proper
 -- subset of the original row type). We further state -- with the
 -- ~AsVinyl~ constraint -- that we want to work on the unadorned field
 -- values, temporarily discarding their header information, with the
