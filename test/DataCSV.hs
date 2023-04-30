@@ -1,56 +1,58 @@
-{-# LANGUAGE DeriveLift, OverloadedStrings, TemplateHaskell #-}
+{-# LANGUAGE DeriveLift #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TupleSections #-}
+
 module DataCSV where
-import Control.Monad ((>=>))
+
 import Data.Bifunctor (first)
-import qualified Data.ByteString as BS
-import qualified Data.HashMap.Lazy as H
-import Data.Maybe (catMaybes)
+import qualified Data.Foldable as F
 import qualified Data.Text as T
 import qualified Data.Text.IO as T
-import Data.Text.Encoding (decodeUtf8)
-import Language.Haskell.TH.Syntax (Lift(..))
-import Text.Toml
-import Text.Toml.Types (Node (VTable, VString), Table)
+import Language.Haskell.TH.Syntax (Lift (..))
+import qualified Toml
+import Validation
 
-data CsvExample = CsvExample {
-  name :: String
-  , csv :: String
-  , generated :: String }
-  deriving Lift
+data CsvExample = CsvExample
+    { name :: String
+    , csv :: String
+    , generated :: String
+    }
+    deriving (Lift, Show)
 
--- instance Lift CsvExample where
---   lift (CsvExample n c g) = [e| CsvExample n c g |]
+keyText :: Toml.Key -> T.Text
+keyText = F.fold . cleanup . map Toml.unPiece . F.toList . Toml.unKey
+  where
+    -- Top-level table names are parsed as @"name" :|
+    -- ["name"]@. Remove that duplication here.
+    cleanup [x, y] | x == y = [x]
+    cleanup x = x
 
+-- | Parse a TOML file that is a top-level table whose values are all
+-- the same type. The @tomland@ codec API is centered around starting
+-- with a key, but a top-level table does not have a key, so we must
+-- use the lower level 'Toml.parse' and 'Toml.tomlTables' before
+-- repeatedly applying the provided 'Toml.TomlCodec'.
+parseFileOf :: forall a. Toml.TomlCodec a -> T.Text -> Either [T.Text] [(T.Text, a)]
+parseFileOf codec =
+    first (map Toml.prettyTomlDecodeError)
+        . validationToEither
+        . traverse (uncurry go)
+        . Toml.toList
+        . Toml.tomlTables
+        . either (error . show) id
+        . Toml.parse
+  where
+    go :: Toml.Key -> Toml.TOML -> Validation [Toml.TomlDecodeError] (T.Text, a)
+    go k v = (keyText k,) <$> Toml.runTomlCodec codec v
+
+parseExamples :: FilePath -> IO (Either [T.Text] [CsvExample])
+parseExamples = fmap (fmap (map mkExample) . parseFileOf exampleCodec) . T.readFile
+  where
+    exampleCodec = Toml.pair (Toml.string "csv") (Toml.string "generated")
+    mkExample (name', (csv', generated')) =
+        CsvExample (T.unpack name') csv' generated'
+
+-- | Wraps 'parseExamples' to call 'error' on any parse errors.
 examplesFrom :: FilePath -> IO [CsvExample]
-examplesFrom fp =
-  (either error id
-   . ((first show . parseTomlDoc "examples") >=> go)
-   . decodeUtf8)
-  <$> BS.readFile fp
-  where go :: Table -> Either String [CsvExample]
-        go = fmap catMaybes . mapM (uncurry ex . first T.unpack) . H.toList
-        ex :: String -> Node -> Either String (Maybe CsvExample)
-        ex k (VTable v) =
-          do c <- case H.lookup "csv" v of
-                    Nothing -> Right Nothing -- ("No csv key in "++k)
-                    Just (VString c) -> Right (Just (T.unpack c))
-                    Just _ -> Left ("csv key not a string in " ++ k)
-             g <- case H.lookup "generated" v of
-                    Nothing -> Left ("No generated key in " ++ k)
-                    Just (VString g) -> Right (Just (T.unpack g))
-                    Just _ -> Left ("generated key not a string in " ++ k)
-             return (CsvExample k <$> c <*> g)
-        ex k _ = Left (k ++ " is not a table")
-
-generatedFrom :: FilePath -> String -> IO String
-generatedFrom fp key = (either error id . (>>= go)
-                        . first show . parseTomlDoc "examples")
-                       <$> T.readFile fp
-  where go :: Table -> Either String String
-        go toml = do tbl <- case H.lookup (T.pack key) toml of
-                              Just (VTable t) -> Right t
-                              _ -> Left (key ++ " is not a table")
-                     case H.lookup "generated" tbl of
-                       Just (VString g) -> Right (T.unpack g)
-                       Just _ -> Left ("generated key not a string in " ++ key)
-                       Nothing -> Left ("No generated key in " ++ key)
+examplesFrom = fmap (either (error . show) id) . parseExamples

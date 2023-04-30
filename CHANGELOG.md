@@ -1,3 +1,6 @@
+# 0.7.4
+Replace the `htoml` package used in a test with `tomland`.
+
 # 0.7.2
 
 - Add `writeCSVopts` that accepts options to specify the CSV delimiter.

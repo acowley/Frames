@@ -1,5 +1,5 @@
 name:                Frames
-version:             0.7.3
+version:             0.7.4
 synopsis:            Data frames For working with tabular data files
 description:         User-friendly, type safe, runtime efficient tooling for
                      working with tabular data deserialized from
@@ -70,7 +70,7 @@ library
                        text >= 1.1.1.0,
                        template-haskell,
                        transformers,
-                       vector,
+                       vector < 0.13,
                        readable >= 0.3.1,
                        pipes >= 4.1 && < 5,
                        pipes-bytestring >= 2.1.6 && < 2.2,
@@ -150,7 +150,7 @@ executable demo
                    pipes
   hs-source-dirs: demo/framestack/app
   default-language: Haskell2010
-  ghc-options: -O2
+  ghc-options: -O2 -fsimpl-tick-factor=200
   -- ghc-options: -O2 -fllvm
 
 executable tutorial
@@ -176,7 +176,7 @@ executable benchdemo
   hs-source-dirs:   benchmarks
   default-language: Haskell2010
   -- ghc-options:      -O2
-  ghc-options: -O2 -fllvm
+  ghc-options: -O2 -fllvm -fsimpl-tick-factor=200
 
 -- A demonstration of dealing with missing data. Provided for source
 -- code and experimentation rather than a useful executable.
@@ -235,9 +235,9 @@ test-suite spec
                        UncurryFold UncurryFoldNoHeader UncurryFoldPartialData
                        Categorical Chunks Issue145
   build-depends:       base, text, hspec, Frames, template-haskell,
-                       temporary, directory, htoml, regex-applicative, pretty,
-                       unordered-containers, pipes, HUnit, vinyl,
-                       foldl >= 1.3 && < 1.5,
+                       temporary, directory, tomland, regex-applicative, pretty,
+                       unordered-containers, pipes, HUnit, vinyl, 
+                       foldl >= 1.3 && < 1.5, validation-selective,
                        attoparsec, lens, bytestring
   ghc-options:         -threaded -rtsopts -with-rtsopts=-N -Wall
   default-language:    Haskell2010
