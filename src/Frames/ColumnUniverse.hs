@@ -67,18 +67,18 @@ parsedTypeRep (ColInfo (t,p)) =
 orderParsePriorities :: Parsed (Maybe Type) -> Maybe Int
 orderParsePriorities x =
   case discardConfidence x of
-    Nothing -> Just (1 + 6) -- categorical variable
+    Nothing -> Just 1 -- categorical variable
     Just t
       | t == tyText -> Just (0 + uncertainty)
       | t == tyDbl -> Just (2 + uncertainty)
       | t == tyInt -> Just (3 + uncertainty)
       | t == tyBool -> Just (4 + uncertainty)
-      | otherwise -> Just (5 + uncertainty) -- Unknown type
+      | otherwise -> Nothing
   where tyText = ConT (mkName "Text")
         tyDbl = ConT (mkName "Double")
         tyInt = ConT (mkName "Int")
         tyBool = ConT (mkName "Bool")
-        uncertainty = case x of Definitely _ -> 6; Possibly _ -> 0
+        uncertainty = case x of Definitely _ -> 0; Possibly _ -> 5
 
 -- | We use a join semi-lattice on types for representations. The
 -- bottom of the lattice is effectively an error (we have nothing to
