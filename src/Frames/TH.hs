@@ -161,11 +161,16 @@ rowGenCat = RowGen [] "" defaultSep "Row" Proxy 1000 . produceTokens
 -- tableType :: String -> FilePath -> DecsQ
 -- tableType n fp = tableType' (rowGen fp) { rowTypeName = n }
 
--- | Like 'tableType', but additionally generates a type synonym for
--- each column, and a proxy value of that type. If the CSV file has
--- column names \"foo\", \"bar\", and \"baz\", then this will declare
--- @type Foo = "foo" :-> Int@, for example, @foo = rlens \@Foo@, and
--- @foo' = rlens' \@Foo@.
+-- | Generate types for a row of a table. This will be something like
+-- @Record ["x" :-> a, "y" :-> b, "z" :-> c]@. This splice
+-- additionally generates a type synonym for each column, and a proxy
+-- value of that type. If the CSV file has column names \"foo\",
+-- \"bar\", and \"baz\", then this will declare @type Foo = "foo" :->
+-- Int@, for example, @foo = rlens \@Foo@, and @foo' = rlens' \@Foo@.
+--
+-- See 'tableTypes'' if you need to customize parsing to do things
+-- like override the separator character (default is a single comma),
+-- or supply column names.
 tableTypes :: String -> FilePath -> DecsQ
 tableTypes n fp = tableTypes' (rowGen fp) { rowTypeName = n }
 
@@ -230,6 +235,14 @@ tableTypesText' RowGen {..} =
 -- the CSV file has column names \"foo\", \"bar\", and \"baz\", then
 -- this will declare @type Foo = "foo" :-> Int@, for example, @foo =
 -- rlens \@Foo@, and @foo' = rlens' \@Foo@.
+--
+-- The supplied 'RowGen' value is also used to produce a value of type
+-- 'ParserOptions' that can be passed to functions like
+-- 'readTableOpt'. This is useful if you need to customize parsing to
+-- support something like a special separator string. This value of
+-- type 'ParserOptions' will be given a name based on the row type
+-- name. If the row type is @Row@, then thsi splice will generate a
+-- value @rowParser :: ParserOptions@.
 tableTypes' :: forall a c. (c ~ CoRec ColInfo a, ColumnTypeable c, Semigroup c, RPureConstrained (ShowF ColInfo) a)
             => RowGen a -> DecsQ
 tableTypes' (RowGen {..}) =
