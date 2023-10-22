@@ -2,10 +2,11 @@
 {-# LANGUAGE KindSignatures #-}
 {-# LANGUAGE QuasiQuotes #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE RankNTypes #-}
 -- | Define the 'TimeIn' type that lets us specify in the type how a
 -- 'LocalTime' should be converted to a 'UTCTime'.
 module TimeIn where
-import Control.Monad (MonadPlus, msum)
+import Control.Monad (MonadPlus (mzero), msum)
 import qualified Data.Text as T
 import Data.Time.Clock
 import Data.Time.Format
@@ -20,11 +21,14 @@ import Language.Haskell.TH
 -- whence it came.
 newtype TimeIn (zone :: Symbol) = TimeIn UTCTime deriving Show
 
+failZero :: MonadPlus m => Maybe r -> m r
+failZero = maybe mzero pure
+
 -- | Try to parse a 'LocalTime' value using common formats.
 parseLocalTime :: MonadPlus m => T.Text -> m LocalTime
 parseLocalTime t = msum (map (($ T.unpack t) . mkParser) formats)
   where formats = ["%F %T", "%F"]
-        mkParser = parseTimeM True defaultTimeLocale
+        mkParser = (failZero .) . parseTimeM True defaultTimeLocale
 
 -- | @zonedTime "America/Chicago"@ will create a 'Parseable' instance
 -- for the type @TimeIn "America/Chicago"@. You can then use this type
