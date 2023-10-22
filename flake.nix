@@ -16,8 +16,17 @@
           haskell = pkgs.haskellPackages;
           haskell-overlay = final: prev: 
             let overrideSrc = pkgs.haskell.lib.overrideSrc;
+                appendConfigureFlags = pkgs.haskell.lib.appendConfigureFlags;
+                overrideCabal = pkgs.haskell.lib.overrideCabal;
+                enableCabalFlag = pkgs.haskell.lib.enableCabalFlag;
             in {
-              ${pkg-name} = hspkgs.callCabal2nix pkg-name ./. {};
+              ${pkg-name} =
+                hspkgs.callCabal2nixWithOptions pkg-name ./. "-fdemos" {};
+                # enableCabalFlag (hspkgs.callCabal2nix pkg-name ./. {}) "demos";
+                  # (hspkgs.callCabal2nix pkg-name ./. {}).overrideAttrs(old: {
+                  #   configureFlags = (old.configureFlags or []) ++ ["-fdemos"];
+                  # });
+
               # Add here any package overrides you may need
             };
           hspkgs = haskell.override {
