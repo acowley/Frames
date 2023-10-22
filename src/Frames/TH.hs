@@ -2,6 +2,7 @@
              QuasiQuotes, RecordWildCards, RoleAnnotations,
              ScopedTypeVariables, TemplateHaskell, TupleSections,
              TypeApplications, TypeOperators #-}
+{-# LANGUAGE FlexibleContexts #-}
 -- | Code generation of types relevant to Frames use-cases. Generation
 -- may be driven by an automated inference process or manual use of
 -- the individual helpers.
@@ -25,6 +26,7 @@ import Language.Haskell.TH.Syntax
 import qualified Pipes as P
 import qualified Pipes.Prelude as P
 import qualified Pipes.Safe as P
+import Data.Vinyl.CoRec (ShowF)
 
 -- | Generate a column type.
 recDec :: [Type] -> Type
@@ -70,7 +72,7 @@ lowerHead = fmap aux . T.uncons
 -- | For each column, we declare a type synonym for its type, and a
 -- Proxy value of that type.
 colDec :: T.Text -> String -> T.Text
-       -> (Either (String -> Q [Dec]) Type)
+       -> Either (String -> Q [Dec]) Type
        -> Q (Type, [Dec])
 colDec prefix rowName colName colTypeGen = do
   (colTy, extraDecs) <- either colDecsHelper (pure . (,[])) colTypeGen
@@ -139,8 +141,8 @@ data RowGen (a :: [GHC.Type]) =
 
 -- -- | Shorthand for a 'Proxy' value of 'ColumnUniverse' applied to the
 -- -- given type list.
--- colQ :: Name -> Q Exp
--- colQ n = [e| (Proxy :: Proxy (ColumnUniverse $(conT n))) |]
+colQ :: Name -> Q Exp
+colQ n = [e| (Proxy :: Proxy (ColumnUniverse $(conT n))) |]
 
 -- | A default 'RowGen'. This instructs the type inference engine to
 -- get column names from the data file, use the default column
@@ -194,7 +196,7 @@ colNamesP src = either (const []) fst <$> P.next src
 -- | Generate a type for a row of a table all of whose columns remain
 -- unparsed 'Text' values.
 tableTypesText' :: forall a c.
-                   (c ~ CoRec ColInfo a, ColumnTypeable c, Monoid c)
+                   (c ~ CoRec ColInfo a, ColumnTypeable c, Semigroup c)
                 => RowGen a -> DecsQ
 tableTypesText' RowGen {..} =
   do colNames <- runIO . P.runSafeT $
@@ -228,7 +230,7 @@ tableTypesText' RowGen {..} =
 -- the CSV file has column names \"foo\", \"bar\", and \"baz\", then
 -- this will declare @type Foo = "foo" :-> Int@, for example, @foo =
 -- rlens \@Foo@, and @foo' = rlens' \@Foo@.
-tableTypes' :: forall a c. (c ~ CoRec ColInfo a, ColumnTypeable c, Monoid c)
+tableTypes' :: forall a c. (c ~ CoRec ColInfo a, ColumnTypeable c, Semigroup c, RPureConstrained (ShowF ColInfo) a)
             => RowGen a -> DecsQ
 tableTypes' (RowGen {..}) =
   do headers <- runIO . P.runSafeT
@@ -256,3 +258,4 @@ tableTypes' (RowGen {..}) =
           case mColNm of
             Just n -> pure (ConT n, []) -- Column's type was already defined
             Nothing -> colDec (T.pack tablePrefix) rowTypeName colNm colTy
+

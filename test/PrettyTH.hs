@@ -36,6 +36,7 @@ makePretty = -- Add new lines before type synonym definitions
                              <* " (RIndex " <* some (psym (/= ')')) <* ")"))
                -- Unqualify names
              . replace' "Frames.CSV.ParserOptions" "ParserOptions"
+             . replace' "GHC.Maybe." ""
              . replace' "GHC.Base." ""
              . replace' "GHC.Types." ""
              . replace' "Data.Vinyl.Core." ""
