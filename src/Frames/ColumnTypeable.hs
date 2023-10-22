@@ -1,5 +1,4 @@
-{-# LANGUAGE BangPatterns, DefaultSignatures, LambdaCase,
-             ScopedTypeVariables #-}
+{-# LANGUAGE DefaultSignatures, ScopedTypeVariables #-}
 module Frames.ColumnTypeable where
 import Control.Monad (MonadPlus)
 import Data.Maybe (fromMaybe)
