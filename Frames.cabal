@@ -1,5 +1,5 @@
 name:                Frames
-version:             0.7.4.1
+version:             0.7.4.2
 synopsis:            Data frames for working with tabular data files
 description:         User-friendly, type safe, runtime efficient tooling for
                      working with tabular data deserialized from
@@ -65,7 +65,7 @@ library
                        UndecidableInstances, ScopedTypeVariables,
                        OverloadedStrings, TypeApplications
   build-depends:       base >=4.10 && <4.20,
-                       ghc-prim >=0.3 && <0.10,
+                       ghc-prim >=0.3 && <0.12,
                        primitive >= 0.6 && < 0.10,
                        text >= 1.1.1.0 && < 2.2,
                        template-haskell >= 2.10 && < 2.22,
