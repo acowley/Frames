@@ -9,8 +9,10 @@
 -- to parse data captured as 'Data.Time.LocalTime.LocalTime' values
 -- into the \"America/Chicago\" time zone.
 module Columns (MyColumns, TimeIn(..), Chicago(..)) where
+import Data.Proxy (Proxy(..))
 import Frames (CommonColumns)
 import Frames.ColumnTypeable (Parseable(..))
+import Frames.CSV (defaultSep, produceTokens)
 import TimeIn
 
 -- | Define a 'Parseable' instance for @TimeIn "America/Chicago"@
