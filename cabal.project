@@ -1,6 +1,0 @@
-packages: .
-
-source-repository-package
-        type: git
-        location: https://github.com/mirokuratczyk/htoml
-        tag: 33971287445c5e2531d9605a287486dfc3cbe1da
