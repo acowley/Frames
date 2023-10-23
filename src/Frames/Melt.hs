@@ -58,6 +58,19 @@ type family RDeleteAll ss ts where
   RDeleteAll '[] ts = ts
   RDeleteAll (s ': ss) ts = RDeleteAll ss (RDelete s ts)
 
+transform :: forall rs as bs . (as ⊆ rs, RDeleteAll as rs ⊆ rs)
+             => (Record as -> Record bs) -> Record rs -> Record (RDeleteAll as rs ++ bs)
+transform f xs = rcast @(RDeleteAll as rs) xs `rappend` f (rcast xs)
+
+-- | Rename a column
+retypeColumn :: forall x y rs . ( V.KnownField x
+                                , V.KnownField y
+                                , V.Snd x ~ V.Snd y
+                                , ElemOf rs x
+                                , RDelete x rs ⊆ rs)
+                => Record rs -> Record (RDelete x rs V.++ '[y])
+retypeColumn = transform @rs @'[x] @'[y] (\r -> (rgetField @x r &: V.RNil))
+
 -- | This is 'melt', but the variables are at the front of the record,
 -- which reads a bit odd.
 meltRow' :: forall proxy vs ts ss. (vs ⊆ ts, ss ⊆ ts, vs ~ RDeleteAll ss ts,
